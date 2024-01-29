@@ -1,0 +1,12 @@
+type RangePaymentCreated @entity(immutable: true) {
+  id: Bytes!
+  rangePayment_avs: Bytes! # address
+  rangePayment_strategy: Bytes! # address
+  rangePayment_token: Bytes! # address
+  rangePayment_amount: BigInt! # uint256
+  rangePayment_startRangeTimestamp: BigInt! # uint256
+  rangePayment_endRangeTimestamp: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
