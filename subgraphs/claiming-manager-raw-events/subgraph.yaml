@@ -1,0 +1,41 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: ClaimingManager
+    network: goerli
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: ClaimingManager
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ActivationDelaySet
+        - ClaimerSet
+        - CommissionSet
+        - PaymentClaimed
+        - PaymentUpdaterSet
+        - RootSubmitted
+      abis:
+        - name: ClaimingManager
+          file: ./abis/ClaimingManager.json
+      eventHandlers:
+        - event: ActivationDelaySet(uint32,uint32)
+          handler: handleActivationDelaySet
+        - event: ClaimerSet(address,address)
+          handler: handleClaimerSet
+        - event: CommissionSet(address,address,uint16)
+          handler: handleCommissionSet
+        - event: PaymentClaimed(address,address,uint256)
+          handler: handlePaymentClaimed
+        - event: PaymentUpdaterSet(address,address)
+          handler: handlePaymentUpdaterSet
+        - event: RootSubmitted(bytes32,uint32,uint32)
+          handler: handleRootSubmitted
+      file: ./src/claiming-manager.ts
