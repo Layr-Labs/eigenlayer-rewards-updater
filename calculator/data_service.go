@@ -15,6 +15,6 @@ type PaymentCalculatorDataService interface {
 	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
 	// GetDistributionsAtTimestamp returns the distributions of all tokens at a given timestamp
 	GetDistributionsAtTimestamp(timestamp *big.Int) (map[gethcommon.Address]*common.Distribution, error)
-
+	// GetOperatorSetAtTimestamp returns the operator set at a given timestamps
 	GetOperatorSetAtTimestamp(avs gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error)
 }

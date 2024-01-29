@@ -5,6 +5,7 @@ import (
 
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,13 +16,24 @@ type Updater struct {
 	transactor     UpdaterTransactor
 }
 
-func NewUpdater(updateInterval time.Duration, dataService PaymentDataService, calculator calculator.PaymentCalculator, transactor UpdaterTransactor) *Updater {
+func NewUpdater(
+	updateInterval time.Duration,
+	dataService PaymentDataService,
+	calculator calculator.PaymentCalculator,
+	ethClient *ethclient.Client,
+	privateKeyString string,
+) (*Updater, error) {
+	transactor, err := NewUpdaterTransactor(ethClient, privateKeyString)
+	if err != nil {
+		log.Fatal().Msgf("failed to create transactor: %s", err)
+	}
+
 	return &Updater{
 		UpdateInterval: updateInterval,
 		dataService:    dataService,
 		calculator:     calculator,
 		transactor:     transactor,
-	}
+	}, nil
 }
 
 func (u *Updater) Start() error {
