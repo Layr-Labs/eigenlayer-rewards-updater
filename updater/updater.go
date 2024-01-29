@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"context"
 	"time"
 
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
@@ -41,18 +42,18 @@ func NewUpdater(
 func (u *Updater) Start() error {
 	// run a loop unning once every u.UpdateInterval that calls u.update()
 	log.Info().Msg("service started")
-
+	ctx := context.Background()
 	ticker := time.NewTicker(u.UpdateInterval)
 	for range ticker.C {
 		log.Info().Msg("running update")
-		if err := u.update(); err != nil {
+		if err := u.update(ctx); err != nil {
 			log.Error().Msgf("failed to update: %s", err)
 		}
 	}
 	return nil
 }
 
-func (u *Updater) update() error {
+func (u *Updater) update(ctx context.Context) error {
 	// get the interval of time that we need to update payments for
 	log.Info().Msg("getting latest finalized timestamp")
 	latestFinalizedTimestamp, err := u.dataService.GetLatestFinalizedTimestamp()
@@ -62,7 +63,7 @@ func (u *Updater) update() error {
 
 	// give the interval to the distribution calculator, get the map from address => token => amount
 	log.Info().Msg("calculating distribution")
-	paymentsCalculatedUntilTimestamp, newDistributions, err := u.calculator.CalculateDistributionsUntilTimestamp(latestFinalizedTimestamp)
+	paymentsCalculatedUntilTimestamp, newDistributions, err := u.calculator.CalculateDistributionsUntilTimestamp(ctx, latestFinalizedTimestamp)
 	if err != nil {
 		return err
 	}

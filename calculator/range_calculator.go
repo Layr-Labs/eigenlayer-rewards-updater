@@ -1,6 +1,7 @@
 package calculator
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
@@ -20,8 +21,8 @@ func NewRangePaymentCalculator(intervalLength *big.Int, dataService PaymentCalcu
 	}
 }
 
-func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
-	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp()
+func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
+	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

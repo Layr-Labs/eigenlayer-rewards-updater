@@ -5,7 +5,9 @@ go 1.21.5
 require (
 	github.com/ethereum/go-ethereum v1.13.11
 	github.com/holiman/uint256 v1.2.4
+	github.com/jackc/pgx/v5 v5.5.2
 	github.com/rs/zerolog v1.31.0
+	github.com/shopspring/decimal v1.3.1
 )
 
 require (
@@ -23,6 +25,9 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
@@ -35,6 +40,7 @@ require (
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
