@@ -19,6 +19,16 @@ func NewDistribution() *Distribution {
 	}
 }
 
+// Set sets the value for a given address.
+func (d *Distribution) Set(address gethcommon.Address, amount *big.Int) {
+	d.data[address] = amount
+}
+
+// Get gets the value for a given address.
+func (d *Distribution) Get(address gethcommon.Address) *big.Int {
+	return d.data[address]
+}
+
 // Add adds the other distribution to this distribution.
 func (d *Distribution) Add(other *Distribution) {
 	for address, amount := range other.data {
@@ -39,20 +49,21 @@ func (d *Distribution) MulDiv(numerator, denominator *big.Int) {
 }
 
 // Merklizes the distribution and returns the merkle root.
-func (d *Distribution) Merklize() ([32]byte, error) {
+func (d *Distribution) Merklize(token gethcommon.Address) ([32]byte, error) {
 	// todo: parallelize this
 	leafs := make([][]byte, len(d.data))
 	for address, amount := range d.data {
-		leafs = append(leafs, encodeLeaf(address, amount))
+		leafs = append(leafs, encodeLeaf(address, token, amount))
 	}
 
 	return Merklize(leafs)
 }
 
 // encodeLeaf encodes an address and an amount into a leaf.
-func encodeLeaf(address gethcommon.Address, amount *big.Int) []byte {
+func encodeLeaf(address, token gethcommon.Address, amount *big.Int) []byte {
 	// todo: handle this better
 	amountU256, _ := uint256.FromBig(amount)
 	amountBytes := amountU256.Bytes32()
-	return append(address.Bytes(), amountBytes[:]...)
+	// (address || token || amount)
+	return append(append(address.Bytes(), token.Bytes()...), amountBytes[:]...)
 }

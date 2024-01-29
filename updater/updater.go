@@ -5,7 +5,6 @@ import (
 
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,42 +39,27 @@ func (u *Updater) Start() error {
 }
 
 func (u *Updater) update() error {
-	// get all events since the last update
-	log.Info().Msg("getting events since last update")
-	paymentsUpdatedUntilTimestamp, newPaymentEvents, err := u.dataService.GetEventsSinceLastUpdate()
+	// get the interval of time that we need to update payments for
+	log.Info().Msg("getting latest finalized timestamp")
+	latestFinalizedTimestamp, err := u.dataService.GetLatestFinalizedTimestamp()
 	if err != nil {
 		return err
 	}
 
-	// feed these events into the distribution calculator, get the map from address => token => amount
+	// give the interval to the distribution calculator, get the map from address => token => amount
 	log.Info().Msg("calculating distribution")
-	newDistributions, err := u.calculator.CalculateDistributions(newPaymentEvents)
-	if err != nil {
-		return err
-	}
-
-	// get all tokens
-	tokens := make([]gethcommon.Address, len(newDistributions))
-	i := 0
-	for token := range newDistributions {
-		tokens[i] = token
-		i++
-	}
-
-	// get previous cumulative distribution of given tokens
-	log.Info().Msg("getting previous distribution")
-	previousDistributions, err := u.dataService.GetDistributionsOfTokensAtTimestamp(paymentsUpdatedUntilTimestamp, tokens)
+	paymentsCalculatedUntilTimestamp, newDistributions, err := u.calculator.CalculateDistributionsUntilTimestamp(latestFinalizedTimestamp)
 	if err != nil {
 		return err
 	}
 
 	// add the pending distribution to the previous distribution
 	log.Info().Msg("adding pending distribution to previous distribution and merklizing")
-	distributionRoots := make([][]byte, len(tokens))
-	for token, distribution := range previousDistributions {
+	distributionRoots := make([][]byte, len(newDistributions))
+	for token, distribution := range newDistributions {
 		newDistributions[token].Add(distribution)
 
-		distributionRoot, err := newDistributions[token].Merklize()
+		distributionRoot, err := newDistributions[token].Merklize(token)
 		if err != nil {
 			return err
 		}
@@ -89,7 +73,7 @@ func (u *Updater) update() error {
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")
-	if err := u.transactor.SubmitRoot(paymentsUpdatedUntilTimestamp, root); err != nil {
+	if err := u.transactor.SubmitRoot(paymentsCalculatedUntilTimestamp, root); err != nil {
 		return err
 	}
 

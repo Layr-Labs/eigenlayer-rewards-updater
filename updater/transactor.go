@@ -1,5 +1,7 @@
 package updater
 
+import "math/big"
+
 type UpdaterTransactor interface {
-	SubmitRoot(latestEventTimestamp uint64, root [32]byte) error
+	SubmitRoot(paymentsCalculatedUntilTimestamp *big.Int, root [32]byte) error
 }
