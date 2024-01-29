@@ -24,35 +24,35 @@ func NewPaymentCalculator(dataService PaymentCalculatorDataService) PaymentCalcu
 	return &PaymentCalculatorImpl{}
 }
 
-func (p *PaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
-	startTimestamp, err := p.dataService.GetPaymentsCalculatedUntilTimestamp()
+func (c *PaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
+	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// make sure the start timestamp is rounded to the nearest interval granularity
-	if new(big.Int).Mod(startTimestamp, p.intervalLength).Cmp(big.NewInt(0)) != 0 {
+	if new(big.Int).Mod(startTimestamp, c.intervalLength).Cmp(big.NewInt(0)) != 0 {
 		return nil, nil, fmt.Errorf("start timestamp must be rounded to the nearest interval granularity")
 	}
 
 	// round the end timestamp to the nearest interval granularity. the start is assumed to be rounded already
-	endTimestamp.Sub(endTimestamp, new(big.Int).Mod(endTimestamp, p.intervalLength))
+	endTimestamp.Sub(endTimestamp, new(big.Int).Mod(endTimestamp, c.intervalLength))
 
 	// make sure the end timestamp is after the start timestamp
 	if endTimestamp.Cmp(startTimestamp) <= 0 {
 		return nil, nil, fmt.Errorf("end timestamp must be after start timestamp")
 	}
 
-	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), p.intervalLength).Int64()
+	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalLength).Int64()
 
 	// get all range payments that overlap with the given interval
-	rangePayments, err := p.dataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
+	rangePayments, err := c.dataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// get all distributions at the start timestamp
-	distributions, err := p.dataService.GetDistributionsAtTimestamp(startTimestamp)
+	distributions, err := c.dataService.GetDistributionsAtTimestamp(startTimestamp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -72,8 +72,8 @@ func (p *PaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(endTimestam
 		// loop through all intervals
 		for i := int64(0); i < numIntervals; i++ {
 			// calculate the start and end of the interval
-			intervalStart := new(big.Int).Add(startTimestamp, new(big.Int).Mul(p.intervalLength, big.NewInt(i)))
-			intervalEnd := new(big.Int).Add(startTimestamp, new(big.Int).Mul(p.intervalLength, big.NewInt(i+1)))
+			intervalStart := new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalLength, big.NewInt(i)))
+			intervalEnd := new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalLength, big.NewInt(i+1)))
 
 			// calculate overlap between the interval and the range payment
 			overlapStart := max(intervalStart, rangePayment.StartRangeTimestamp)
@@ -83,7 +83,7 @@ func (p *PaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(endTimestam
 			paymentToDistribute := new(big.Int).Mul(paymentPerSecond, new(big.Int).Sub(overlapEnd, overlapStart))
 
 			// get the operator set at the interval start
-			operatorSet, err := p.dataService.GetOperatorSetAtTimestamp(rangePayment.Avs, intervalStart)
+			operatorSet, err := c.dataService.GetOperatorSetAtTimestamp(rangePayment.Avs, intervalStart)
 			if err != nil {
 				return nil, nil, err
 			}

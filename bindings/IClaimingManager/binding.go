@@ -31,16 +31,16 @@ var (
 
 // IClaimingManagerPaymentMerkleClaim is an auto generated low-level Go binding around an user-defined struct.
 type IClaimingManagerPaymentMerkleClaim struct {
+	Token     common.Address
+	Amount    *big.Int
 	RootIndex uint32
 	LeafIndex uint32
-	Account   common.Address
-	Amount    *big.Int
 	Proof     []byte
 }
 
 // ContractIClaimingManagerMetaData contains all meta data concerning the ContractIClaimingManager contract.
 var ContractIClaimingManagerMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"activationDelay\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimPayments\",\"inputs\":[{\"name\":\"tokens\",\"type\":\"address[]\",\"internalType\":\"contractIERC20[]\"},{\"name\":\"claims\",\"type\":\"tuple[][]\",\"internalType\":\"structIClaimingManager.PaymentMerkleClaim[][]\",\"components\":[{\"name\":\"rootIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"leafIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"claimers\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getCommission\",\"inputs\":[{\"name\":\"operator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"avs\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"initialOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paymentUpdater\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setActivationDelay\",\"inputs\":[{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setClaimer\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setCommission\",\"inputs\":[{\"name\":\"avs\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"commissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setGlobalCommission\",\"inputs\":[{\"name\":\"commissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPaymentUpdater\",\"inputs\":[{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRoots\",\"inputs\":[{\"name\":\"tokens\",\"type\":\"address[]\",\"internalType\":\"contractIERC20[]\"},{\"name\":\"roots\",\"type\":\"bytes32[]\",\"internalType\":\"bytes32[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"ActivationDelaySet\",\"inputs\":[{\"name\":\"oldActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"newActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ClaimerSet\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionSet\",\"inputs\":[{\"name\":\"operator\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"avs\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"commissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentClaimed\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentUpdaterSet\",\"inputs\":[{\"name\":\"oldPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RootSubmitted\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"root\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"activatedAfter\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"activationDelay\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimers\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getCommission\",\"inputs\":[{\"name\":\"operator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"avs\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"initialOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paymentUpdater\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"processClaims\",\"inputs\":[{\"name\":\"claims\",\"type\":\"tuple[]\",\"internalType\":\"structIClaimingManager.PaymentMerkleClaim[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"rootIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"leafIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setActivationDelay\",\"inputs\":[{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setClaimer\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setCommission\",\"inputs\":[{\"name\":\"avs\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"commissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setGlobalCommission\",\"inputs\":[{\"name\":\"commissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPaymentUpdater\",\"inputs\":[{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRoot\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"ActivationDelaySet\",\"inputs\":[{\"name\":\"oldActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"newActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ClaimerSet\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionSet\",\"inputs\":[{\"name\":\"operator\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"avs\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"commissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentClaimed\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentUpdaterSet\",\"inputs\":[{\"name\":\"oldPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RootSubmitted\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"activatedAfter\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
 }
 
 // ContractIClaimingManagerABI is the input ABI used to generate the binding from.
@@ -313,27 +313,6 @@ func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) PaymentU
 	return _ContractIClaimingManager.Contract.PaymentUpdater(&_ContractIClaimingManager.CallOpts)
 }
 
-// ClaimPayments is a paid mutator transaction binding the contract method 0xe442f7d2.
-//
-// Solidity: function claimPayments(address[] tokens, (uint32,uint32,address,uint256,bytes)[][] claims) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) ClaimPayments(opts *bind.TransactOpts, tokens []common.Address, claims [][]IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
-	return _ContractIClaimingManager.contract.Transact(opts, "claimPayments", tokens, claims)
-}
-
-// ClaimPayments is a paid mutator transaction binding the contract method 0xe442f7d2.
-//
-// Solidity: function claimPayments(address[] tokens, (uint32,uint32,address,uint256,bytes)[][] claims) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) ClaimPayments(tokens []common.Address, claims [][]IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.ClaimPayments(&_ContractIClaimingManager.TransactOpts, tokens, claims)
-}
-
-// ClaimPayments is a paid mutator transaction binding the contract method 0xe442f7d2.
-//
-// Solidity: function claimPayments(address[] tokens, (uint32,uint32,address,uint256,bytes)[][] claims) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) ClaimPayments(tokens []common.Address, claims [][]IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.ClaimPayments(&_ContractIClaimingManager.TransactOpts, tokens, claims)
-}
-
 // Initialize is a paid mutator transaction binding the contract method 0x6ecf2b22.
 //
 // Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay) returns()
@@ -353,6 +332,27 @@ func (_ContractIClaimingManager *ContractIClaimingManagerSession) Initialize(ini
 // Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay) returns()
 func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) Initialize(initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32) (*types.Transaction, error) {
 	return _ContractIClaimingManager.Contract.Initialize(&_ContractIClaimingManager.TransactOpts, initialOwner, _paymentUpdater, _activationDelay)
+}
+
+// ProcessClaims is a paid mutator transaction binding the contract method 0x1441f788.
+//
+// Solidity: function processClaims((address,uint256,uint32,uint32,bytes)[] claims) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) ProcessClaims(opts *bind.TransactOpts, claims []IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
+	return _ContractIClaimingManager.contract.Transact(opts, "processClaims", claims)
+}
+
+// ProcessClaims is a paid mutator transaction binding the contract method 0x1441f788.
+//
+// Solidity: function processClaims((address,uint256,uint32,uint32,bytes)[] claims) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) ProcessClaims(claims []IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.ProcessClaims(&_ContractIClaimingManager.TransactOpts, claims)
+}
+
+// ProcessClaims is a paid mutator transaction binding the contract method 0x1441f788.
+//
+// Solidity: function processClaims((address,uint256,uint32,uint32,bytes)[] claims) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) ProcessClaims(claims []IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.ProcessClaims(&_ContractIClaimingManager.TransactOpts, claims)
 }
 
 // SetActivationDelay is a paid mutator transaction binding the contract method 0x58baaa3e.
@@ -460,25 +460,25 @@ func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetP
 	return _ContractIClaimingManager.Contract.SetPaymentUpdater(&_ContractIClaimingManager.TransactOpts, _paymentUpdater)
 }
 
-// SubmitRoots is a paid mutator transaction binding the contract method 0x5790a23b.
+// SubmitRoot is a paid mutator transaction binding the contract method 0x3efe1db6.
 //
-// Solidity: function submitRoots(address[] tokens, bytes32[] roots) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SubmitRoots(opts *bind.TransactOpts, tokens []common.Address, roots [][32]byte) (*types.Transaction, error) {
-	return _ContractIClaimingManager.contract.Transact(opts, "submitRoots", tokens, roots)
+// Solidity: function submitRoot(bytes32 root, uint32 paymentsCalculatedUntilTimestamp) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SubmitRoot(opts *bind.TransactOpts, root [32]byte, paymentsCalculatedUntilTimestamp uint32) (*types.Transaction, error) {
+	return _ContractIClaimingManager.contract.Transact(opts, "submitRoot", root, paymentsCalculatedUntilTimestamp)
 }
 
-// SubmitRoots is a paid mutator transaction binding the contract method 0x5790a23b.
+// SubmitRoot is a paid mutator transaction binding the contract method 0x3efe1db6.
 //
-// Solidity: function submitRoots(address[] tokens, bytes32[] roots) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) SubmitRoots(tokens []common.Address, roots [][32]byte) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SubmitRoots(&_ContractIClaimingManager.TransactOpts, tokens, roots)
+// Solidity: function submitRoot(bytes32 root, uint32 paymentsCalculatedUntilTimestamp) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) SubmitRoot(root [32]byte, paymentsCalculatedUntilTimestamp uint32) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.SubmitRoot(&_ContractIClaimingManager.TransactOpts, root, paymentsCalculatedUntilTimestamp)
 }
 
-// SubmitRoots is a paid mutator transaction binding the contract method 0x5790a23b.
+// SubmitRoot is a paid mutator transaction binding the contract method 0x3efe1db6.
 //
-// Solidity: function submitRoots(address[] tokens, bytes32[] roots) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SubmitRoots(tokens []common.Address, roots [][32]byte) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SubmitRoots(&_ContractIClaimingManager.TransactOpts, tokens, roots)
+// Solidity: function submitRoot(bytes32 root, uint32 paymentsCalculatedUntilTimestamp) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SubmitRoot(root [32]byte, paymentsCalculatedUntilTimestamp uint32) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.SubmitRoot(&_ContractIClaimingManager.TransactOpts, root, paymentsCalculatedUntilTimestamp)
 }
 
 // ContractIClaimingManagerActivationDelaySetIterator is returned from FilterActivationDelaySet and is used to iterate over the raw logs and unpacked data for ActivationDelaySet events raised by the ContractIClaimingManager contract.
@@ -1227,15 +1227,15 @@ func (it *ContractIClaimingManagerRootSubmittedIterator) Close() error {
 
 // ContractIClaimingManagerRootSubmitted represents a RootSubmitted event raised by the ContractIClaimingManager contract.
 type ContractIClaimingManagerRootSubmitted struct {
-	Token          common.Address
-	Root           [32]byte
-	ActivatedAfter uint32
-	Raw            types.Log // Blockchain specific contextual infos
+	Root                             [32]byte
+	PaymentsCalculatedUntilTimestamp uint32
+	ActivatedAfter                   uint32
+	Raw                              types.Log // Blockchain specific contextual infos
 }
 
-// FilterRootSubmitted is a free log retrieval operation binding the contract event 0x4895b884917c48860b77d6e2dca29444ec668ee1c4b6ef033f0f06d6bec3a839.
+// FilterRootSubmitted is a free log retrieval operation binding the contract event 0x262191a0e015e84c4074af7ac4d2305db1490bf60340fbd04afa74cb37bcbdf1.
 //
-// Solidity: event RootSubmitted(address token, bytes32 root, uint32 activatedAfter)
+// Solidity: event RootSubmitted(bytes32 root, uint32 paymentsCalculatedUntilTimestamp, uint32 activatedAfter)
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterRootSubmitted(opts *bind.FilterOpts) (*ContractIClaimingManagerRootSubmittedIterator, error) {
 
 	logs, sub, err := _ContractIClaimingManager.contract.FilterLogs(opts, "RootSubmitted")
@@ -1245,9 +1245,9 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterRootSub
 	return &ContractIClaimingManagerRootSubmittedIterator{contract: _ContractIClaimingManager.contract, event: "RootSubmitted", logs: logs, sub: sub}, nil
 }
 
-// WatchRootSubmitted is a free log subscription operation binding the contract event 0x4895b884917c48860b77d6e2dca29444ec668ee1c4b6ef033f0f06d6bec3a839.
+// WatchRootSubmitted is a free log subscription operation binding the contract event 0x262191a0e015e84c4074af7ac4d2305db1490bf60340fbd04afa74cb37bcbdf1.
 //
-// Solidity: event RootSubmitted(address token, bytes32 root, uint32 activatedAfter)
+// Solidity: event RootSubmitted(bytes32 root, uint32 paymentsCalculatedUntilTimestamp, uint32 activatedAfter)
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchRootSubmitted(opts *bind.WatchOpts, sink chan<- *ContractIClaimingManagerRootSubmitted) (event.Subscription, error) {
 
 	logs, sub, err := _ContractIClaimingManager.contract.WatchLogs(opts, "RootSubmitted")
@@ -1282,9 +1282,9 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchRootSubm
 	}), nil
 }
 
-// ParseRootSubmitted is a log parse operation binding the contract event 0x4895b884917c48860b77d6e2dca29444ec668ee1c4b6ef033f0f06d6bec3a839.
+// ParseRootSubmitted is a log parse operation binding the contract event 0x262191a0e015e84c4074af7ac4d2305db1490bf60340fbd04afa74cb37bcbdf1.
 //
-// Solidity: event RootSubmitted(address token, bytes32 root, uint32 activatedAfter)
+// Solidity: event RootSubmitted(bytes32 root, uint32 paymentsCalculatedUntilTimestamp, uint32 activatedAfter)
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseRootSubmitted(log types.Log) (*ContractIClaimingManagerRootSubmitted, error) {
 	event := new(ContractIClaimingManagerRootSubmitted)
 	if err := _ContractIClaimingManager.contract.UnpackLog(event, "RootSubmitted", log); err != nil {

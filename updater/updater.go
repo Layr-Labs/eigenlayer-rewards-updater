@@ -5,6 +5,7 @@ import (
 
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog/log"
 )
@@ -22,8 +23,9 @@ func NewUpdater(
 	calculator calculator.PaymentCalculator,
 	ethClient *ethclient.Client,
 	privateKeyString string,
+	claimingManagerAddress gethcommon.Address,
 ) (*Updater, error) {
-	transactor, err := NewUpdaterTransactor(ethClient, privateKeyString)
+	transactor, err := NewUpdaterTransactor(ethClient, privateKeyString, claimingManagerAddress)
 	if err != nil {
 		log.Fatal().Msgf("failed to create transactor: %s", err)
 	}
@@ -85,7 +87,7 @@ func (u *Updater) update() error {
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")
-	if err := u.transactor.SubmitRoot(paymentsCalculatedUntilTimestamp, root); err != nil {
+	if err := u.transactor.SubmitRoot(root, paymentsCalculatedUntilTimestamp); err != nil {
 		return err
 	}
 

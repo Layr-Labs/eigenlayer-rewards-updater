@@ -6,6 +6,4 @@ import (
 
 type PaymentDataService interface {
 	GetLatestFinalizedTimestamp() (*big.Int, error)
-
-	GetPaymentsCalculatedUntilTimestamp() (*big.Int, error)
 }
