@@ -48,6 +48,14 @@ func (d *Distribution) MulDiv(numerator, denominator *big.Int) {
 	}
 }
 
+func NewRandomDistribution(numAddrs int) *Distribution {
+	d := NewDistribution()
+	for i := 0; i < numAddrs; i++ {
+		d.Set(gethcommon.BigToAddress(big.NewInt(int64(i))), big.NewInt(int64(i)))
+	}
+	return d
+}
+
 // Merklizes the distribution and returns the merkle root.
 func (d *Distribution) Merklize(token gethcommon.Address) ([32]byte, error) {
 	// todo: parallelize this

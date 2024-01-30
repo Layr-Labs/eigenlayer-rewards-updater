@@ -20,7 +20,7 @@ type Updater struct {
 func NewUpdater(
 	updateInterval time.Duration,
 	calculator calculator.PaymentCalculator,
-	chainClient *ChainClient,
+	chainClient *common.ChainClient,
 	claimingManagerAddress gethcommon.Address,
 ) (*Updater, error) {
 	dataService := NewPaymentDataService(chainClient)
@@ -87,7 +87,7 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")
-	if err := u.transactor.SubmitRoot(root, paymentsCalculatedUntilTimestamp); err != nil {
+	if err := u.transactor.SubmitRoot(ctx, root, paymentsCalculatedUntilTimestamp); err != nil {
 		return err
 	}
 

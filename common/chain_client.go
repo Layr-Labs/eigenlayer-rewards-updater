@@ -1,4 +1,4 @@
-package updater
+package common
 
 import (
 	"context"
@@ -35,9 +35,10 @@ func NewChainClient(ethClient *ethclient.Client, privateKeyString string) (*Chai
 	var accountAddress common.Address
 	var privateKey *ecdsa.PrivateKey
 	var opts *bind.TransactOpts
+	var err error
 
 	if len(privateKeyString) != 0 {
-		privateKey, err := crypto.HexToECDSA(privateKeyString)
+		privateKey, err = crypto.HexToECDSA(privateKeyString)
 		if err != nil {
 			return nil, fmt.Errorf("NewClient: cannot parse private key: %w", err)
 		}
@@ -116,7 +117,10 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 	if err != nil {
 		return nil, err
 	}
-	gasFeeCap := new(big.Int).Add(header.BaseFee, gasTipCap)
+	// get header basefee * 3/2
+	overestimatedBasefee := new(big.Int).Div(new(big.Int).Mul(header.BaseFee, big.NewInt(3)), big.NewInt(2))
+
+	gasFeeCap := new(big.Int).Add(overestimatedBasefee, gasTipCap)
 
 	// The estimated gas limits performed by RawTransact fail semi-regularly
 	// with out of gas exceptions. To remedy this we extract the internal calls
@@ -154,10 +158,14 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 		c.Contracts[*tx.To()] = contract
 	}
 
+	log.Info().Msgf("EstimateGasPriceAndLimitAndSendTx: sending txn (%s) with gasTipCap=%v gasFeeCap=%v gasLimit=%v", tag, gasTipCap, gasFeeCap, opts.GasLimit)
+
 	tx, err = contract.RawTransact(opts, tx.Data())
 	if err != nil {
 		return nil, fmt.Errorf("EstimateGasPriceAndLimitAndSendTx: failed to send txn (%s): %w", tag, err)
 	}
+
+	log.Info().Msgf("EstimateGasPriceAndLimitAndSendTx: sent txn (%s) with hash=%s", tag, tx.Hash().Hex())
 
 	receipt, err := c.EnsureTransactionEvaled(
 		tx,
@@ -171,6 +179,8 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 }
 
 func (c *ChainClient) EnsureTransactionEvaled(tx *types.Transaction, tag string) (*types.Receipt, error) {
+	log.Info().Msgf("EnsureTransactionEvaled entered")
+
 	receipt, err := bind.WaitMined(context.Background(), c.Client, tx)
 	if err != nil {
 		return nil, fmt.Errorf("EnsureTransactionEvaled: failed to wait for transaction (%s) to mine: %w", tag, err)
@@ -179,7 +189,7 @@ func (c *ChainClient) EnsureTransactionEvaled(tx *types.Transaction, tag string)
 		log.Debug().Msgf("EnsureTransactionEvaled: transaction (%s) failed: %v", tag, receipt)
 		return nil, ErrTransactionFailed
 	}
-	log.Debug().Msgf("EnsureTransactionEvaled: transaction (%s) succeeded: %v", tag, receipt)
+	log.Debug().Msgf("EnsureTransactionEvaled: transaction (%s) succeeded: %v", tag, receipt.TxHash.Hex())
 	return receipt, nil
 }
 

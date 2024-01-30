@@ -5,19 +5,20 @@ import (
 	"math/big"
 
 	contractIClaimingManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IClaimingManager"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 type UpdaterTransactor interface {
-	SubmitRoot(root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error
+	SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error
 }
 
 type UpdaterTransactorImpl struct {
-	ChainClient     *ChainClient
+	ChainClient     *common.ChainClient
 	ClaimingManager *contractIClaimingManager.ContractIClaimingManager
 }
 
-func NewUpdaterTransactor(chainClient *ChainClient, claimingManagerAddress gethcommon.Address) (UpdaterTransactor, error) {
+func NewUpdaterTransactor(chainClient *common.ChainClient, claimingManagerAddress gethcommon.Address) (UpdaterTransactor, error) {
 	claimingManager, err := contractIClaimingManager.NewContractIClaimingManager(claimingManagerAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
@@ -29,13 +30,11 @@ func NewUpdaterTransactor(chainClient *ChainClient, claimingManagerAddress gethc
 	}, nil
 }
 
-func (t *UpdaterTransactorImpl) SubmitRoot(root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
+func (t *UpdaterTransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
 	tx, err := t.ClaimingManager.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, uint32(paymentsCalculatedUntilTimestamp.Uint64()))
 	if err != nil {
 		return err
 	}
-
-	ctx := context.Background()
 
 	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(ctx, tx, "submitRoot")
 	if err != nil {
@@ -43,7 +42,7 @@ func (t *UpdaterTransactorImpl) SubmitRoot(root [32]byte, paymentsCalculatedUnti
 	}
 
 	if receipt.Status != 1 {
-		return ErrTransactionFailed
+		return common.ErrTransactionFailed
 	}
 
 	return nil

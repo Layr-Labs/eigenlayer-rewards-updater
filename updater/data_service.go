@@ -3,6 +3,8 @@ package updater
 import (
 	"context"
 	"math/big"
+
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 )
 
 const FINALIZATION_DEPTH = 100
@@ -12,10 +14,10 @@ type PaymentDataService interface {
 }
 
 type PaymentDataServiceImpl struct {
-	ChainClient *ChainClient
+	ChainClient *common.ChainClient
 }
 
-func NewPaymentDataService(chainClient *ChainClient) PaymentDataService {
+func NewPaymentDataService(chainClient *common.ChainClient) PaymentDataService {
 	return &PaymentDataServiceImpl{
 		ChainClient: chainClient,
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 type OperatorSet struct {
-	TotalStakedStrategyShares map[gethcommon.Address]*big.Int
+	TotalStakedStrategyShares *big.Int
 	Operators                 []Operator
 }
 
@@ -18,13 +18,13 @@ type Earner struct {
 type Operator struct {
 	Earner
 	Address                      gethcommon.Address
-	Commissions                  map[gethcommon.Address]*big.Int
-	TotalDelegatedStrategyShares map[gethcommon.Address]*big.Int
+	Commission                   *big.Int
+	TotalDelegatedStrategyShares *big.Int
 	Stakers                      []Staker
 }
 
 type Staker struct {
 	Earner
-	Address gethcommon.Address
-	Shares  map[gethcommon.Address]*big.Int
+	Address        gethcommon.Address
+	StrategyShares *big.Int
 }

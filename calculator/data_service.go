@@ -3,8 +3,10 @@ package calculator
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
@@ -20,8 +22,10 @@ type PaymentCalculatorDataService interface {
 	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
 	// GetDistributionsAtTimestamp returns the distributions of all tokens at a given timestamp
 	GetDistributionsAtTimestamp(timestamp *big.Int) (map[gethcommon.Address]*common.Distribution, error)
-	// GetOperatorSetAtTimestamp returns the operator set at a given timestamps
-	GetOperatorSetAtTimestamp(avs gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error)
+	// SetDistributionsAtTimestamp sets the distributions of all tokens at a given timestamp
+	SetDistributionsAtTimestamp(timestamp *big.Int, distributions map[gethcommon.Address]*common.Distribution) error
+	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
+	GetOperatorSetForStrategyAtTimestamp(avs gethcommon.Address, strategy gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error)
 }
 
 type PaymentCalculatorDataServiceImpl struct {
@@ -68,6 +72,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(c
 	err = row.Scan(
 		&resDecimal,
 	)
+
 	return resDecimal.BigInt(), nil
 }
 
@@ -101,6 +106,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment
 	for rows.Next() {
@@ -140,9 +146,63 @@ func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(
 }
 
 func (s *PaymentCalculatorDataServiceImpl) GetDistributionsAtTimestamp(timestamp *big.Int) (map[gethcommon.Address]*common.Distribution, error) {
-	return nil, nil
+	// read from data/distributions_{timestamp}.json
+	file, err := os.ReadFile(fmt.Sprintf("data/distributions_%d.json", timestamp))
+	if err != nil {
+		return nil, err
+	}
+
+	// deserialize from json
+	var distributions map[gethcommon.Address]*common.Distribution
+	err = json.Unmarshal(file, &distributions)
+	if err != nil {
+		return nil, err
+	}
+
+	return distributions, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetAtTimestamp(avs gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error) {
+func (s *PaymentCalculatorDataServiceImpl) SetDistributionsAtTimestamp(timestamp *big.Int, distributions map[gethcommon.Address]*common.Distribution) error {
+	// seralize to json and write to data/distributions_{timestamp}.json
+	marshalledDistributions, err := json.Marshal(distributions)
+	if err != nil {
+		return err
+	}
+
+	// write to file
+	err = os.WriteFile(fmt.Sprintf("data/distributions_%d.json", timestamp), marshalledDistributions, 0644)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+// type OperatorSet struct {
+// 	TotalStakedStrategyShares map[gethcommon.Address]*big.Int
+// 	Operators                 []Operator
+// }
+
+// type Earner struct {
+// 	Claimer gethcommon.Address
+// }
+
+// type Operator struct {
+// 	Earner
+// 	Address                      gethcommon.Address
+// 	Commissions                  map[gethcommon.Address]*big.Int
+// 	TotalDelegatedStrategyShares map[gethcommon.Address]*big.Int
+// 	Stakers                      []Staker
+// }
+
+// type Staker struct {
+// 	Earner
+// 	Address gethcommon.Address
+// 	Shares  map[gethcommon.Address]*big.Int
+// }
+
+func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(avs gethcommon.Address, strategy gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error) {
 	return common.OperatorSet{}, nil
 }
+
+func 

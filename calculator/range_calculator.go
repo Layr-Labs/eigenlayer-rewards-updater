@@ -7,23 +7,24 @@ import (
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
 )
 
-type RangePaymentCalculatorImpl struct {
+type RangePaymentCalculator struct {
 	intervalLength *big.Int
 	dataService    PaymentCalculatorDataService
 }
 
 func NewRangePaymentCalculator(intervalLength *big.Int, dataService PaymentCalculatorDataService) PaymentCalculator {
-	return &RangePaymentCalculatorImpl{
+	return &RangePaymentCalculator{
 		intervalLength: intervalLength,
 		dataService:    dataService,
 	}
 }
 
-func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
+func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
 	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp(ctx)
-	if err != nil {
+	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
 	}
 
@@ -40,16 +41,19 @@ func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx co
 		return nil, nil, fmt.Errorf("end timestamp must be after start timestamp")
 	}
 
+	// get all distributions at the start timestamp
+	distributions := make(map[gethcommon.Address]*common.Distribution)
+	if err == nil {
+		distributions, err = c.dataService.GetDistributionsAtTimestamp(startTimestamp)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalLength).Int64()
 
 	// get all range payments that overlap with the given interval
 	rangePayments, err := c.dataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// get all distributions at the start timestamp
-	distributions, err := c.dataService.GetDistributionsAtTimestamp(startTimestamp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -80,7 +84,7 @@ func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx co
 			paymentToDistribute := new(big.Int).Mul(paymentPerSecond, new(big.Int).Sub(overlapEnd, overlapStart))
 
 			// get the operator set at the interval start
-			operatorSet, err := c.dataService.GetOperatorSetAtTimestamp(rangePayment.Avs, intervalStart)
+			operatorSet, err := c.dataService.GetOperatorSetForStrategyAtTimestamp(rangePayment.Avs, rangePayment.Strategy, intervalStart)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -88,7 +92,7 @@ func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx co
 			// loop through all operators
 			for _, operator := range operatorSet.Operators {
 				// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
-				totalPaymentToOperatorAndStakers := new(big.Int).Div(new(big.Int).Mul(paymentToDistribute, operator.TotalDelegatedStrategyShares[rangePayment.Strategy]), operatorSet.TotalStakedStrategyShares[rangePayment.Strategy])
+				totalPaymentToOperatorAndStakers := new(big.Int).Div(new(big.Int).Mul(paymentToDistribute, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
 
 				// increment token balance according to the operator's commission
 				operatorAmt := distribution.Get(operator.Address)
@@ -96,7 +100,7 @@ func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx co
 					operatorAmt = big.NewInt(0)
 				}
 				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions
-				distribution.Set(operator.Address, operatorAmt.Add(operatorAmt, new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commissions[rangePayment.Avs])))
+				distribution.Set(operator.Address, operatorAmt.Add(operatorAmt, new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission)))
 
 				// loop through all stakers
 				for _, staker := range operator.Stakers {
@@ -107,11 +111,17 @@ func (c *RangePaymentCalculatorImpl) CalculateDistributionsUntilTimestamp(ctx co
 					}
 
 					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / operatorDelegatedStrategyShares
-					distribution.Set(staker.Address, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commissions[rangePayment.Avs]), totalPaymentToOperatorAndStakers), staker.Shares[rangePayment.Avs]), operator.TotalDelegatedStrategyShares[rangePayment.Strategy])))
+					distribution.Set(staker.Address, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission), totalPaymentToOperatorAndStakers), staker.StrategyShares), operator.TotalDelegatedStrategyShares)))
 				}
 			}
 		}
 
+	}
+
+	// set the distributions at the end timestamp
+	err = c.dataService.SetDistributionsAtTimestamp(endTimestamp, distributions)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return endTimestamp, distributions, nil

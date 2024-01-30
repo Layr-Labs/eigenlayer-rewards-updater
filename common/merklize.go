@@ -6,7 +6,7 @@ import "github.com/ethereum/go-ethereum/crypto"
 func Merklize(leafs [][]byte) ([32]byte, error) {
 	// todo: parallelize this
 	numNodes := len(leafs)
-	for len(leafs) > 1 {
+	for numNodes > 1 {
 		// if the number of leafs is odd, duplicate the last leaf
 		if len(leafs)%2 == 1 {
 			leafs = append(leafs, ZERO_LEAF)
