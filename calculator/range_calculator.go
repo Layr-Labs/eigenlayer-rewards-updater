@@ -8,17 +8,18 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 type RangePaymentCalculator struct {
-	intervalLength *big.Int
-	dataService    PaymentCalculatorDataService
+	intervalSecondsLength *big.Int
+	dataService           PaymentCalculatorDataService
 }
 
-func NewRangePaymentCalculator(intervalLength *big.Int, dataService PaymentCalculatorDataService) PaymentCalculator {
+func NewRangePaymentCalculator(intervalSecondsLength *big.Int, dataService PaymentCalculatorDataService) PaymentCalculator {
 	return &RangePaymentCalculator{
-		intervalLength: intervalLength,
-		dataService:    dataService,
+		intervalSecondsLength: intervalSecondsLength,
+		dataService:           dataService,
 	}
 }
 
@@ -27,14 +28,20 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
 	}
+	if err == pgx.ErrNoRows {
+		// TODO: this correctly
+		// set timestamp to 1 interval behind end timestamp
+		startTimestamp = new(big.Int).Sub(endTimestamp, c.intervalSecondsLength)
+		startTimestamp.Sub(startTimestamp, new(big.Int).Mod(startTimestamp, c.intervalSecondsLength))
+	}
 
 	// make sure the start timestamp is rounded to the nearest interval granularity
-	if new(big.Int).Mod(startTimestamp, c.intervalLength).Cmp(big.NewInt(0)) != 0 {
+	if new(big.Int).Mod(startTimestamp, c.intervalSecondsLength).Cmp(big.NewInt(0)) != 0 {
 		return nil, nil, fmt.Errorf("start timestamp must be rounded to the nearest interval granularity")
 	}
 
 	// round the end timestamp to the nearest interval granularity. the start is assumed to be rounded already
-	endTimestamp.Sub(endTimestamp, new(big.Int).Mod(endTimestamp, c.intervalLength))
+	endTimestamp.Sub(endTimestamp, new(big.Int).Mod(endTimestamp, c.intervalSecondsLength))
 
 	// make sure the end timestamp is after the start timestamp
 	if endTimestamp.Cmp(startTimestamp) <= 0 {
@@ -42,21 +49,24 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 	}
 
 	// get all distributions at the start timestamp
-	distributions := make(map[gethcommon.Address]*common.Distribution)
-	if err == nil {
-		distributions, err = c.dataService.GetDistributionsAtTimestamp(startTimestamp)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalLength).Int64()
-
-	// get all range payments that overlap with the given interval
-	rangePayments, err := c.dataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
+	distributions, err := c.dataService.GetDistributionsAtTimestamp(startTimestamp)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalSecondsLength).Int64()
+
+	// get all range payments that overlap with the given interval
+	rangePayments, err := c.dataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
+	if err != nil && err != pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	if err == pgx.ErrNoRows {
+		log.Info().Msg("no range payments found")
+		return endTimestamp, distributions, nil
+	}
+
+	log.Info().Msgf("found %d range payments", len(rangePayments))
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
@@ -73,8 +83,8 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 		// loop through all intervals
 		for i := int64(0); i < numIntervals; i++ {
 			// calculate the start and end of the interval
-			intervalStart := new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalLength, big.NewInt(i)))
-			intervalEnd := new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalLength, big.NewInt(i+1)))
+			intervalStart := new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(i)))
+			intervalEnd := new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(i+1)))
 
 			// calculate overlap between the interval and the range payment
 			overlapStart := max(intervalStart, rangePayment.StartRangeTimestamp)

@@ -28,27 +28,26 @@ type PaymentCalculatorDataService interface {
 	GetOperatorSetForStrategyAtTimestamp(avs gethcommon.Address, strategy gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error)
 }
 
+const (
+	claimingManagerSubgraph    = "claiming-manager-raw-events"
+	paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
+)
+
 type PaymentCalculatorDataServiceImpl struct {
-	dbpool                     *pgxpool.Pool
-	schemaService              *common.SubgraphSchemaService
-	claimingManagerSubgraph    string
-	paymentCoordinatorSubgraph string
-	subgraphProvider           common.SubgraphProvider
+	dbpool           *pgxpool.Pool
+	schemaService    *common.SubgraphSchemaService
+	subgraphProvider common.SubgraphProvider
 }
 
 func NewPaymentCalculatorDataService(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
-	claimingManagerSubgraph string,
-	paymentCoordinatorSubgraph string,
 	subgraphProvider common.SubgraphProvider,
 ) PaymentCalculatorDataService {
 	return &PaymentCalculatorDataServiceImpl{
-		dbpool:                     dbpool,
-		schemaService:              schemaService,
-		claimingManagerSubgraph:    claimingManagerSubgraph,
-		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
-		subgraphProvider:           subgraphProvider,
+		dbpool:           dbpool,
+		schemaService:    schemaService,
+		subgraphProvider: subgraphProvider,
 	}
 }
 
@@ -60,7 +59,7 @@ var paymentsCalculatedUntilQuery string = `
 `
 
 func (s *PaymentCalculatorDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, s.claimingManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +79,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(c
 var overlappingRangePaymentsQuery string = `
 	SELECT range_payment_avs, range_payment_strategy, range_payment_token, range_payment_amount, range_payment_start_range_timestamp, range_payment_end_range_timestamp
 	FROM %s.range_payment_created
-	WHERE start_range_timestamp < $2 AND end_range_timestamp > $1
+	WHERE range_payment_start_range_timestamp < $2 AND range_payment_end_range_timestamp > $1
 	LIMIT 1
 `
 
@@ -96,7 +95,7 @@ var overlappingRangePaymentsQuery string = `
 //  transaction_hash                    | bytea   |           | not null |
 
 func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.paymentCoordinatorSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), paymentCoordinatorSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +145,19 @@ func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(
 }
 
 func (s *PaymentCalculatorDataServiceImpl) GetDistributionsAtTimestamp(timestamp *big.Int) (map[gethcommon.Address]*common.Distribution, error) {
+	// if the data directory doesn't exist, create it and return empty map
+	_, err := os.Stat("./data")
+	if os.IsNotExist(err) {
+		err = os.Mkdir("./data", 0755)
+		if err != nil {
+			return nil, err
+		}
+		return make(map[gethcommon.Address]*common.Distribution), nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	// read from data/distributions_{timestamp}.json
 	file, err := os.ReadFile(fmt.Sprintf("data/distributions_%d.json", timestamp))
 	if err != nil {
@@ -205,4 +217,13 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 	return common.OperatorSet{}, nil
 }
 
-func 
+// get all stakers that have an entry in the staker_delegated table with the given operator with a block timestamp higher than the entry in the staker_undelegated table for the same staker
+var stakerSetAtTimestampQuery string = `
+	SELECT staker as stakerAddress 
+	FROM %s.staker_delegated
+	WHERE operator = $1 AND block_timestamp > (
+		SELECT block_timestamp FROM %s.staker_undelegated
+		WHERE operator = $1 AND staker = stakerAddress
+		ORDER BY block_timestamp DESC
+		LIMIT 1
+	)`

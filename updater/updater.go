@@ -42,6 +42,12 @@ func (u *Updater) Start() error {
 	// run a loop unning once every u.UpdateInterval that calls u.update()
 	log.Info().Msg("service started")
 	ctx := context.Background()
+
+	// run the first update immediately
+	if err := u.update(ctx); err != nil {
+		log.Error().Msgf("failed to update: %s", err)
+	}
+
 	ticker := time.NewTicker(u.UpdateInterval)
 	for range ticker.C {
 		log.Info().Msg("running update")

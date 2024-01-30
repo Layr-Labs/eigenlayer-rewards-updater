@@ -4,6 +4,10 @@ import "github.com/ethereum/go-ethereum/crypto"
 
 // Merklizes the leaves and returns the merkle root.
 func Merklize(leafs [][]byte) ([32]byte, error) {
+	if len(leafs) == 0 {
+		return [32]byte{0xDE, 0xAD}, nil // todo: fix this
+	}
+
 	// todo: parallelize this
 	numNodes := len(leafs)
 	for numNodes > 1 {
