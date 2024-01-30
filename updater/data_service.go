@@ -1,9 +1,38 @@
 package updater
 
 import (
+	"context"
 	"math/big"
 )
 
+const FINALIZATION_DEPTH = 100
+
 type PaymentDataService interface {
-	GetLatestFinalizedTimestamp() (*big.Int, error)
+	GetLatestFinalizedTimestamp(ctx context.Context) (*big.Int, error)
+}
+
+type PaymentDataServiceImpl struct {
+	ChainClient *ChainClient
+}
+
+func NewPaymentDataService(chainClient *ChainClient) PaymentDataService {
+	return &PaymentDataServiceImpl{
+		ChainClient: chainClient,
+	}
+}
+
+func (s *PaymentDataServiceImpl) GetLatestFinalizedTimestamp(ctx context.Context) (*big.Int, error) {
+	latestBlockNumber, err := s.ChainClient.GetCurrentBlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	latestFinalizedBlockNumber := latestBlockNumber - FINALIZATION_DEPTH
+
+	latestFinalizedBlock, err := s.ChainClient.BlockByNumber(ctx, big.NewInt(int64(latestFinalizedBlockNumber)))
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(int64(latestFinalizedBlock.Time())), nil
 }

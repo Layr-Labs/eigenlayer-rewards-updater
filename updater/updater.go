@@ -7,7 +7,6 @@ import (
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,13 +19,13 @@ type Updater struct {
 
 func NewUpdater(
 	updateInterval time.Duration,
-	dataService PaymentDataService,
 	calculator calculator.PaymentCalculator,
-	ethClient *ethclient.Client,
-	privateKeyString string,
+	chainClient *ChainClient,
 	claimingManagerAddress gethcommon.Address,
 ) (*Updater, error) {
-	transactor, err := NewUpdaterTransactor(ethClient, privateKeyString, claimingManagerAddress)
+	dataService := NewPaymentDataService(chainClient)
+
+	transactor, err := NewUpdaterTransactor(chainClient, claimingManagerAddress)
 	if err != nil {
 		log.Fatal().Msgf("failed to create transactor: %s", err)
 	}
@@ -56,7 +55,7 @@ func (u *Updater) Start() error {
 func (u *Updater) update(ctx context.Context) error {
 	// get the interval of time that we need to update payments for
 	log.Info().Msg("getting latest finalized timestamp")
-	latestFinalizedTimestamp, err := u.dataService.GetLatestFinalizedTimestamp()
+	latestFinalizedTimestamp, err := u.dataService.GetLatestFinalizedTimestamp(ctx)
 	if err != nil {
 		return err
 	}
