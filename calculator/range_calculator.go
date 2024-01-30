@@ -48,6 +48,8 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 		return nil, nil, fmt.Errorf("end timestamp must be after start timestamp")
 	}
 
+	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
+
 	// get all distributions at the start timestamp
 	distributions, err := c.dataService.GetDistributionsAtTimestamp(startTimestamp)
 	if err != nil {

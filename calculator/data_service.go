@@ -71,6 +71,9 @@ func (s *PaymentCalculatorDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(c
 	err = row.Scan(
 		&resDecimal,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	return resDecimal.BigInt(), nil
 }
