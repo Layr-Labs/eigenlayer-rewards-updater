@@ -1,4 +1,4 @@
-specVersion: 1.0.0
+specVersion: 0.0.8
 indexerHints:
   prune: auto
 schema:
@@ -8,9 +8,9 @@ dataSources:
     name: PaymentCoordinator
     network: goerli
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x672826643803C4EEF3EE45411F9705C5557C6A21"
       abi: PaymentCoordinator
-      startBlock: 0
+      startBlock: 10000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
