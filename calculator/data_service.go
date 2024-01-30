@@ -15,6 +15,9 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// todo: set this to the global default AVS
+var GLOBAL_DEFAULT_AVS = gethcommon.HexToAddress("0x0000000000000000000000000000000000000000")
+
 type PaymentCalculatorDataService interface {
 	// GetPaymentsCalculatedUntilTimestamp returns the timestamp until which payments have been calculated
 	GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error)
@@ -218,6 +221,142 @@ func (s *PaymentCalculatorDataServiceImpl) SetDistributionsAtTimestamp(timestamp
 
 func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(avs gethcommon.Address, strategy gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error) {
 	return common.OperatorSet{}, nil
+}
+
+func (s *PaymentCalculatorDataServiceImpl) getCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	commissions, err := s.getCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, avs, operators)
+	if err != nil {
+		return nil, err
+	}
+
+	// for all operators without a specific commission, get their global default commission
+	operatorsWithoutSpecificCommission := make([]gethcommon.Address, 0)
+	for _, operator := range operators {
+		if _, ok := commissions[operator]; !ok {
+			operatorsWithoutSpecificCommission = append(operatorsWithoutSpecificCommission, operator)
+		}
+	}
+
+	commissionsWithGlobalDefault, err := s.getCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, GLOBAL_DEFAULT_AVS, operatorsWithoutSpecificCommission)
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the two maps
+	for operator, commission := range commissionsWithGlobalDefault {
+		commissions[operator] = commission
+	}
+
+	return commissions, nil
+}
+
+var commissionAtTimestampQuery string = `
+	SELECT DISTINCT ON (operator) operator, commission_bips
+	FROM %s.commission_set
+	WHERE block_timestamp <= $1 AND avs = $2 AND operator in ($3)
+	ORDER BY account, block_timestamp DESC`
+
+func (s *PaymentCalculatorDataServiceImpl) getCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	// get the schema id for the claiming manager subgraph
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), claimingManagerSubgraph, s.subgraphProvider)
+	if err != nil {
+		return nil, err
+	}
+
+	// format the query
+	formattedQuery := fmt.Sprintf(commissionAtTimestampQuery, schemaID)
+
+	// query the database
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, avs, operators)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// create a map of operator to commission
+	commissions := make(map[gethcommon.Address]*big.Int)
+	for rows.Next() {
+		var (
+			operatorBytes []byte
+			commission    decimal.Decimal
+		)
+
+		err := rows.Scan(
+			&operatorBytes,
+			&commission,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		operator := gethcommon.HexToAddress(hex.EncodeToString(operatorBytes))
+
+		commissions[operator] = commission.BigInt()
+	}
+
+	// for all operators that don't have a commission, set it to 0
+	for _, operator := range operators {
+		if _, ok := commissions[operator]; !ok {
+			commissions[operator] = big.NewInt(0)
+		}
+	}
+
+	return commissions, nil
+}
+
+var claimersAtTimestampQuery string = `
+	SELECT DISTINCT ON (account) account, claimer
+	FROM %s.claimer_set
+	WHERE block_timestamp <= $1 AND account in ($2)
+	ORDER BY account, block_timestamp DESC`
+
+func (s *PaymentCalculatorDataServiceImpl) getClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
+	// get the schema id for the claiming manager subgraph
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), claimingManagerSubgraph, s.subgraphProvider)
+	if err != nil {
+		return nil, err
+	}
+
+	// format the query
+	formattedQuery := fmt.Sprintf(claimersAtTimestampQuery, schemaID)
+
+	// query the database
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, accounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// create a map of account to claimer
+	claimers := make(map[gethcommon.Address]gethcommon.Address)
+	for rows.Next() {
+		var (
+			accountBytes []byte
+			claimerBytes []byte
+		)
+
+		err := rows.Scan(
+			&accountBytes,
+			&claimerBytes,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		account := gethcommon.HexToAddress(hex.EncodeToString(accountBytes))
+		claimer := gethcommon.HexToAddress(hex.EncodeToString(claimerBytes))
+
+		claimers[account] = claimer
+	}
+
+	// set the claimer of any account that doesn't have one to the account itself
+	for _, account := range accounts {
+		if _, ok := claimers[account]; !ok {
+			claimers[account] = account
+		}
+	}
+
+	return claimers, nil
 }
 
 // get all stakers that have an entry in the staker_delegated table with the given operator with a block timestamp higher than the entry in the staker_undelegated table for the same staker
