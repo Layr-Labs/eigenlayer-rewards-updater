@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"sync"
 
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
@@ -72,6 +73,20 @@ func NewPaymentCalculatorDataService(
 	subgraphProvider common.SubgraphProvider,
 	ethClient *ethclient.Client,
 ) PaymentCalculatorDataService {
+	return &PaymentCalculatorDataServiceImpl{
+		dbpool:           dbpool,
+		schemaService:    schemaService,
+		subgraphProvider: subgraphProvider,
+		ethClient:        ethClient,
+	}
+}
+
+func NewPaymentCalculatorDataServiceImpl(
+	dbpool *pgxpool.Pool,
+	schemaService *common.SubgraphSchemaService,
+	subgraphProvider common.SubgraphProvider,
+	ethClient *ethclient.Client,
+) *PaymentCalculatorDataServiceImpl {
 	return &PaymentCalculatorDataServiceImpl{
 		dbpool:           dbpool,
 		schemaService:    schemaService,
@@ -227,7 +242,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 	operatorSet.TotalStakedStrategyShares = big.NewInt(0)
 
 	// get all operators for the given strategy at the given timestamp
-	operatorAddresses, err := s.getOperatorAddressesForAVSAtTimestamp(timestamp, avs, strategy)
+	operatorAddresses, err := s.GetOperatorAddressesForAVSAtTimestamp(timestamp, avs, strategy)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +250,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 	operatorSet.Operators = make([]common.Operator, len(operatorAddresses))
 
 	// get the commission for each operator
-	commissions, err := s.getCommissionForAVSAtTimestamp(timestamp, avs, operatorAddresses)
+	commissions, err := s.GetCommissionForAVSAtTimestamp(timestamp, avs, operatorAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +262,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
 
 		// get the stakers of the operator
-		stakers, err := s.getStakersDelegatedToOperatorAtTimestamp(timestamp, operatorAddress)
+		stakers, err := s.GetStakersDelegatedToOperatorAtTimestamp(timestamp, operatorAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -255,7 +270,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 		operatorSet.Operators[i].Stakers = make([]common.Staker, len(stakers))
 
 		// get the claimers of each staker and the operator
-		claimers, err := s.getClaimersAtTimestamp(timestamp, append(stakers, operatorAddress))
+		claimers, err := s.GetClaimersAtTimestamp(timestamp, append(stakers, operatorAddress))
 		if err != nil {
 			return nil, err
 		}
@@ -267,7 +282,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 		}
 
 		// get the shares of each staker
-		strategyShareMap, err := s.getSharesOfStakersAtBlockNumber(blockNumber, strategy, stakers)
+		strategyShareMap, err := s.GetSharesOfStakersAtBlockNumber(blockNumber, strategy, stakers)
 		if err != nil {
 			return nil, err
 		}
@@ -290,13 +305,13 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 	return &operatorSet, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) getOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
 	// TODO
 	return nil, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) getCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
-	commissions, err := s.getCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, avs, operators)
+func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	commissions, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, avs, operators)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +324,7 @@ func (s *PaymentCalculatorDataServiceImpl) getCommissionForAVSAtTimestamp(timest
 		}
 	}
 
-	commissionsWithGlobalDefault, err := s.getCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, GLOBAL_DEFAULT_AVS, operatorsWithoutSpecificCommission)
+	commissionsWithGlobalDefault, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, GLOBAL_DEFAULT_AVS, operatorsWithoutSpecificCommission)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +343,7 @@ var commissionAtTimestampQuery string = `
 	WHERE block_timestamp <= $1 AND avs = $2 AND operator in ($3)
 	ORDER BY account, block_timestamp DESC`
 
-func (s *PaymentCalculatorDataServiceImpl) getCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
@@ -382,7 +397,7 @@ var claimersAtTimestampQuery string = `
 	WHERE block_timestamp <= $1 AND account in ($2)
 	ORDER BY account, block_timestamp DESC`
 
-func (s *PaymentCalculatorDataServiceImpl) getClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
@@ -433,7 +448,7 @@ func (s *PaymentCalculatorDataServiceImpl) getClaimersAtTimestamp(timestamp *big
 
 // get all stakers that have an entry in the staker_delegated table with the given operator with a block timestamp higher than the entry in the staker_undelegated table for the same staker
 var stakerSetAtTimestampQuery string = `
-	SELECT staker as stakerAddress 
+	SELECT DISTINCT ON (staker) staker as stakerAddress 
 	FROM %s.staker_delegated
 	WHERE operator = $1 AND block_timestamp > (
 		SELECT block_timestamp FROM %s.staker_undelegated
@@ -442,7 +457,7 @@ var stakerSetAtTimestampQuery string = `
 		LIMIT 1
 	)`
 
-func (s *PaymentCalculatorDataServiceImpl) getStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), delegationManagerSubgraph, s.subgraphProvider)
 	if err != nil {
@@ -507,7 +522,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *
 	return lo.Sub(lo, big.NewInt(1)), nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) getSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	if strategy == BEACON_CHAIN_ETH_STRATEGY_ADDRESS {
 		return s.getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber, stakers)
 	} else {
@@ -522,16 +537,14 @@ func (s *PaymentCalculatorDataServiceImpl) getSharesOfStrategyManagerStrategyFor
 	}
 
 	// TODO: make this a batch call
-	strategyShares := make(map[gethcommon.Address]*big.Int)
-	for _, staker := range stakers {
+	return fillMapFromAddressToBigIntParallel(stakers, func(staker gethcommon.Address) (*big.Int, error) {
 		shares, err := strategyManagerContract.StakerStrategyShares(&bind.CallOpts{BlockNumber: blockNumber}, staker, strategy)
 		if err != nil {
 			return nil, err
 		}
-		strategyShares[staker] = shares
-	}
 
-	return strategyShares, nil
+		return shares, nil
+	})
 }
 
 func (s *PaymentCalculatorDataServiceImpl) getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber *big.Int, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
@@ -541,14 +554,59 @@ func (s *PaymentCalculatorDataServiceImpl) getSharesOfBeaconChainETHStrategyForS
 	}
 
 	// TODO: make this a batch call
-	strategyShares := make(map[gethcommon.Address]*big.Int)
-	for _, staker := range stakers {
+	return fillMapFromAddressToBigIntParallel(stakers, func(staker gethcommon.Address) (*big.Int, error) {
 		shares, err := eigenPodManagerContract.PodOwnerShares(&bind.CallOpts{BlockNumber: blockNumber}, staker)
 		if err != nil {
 			return nil, err
 		}
-		strategyShares[staker] = shares
+
+		return shares, nil
+	})
+}
+
+func fillMapFromAddressToBigIntParallel(addresses []gethcommon.Address, getValue func(gethcommon.Address) (*big.Int, error)) (map[gethcommon.Address]*big.Int, error) {
+	resMap := make(map[gethcommon.Address]*big.Int)
+	var mu sync.Mutex     // Used to safely write to the map
+	var wg sync.WaitGroup // Used to wait for all goroutines to finish
+
+	errChan := make(chan error, len(addresses)) // Channel to collect errors
+	resChan := make(chan struct {
+		addr  gethcommon.Address
+		value *big.Int
+	}, len(addresses)) // Channel to collect
+
+	for _, addr := range addresses {
+		wg.Add(1)
+		go func(addr gethcommon.Address) {
+			defer wg.Done()
+			value, err := getValue(addr)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resChan <- struct {
+				addr  gethcommon.Address
+				value *big.Int
+			}{addr, value}
+		}(addr)
 	}
 
-	return strategyShares, nil
+	go func() {
+		wg.Wait()
+		close(resChan)
+		close(errChan)
+	}()
+
+	for res := range resChan {
+		mu.Lock()
+		resMap[res.addr] = res.value
+		mu.Unlock()
+	}
+
+	// Check if there were any errors
+	if len(errChan) > 0 {
+		return nil, <-errChan // Return the first error encountered
+	}
+
+	return resMap, nil
 }

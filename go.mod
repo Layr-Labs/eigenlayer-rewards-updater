@@ -6,6 +6,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.11
 	github.com/holiman/uint256 v1.2.4
 	github.com/jackc/pgx/v5 v5.5.2
+	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.31.0
 	github.com/shopspring/decimal v1.3.1
 )
