@@ -10,11 +10,18 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/joho/godotenv"
 )
 
 func TestPaymentCalculatorDataService(t *testing.T) {
+	const (
+		claimingManagerSubgraph    = "claiming-manager-raw-events"
+		paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
+		delegationManagerSubgraph  = "eigenlayer-delegation-raw-events-goerli"
+	)
+
 	err := godotenv.Load("../.env") // Replace with your file path
 	if err != nil {
 		t.Fatal("Error loading .env file", err)
@@ -22,6 +29,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 
 	testBlockNumber := big.NewInt(10102668)
 
+	P2P_OPERATOR_ADDRESS := gethcommon.HexToAddress("0xb1bd1266ec811048161424f534e74c76c48e6ce2")
 	STETH_STRATEGY_ADDRESS := gethcommon.HexToAddress("0xB613E78E2068d7489bb66419fB1cfa11275d14da")
 
 	stakers := []gethcommon.Address{
@@ -51,7 +59,15 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		panic(err)
 	}
 
-	elpds := NewPaymentCalculatorDataServiceImpl(dbpool, schemaService, subgraphProvider, ethClient)
+	elpds := NewPaymentCalculatorDataServiceImpl(
+		dbpool,
+		schemaService,
+		subgraphProvider,
+		claimingManagerSubgraph,
+		paymentCoordinatorSubgraph,
+		delegationManagerSubgraph,
+		ethClient,
+	)
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp", func(t *testing.T) {
 		paymentsCalculatedUntilTimestamp, err := elpds.GetPaymentsCalculatedUntilTimestamp(context.Background())
@@ -62,8 +78,18 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		t.Fail()
 	})
 
-	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth", func(t *testing.T) {
-		strategyShares, err := elpds.GetSharesOfStakersAtBlockNumber(testBlockNumber, BEACON_CHAIN_ETH_STRATEGY_ADDRESS, stakers)
+	t.Run("test GetStakersDelegatedToOperatorAtTimestamp", func(t *testing.T) {
+		stakersDelegatedToOperator, err := elpds.GetStakersDelegatedToOperatorAtTimestamp(testBlockNumber, P2P_OPERATOR_ADDRESS)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Logf("number of stakers delegated to operator: %d", len(stakersDelegatedToOperator))
+		assert.Equal(t, len(stakersDelegatedToOperator), 8326)
+	})
+
+	t.Run("test GetSharesOfStakersAtBlockNumber for steth", func(t *testing.T) {
+		strategyShares, err := elpds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -74,8 +100,8 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		t.Fail()
 	})
 
-	t.Run("test GetSharesOfStakersAtBlockNumber for steth", func(t *testing.T) {
-		strategyShares, err := elpds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
+	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth", func(t *testing.T) {
+		strategyShares, err := elpds.GetSharesOfStakersAtBlockNumber(testBlockNumber, BEACON_CHAIN_ETH_STRATEGY_ADDRESS, stakers)
 		if err != nil {
 			t.Fatal(err)
 		}

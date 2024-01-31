@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"sync"
 
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
@@ -54,30 +55,33 @@ type PaymentCalculatorDataService interface {
 	GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error)
 }
 
-const (
-	claimingManagerSubgraph    = "claiming-manager-raw-events"
-	paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
-	delegationManagerSubgraph  = "delegation-manager-raw-events"
-)
-
 type PaymentCalculatorDataServiceImpl struct {
-	dbpool           *pgxpool.Pool
-	schemaService    *common.SubgraphSchemaService
-	subgraphProvider common.SubgraphProvider
-	ethClient        *ethclient.Client
+	dbpool                     *pgxpool.Pool
+	schemaService              *common.SubgraphSchemaService
+	subgraphProvider           common.SubgraphProvider
+	claimingManagerSubgraph    string
+	paymentCoordinatorSubgraph string
+	delegationManagerSubgraph  string
+	ethClient                  *ethclient.Client
 }
 
 func NewPaymentCalculatorDataService(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
 	subgraphProvider common.SubgraphProvider,
+	claimingManagerSubgraph string,
+	paymentCoordinatorSubgraph string,
+	delegationManagerSubgraph string,
 	ethClient *ethclient.Client,
 ) PaymentCalculatorDataService {
 	return &PaymentCalculatorDataServiceImpl{
-		dbpool:           dbpool,
-		schemaService:    schemaService,
-		subgraphProvider: subgraphProvider,
-		ethClient:        ethClient,
+		dbpool:                     dbpool,
+		schemaService:              schemaService,
+		subgraphProvider:           subgraphProvider,
+		claimingManagerSubgraph:    claimingManagerSubgraph,
+		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
+		delegationManagerSubgraph:  delegationManagerSubgraph,
+		ethClient:                  ethClient,
 	}
 }
 
@@ -85,13 +89,19 @@ func NewPaymentCalculatorDataServiceImpl(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
 	subgraphProvider common.SubgraphProvider,
+	claimingManagerSubgraph string,
+	paymentCoordinatorSubgraph string,
+	delegationManagerSubgraph string,
 	ethClient *ethclient.Client,
 ) *PaymentCalculatorDataServiceImpl {
 	return &PaymentCalculatorDataServiceImpl{
-		dbpool:           dbpool,
-		schemaService:    schemaService,
-		subgraphProvider: subgraphProvider,
-		ethClient:        ethClient,
+		dbpool:                     dbpool,
+		schemaService:              schemaService,
+		subgraphProvider:           subgraphProvider,
+		claimingManagerSubgraph:    claimingManagerSubgraph,
+		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
+		delegationManagerSubgraph:  delegationManagerSubgraph,
+		ethClient:                  ethClient,
 	}
 }
 
@@ -103,7 +113,7 @@ var paymentsCalculatedUntilQuery string = `
 `
 
 func (s *PaymentCalculatorDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, claimingManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, s.claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +152,7 @@ var overlappingRangePaymentsQuery string = `
 //  transaction_hash                    | bytea   |           | not null |
 
 func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), paymentCoordinatorSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.paymentCoordinatorSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +355,7 @@ var commissionAtTimestampQuery string = `
 
 func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), claimingManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +409,7 @@ var claimersAtTimestampQuery string = `
 
 func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), claimingManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -448,18 +458,41 @@ func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big
 
 // get all stakers that have an entry in the staker_delegated table with the given operator with a block timestamp higher than the entry in the staker_undelegated table for the same staker
 var stakerSetAtTimestampQuery string = `
-	SELECT DISTINCT ON (staker) staker as stakerAddress 
-	FROM %s.staker_delegated
-	WHERE operator = $1 AND block_timestamp > (
-		SELECT block_timestamp FROM %s.staker_undelegated
-		WHERE operator = $1 AND staker = stakerAddress
-		ORDER BY block_timestamp DESC
-		LIMIT 1
-	)`
+WITH latest_undelegations AS (
+    SELECT
+        DISTINCT ON (staker) staker,
+        block_timestamp AS undelegation_timestamp
+    FROM
+        %s.staker_undelegated
+    WHERE
+        encode(operator, 'hex') = $1
+    ORDER BY
+        staker,
+        block_timestamp DESC
+), latest_delegations AS (
+    SELECT
+        DISTINCT ON (staker) staker,
+        block_timestamp AS delegation_timestamp
+    FROM
+        %s.staker_delegated
+    WHERE
+        encode(operator, 'hex') = $1
+    ORDER BY
+        staker,
+        block_timestamp DESC
+)
+SELECT
+    ld.staker
+FROM
+    latest_delegations ld
+LEFT JOIN
+    latest_undelegations lu ON ld.staker = lu.staker
+WHERE
+    lu.staker IS NULL OR ld.delegation_timestamp > lu.undelegation_timestamp;`
 
 func (s *PaymentCalculatorDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), delegationManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.delegationManagerSubgraph, s.subgraphProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -468,7 +501,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetStakersDelegatedToOperatorAtTimest
 	formattedQuery := fmt.Sprintf(stakerSetAtTimestampQuery, schemaID, schemaID)
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, operator)
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, toSQLAddress(operator))
 	if err != nil {
 		return nil, err
 	}
@@ -609,4 +642,8 @@ func fillMapFromAddressToBigIntParallel(addresses []gethcommon.Address, getValue
 	}
 
 	return resMap, nil
+}
+
+func toSQLAddress(address gethcommon.Address) string {
+	return strings.ToLower(address.Hex()[2:])
 }
