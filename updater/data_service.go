@@ -31,10 +31,10 @@ func (s *PaymentDataServiceImpl) GetLatestFinalizedTimestamp(ctx context.Context
 
 	latestFinalizedBlockNumber := latestBlockNumber - FINALIZATION_DEPTH
 
-	latestFinalizedBlock, err := s.ChainClient.BlockByNumber(ctx, big.NewInt(int64(latestFinalizedBlockNumber)))
+	latestFinalizedBlock, err := s.ChainClient.HeaderByNumber(ctx, big.NewInt(int64(latestFinalizedBlockNumber)))
 	if err != nil {
 		return nil, err
 	}
 
-	return big.NewInt(int64(latestFinalizedBlock.Time())), nil
+	return big.NewInt(int64(latestFinalizedBlock.Time)), nil
 }

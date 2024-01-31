@@ -16,6 +16,7 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 	"github.com/shopspring/decimal"
 )
 
@@ -48,6 +49,8 @@ type PaymentCalculatorDataService interface {
 	SetDistributionsAtTimestamp(timestamp *big.Int, distributions map[gethcommon.Address]*common.Distribution) error
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
 	GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
+
+	GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error)
 }
 
 const (
@@ -67,11 +70,13 @@ func NewPaymentCalculatorDataService(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
 	subgraphProvider common.SubgraphProvider,
+	ethClient *ethclient.Client,
 ) PaymentCalculatorDataService {
 	return &PaymentCalculatorDataServiceImpl{
 		dbpool:           dbpool,
 		schemaService:    schemaService,
 		subgraphProvider: subgraphProvider,
+		ethClient:        ethClient,
 	}
 }
 
@@ -256,7 +261,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 		}
 
 		// get the blocknumber of the block at the given timestamp
-		blockNumber, err := s.getBlockNumberAtTimestamp(timestamp)
+		blockNumber, err := s.GetBlockNumberAtTimestamp(timestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -476,9 +481,30 @@ func (s *PaymentCalculatorDataServiceImpl) getStakersDelegatedToOperatorAtTimest
 	return stakers, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) getBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
-	// TODO
-	return nil, nil
+func (s *PaymentCalculatorDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
+	head, err := s.ethClient.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var lo, hi = big.NewInt(0), head.Number
+	for lo.Cmp(hi) < 0 {
+		mid := new(big.Int).Add(lo, hi)
+		mid.Div(mid, big.NewInt(2))
+
+		header, err := s.ethClient.HeaderByNumber(context.Background(), mid)
+		if err != nil {
+			return nil, err
+		}
+		log.Info().Msgf("mid: %d, header time: %d, timestamp: %d", mid, header.Time, timestamp)
+		if header.Time < timestamp.Uint64() {
+			lo = mid.Add(mid, big.NewInt(1))
+		} else {
+			hi = mid
+		}
+	}
+
+	return lo.Sub(lo, big.NewInt(1)), nil
 }
 
 func (s *PaymentCalculatorDataServiceImpl) getSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {

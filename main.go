@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	elpds := calculator.NewPaymentCalculatorDataService(dbpool, schemaService, subgraphProvider)
+	elpds := calculator.NewPaymentCalculatorDataService(dbpool, schemaService, subgraphProvider, ethClient)
 
 	intervalSecondsLength := big.NewInt(10)
 
