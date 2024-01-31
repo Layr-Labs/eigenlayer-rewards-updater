@@ -47,7 +47,7 @@ type PaymentCalculatorDataService interface {
 	// SetDistributionsAtTimestamp sets the distributions of all tokens at a given timestamp
 	SetDistributionsAtTimestamp(timestamp *big.Int, distributions map[gethcommon.Address]*common.Distribution) error
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
-	GetOperatorSetForStrategyAtTimestamp(avs gethcommon.Address, strategy gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error)
+	GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
 }
 
 const (

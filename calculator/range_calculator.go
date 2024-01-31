@@ -96,7 +96,7 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 			paymentToDistribute := new(big.Int).Mul(paymentPerSecond, new(big.Int).Sub(overlapEnd, overlapStart))
 
 			// get the operator set at the interval start
-			operatorSet, err := c.dataService.GetOperatorSetForStrategyAtTimestamp(rangePayment.Avs, rangePayment.Strategy, intervalStart)
+			operatorSet, err := c.dataService.GetOperatorSetForStrategyAtTimestamp(intervalStart, rangePayment.Avs, rangePayment.Strategy)
 			if err != nil {
 				return nil, nil, err
 			}
