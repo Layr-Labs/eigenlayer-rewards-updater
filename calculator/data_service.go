@@ -8,15 +8,34 @@ import (
 	"math/big"
 	"os"
 
+	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
+	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 )
 
 // todo: set this to the global default AVS
 var GLOBAL_DEFAULT_AVS = gethcommon.HexToAddress("0x0000000000000000000000000000000000000000")
+
+// multicall has the same address on all networks
+var MULTICALL3_ADDRESS = gethcommon.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
+
+// strategy manager address
+var STRATEGY_MANAGER_ADDRESS = gethcommon.HexToAddress("0x779d1b5315df083e3F9E94cB495983500bA8E907")
+
+// eigen pod manager address
+var EIGEN_POD_MANAGER_ADDRESS = gethcommon.HexToAddress("0xa286b84C96aF280a49Fe1F40B9627C2A2827df41")
+
+// beacon chain eth strategy address
+var BEACON_CHAIN_ETH_STRATEGY_ADDRESS = gethcommon.HexToAddress("0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0")
+
+// delegation manager address
+var DELEGATION_MANAGER_ADDRESS = gethcommon.HexToAddress("0x1b7b8F6b258f95Cf9596EabB9aa18B62940Eb0a8")
 
 type PaymentCalculatorDataService interface {
 	// GetPaymentsCalculatedUntilTimestamp returns the timestamp until which payments have been calculated
@@ -34,12 +53,14 @@ type PaymentCalculatorDataService interface {
 const (
 	claimingManagerSubgraph    = "claiming-manager-raw-events"
 	paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
+	delegationManagerSubgraph  = "delegation-manager-raw-events"
 )
 
 type PaymentCalculatorDataServiceImpl struct {
 	dbpool           *pgxpool.Pool
 	schemaService    *common.SubgraphSchemaService
 	subgraphProvider common.SubgraphProvider
+	ethClient        *ethclient.Client
 }
 
 func NewPaymentCalculatorDataService(
@@ -196,31 +217,77 @@ func (s *PaymentCalculatorDataServiceImpl) SetDistributionsAtTimestamp(timestamp
 	return err
 }
 
-// type OperatorSet struct {
-// 	TotalStakedStrategyShares map[gethcommon.Address]*big.Int
-// 	Operators                 []Operator
-// }
+func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
+	operatorSet := common.OperatorSet{}
+	operatorSet.TotalStakedStrategyShares = big.NewInt(0)
 
-// type Earner struct {
-// 	Claimer gethcommon.Address
-// }
+	// get all operators for the given strategy at the given timestamp
+	operatorAddresses, err := s.getOperatorAddressesForAVSAtTimestamp(timestamp, avs, strategy)
+	if err != nil {
+		return nil, err
+	}
 
-// type Operator struct {
-// 	Earner
-// 	Address                      gethcommon.Address
-// 	Commissions                  map[gethcommon.Address]*big.Int
-// 	TotalDelegatedStrategyShares map[gethcommon.Address]*big.Int
-// 	Stakers                      []Staker
-// }
+	operatorSet.Operators = make([]common.Operator, len(operatorAddresses))
 
-// type Staker struct {
-// 	Earner
-// 	Address gethcommon.Address
-// 	Shares  map[gethcommon.Address]*big.Int
-// }
+	// get the commission for each operator
+	commissions, err := s.getCommissionForAVSAtTimestamp(timestamp, avs, operatorAddresses)
+	if err != nil {
+		return nil, err
+	}
 
-func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(avs gethcommon.Address, strategy gethcommon.Address, timestamp *big.Int) (common.OperatorSet, error) {
-	return common.OperatorSet{}, nil
+	// loop thru each operator and get their staker sets
+	for i, operatorAddress := range operatorAddresses {
+		operatorSet.Operators[i].Address = operatorAddress
+		operatorSet.Operators[i].Commission = commissions[operatorAddress]
+		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
+
+		// get the stakers of the operator
+		stakers, err := s.getStakersDelegatedToOperatorAtTimestamp(timestamp, operatorAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		operatorSet.Operators[i].Stakers = make([]common.Staker, len(stakers))
+
+		// get the claimers of each staker and the operator
+		claimers, err := s.getClaimersAtTimestamp(timestamp, append(stakers, operatorAddress))
+		if err != nil {
+			return nil, err
+		}
+
+		// get the blocknumber of the block at the given timestamp
+		blockNumber, err := s.getBlockNumberAtTimestamp(timestamp)
+		if err != nil {
+			return nil, err
+		}
+
+		// get the shares of each staker
+		strategyShareMap, err := s.getSharesOfStakersAtBlockNumber(blockNumber, strategy, stakers)
+		if err != nil {
+			return nil, err
+		}
+
+		// loop thru each staker and get their shares
+		for j, stakerAddress := range stakers {
+			operatorSet.Operators[i].Stakers[j].Address = stakerAddress
+			operatorSet.Operators[i].Stakers[j].Claimer = claimers[stakerAddress]
+			operatorSet.Operators[i].Stakers[j].StrategyShares = strategyShareMap[stakerAddress]
+
+			operatorSet.Operators[i].Claimer = claimers[operatorAddress]
+			// add the staker's shares to the operator's total delegated strategy shares
+			operatorSet.Operators[i].TotalDelegatedStrategyShares = operatorSet.Operators[i].TotalDelegatedStrategyShares.Add(operatorSet.Operators[i].TotalDelegatedStrategyShares, strategyShareMap[stakerAddress])
+		}
+
+		// add the operator's total delegated strategy shares to the operator set's total staked strategy shares
+		operatorSet.TotalStakedStrategyShares = operatorSet.TotalStakedStrategyShares.Add(operatorSet.TotalStakedStrategyShares, operatorSet.Operators[i].TotalDelegatedStrategyShares)
+	}
+
+	return &operatorSet, nil
+}
+
+func (s *PaymentCalculatorDataServiceImpl) getOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
+	// TODO
+	return nil, nil
 }
 
 func (s *PaymentCalculatorDataServiceImpl) getCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
@@ -369,3 +436,93 @@ var stakerSetAtTimestampQuery string = `
 		ORDER BY block_timestamp DESC
 		LIMIT 1
 	)`
+
+func (s *PaymentCalculatorDataServiceImpl) getStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
+	// get the schema id for the claiming manager subgraph
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), delegationManagerSubgraph, s.subgraphProvider)
+	if err != nil {
+		return nil, err
+	}
+
+	// format the query
+	formattedQuery := fmt.Sprintf(stakerSetAtTimestampQuery, schemaID, schemaID)
+
+	// query the database
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, operator)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// create a list of stakers
+	stakers := make([]gethcommon.Address, 0)
+	for rows.Next() {
+		var (
+			stakerBytes []byte
+		)
+
+		err := rows.Scan(
+			&stakerBytes,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		staker := gethcommon.HexToAddress(hex.EncodeToString(stakerBytes))
+
+		stakers = append(stakers, staker)
+	}
+
+	return stakers, nil
+}
+
+func (s *PaymentCalculatorDataServiceImpl) getBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
+	// TODO
+	return nil, nil
+}
+
+func (s *PaymentCalculatorDataServiceImpl) getSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	if strategy == BEACON_CHAIN_ETH_STRATEGY_ADDRESS {
+		return s.getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber, stakers)
+	} else {
+		return s.getSharesOfStrategyManagerStrategyForStakersAtBlockNumber(blockNumber, strategy, stakers)
+	}
+}
+
+func (s *PaymentCalculatorDataServiceImpl) getSharesOfStrategyManagerStrategyForStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	strategyManagerContract, err := contractIStrategyManager.NewContractIStrategyManager(STRATEGY_MANAGER_ADDRESS, s.ethClient)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: make this a batch call
+	strategyShares := make(map[gethcommon.Address]*big.Int)
+	for _, staker := range stakers {
+		shares, err := strategyManagerContract.StakerStrategyShares(&bind.CallOpts{BlockNumber: blockNumber}, staker, strategy)
+		if err != nil {
+			return nil, err
+		}
+		strategyShares[staker] = shares
+	}
+
+	return strategyShares, nil
+}
+
+func (s *PaymentCalculatorDataServiceImpl) getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber *big.Int, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	eigenPodManagerContract, err := contractIEigenPodManager.NewContractIEigenPodManager(EIGEN_POD_MANAGER_ADDRESS, s.ethClient)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: make this a batch call
+	strategyShares := make(map[gethcommon.Address]*big.Int)
+	for _, staker := range stakers {
+		shares, err := eigenPodManagerContract.PodOwnerShares(&bind.CallOpts{BlockNumber: blockNumber}, staker)
+		if err != nil {
+			return nil, err
+		}
+		strategyShares[staker] = shares
+	}
+
+	return strategyShares, nil
+}
