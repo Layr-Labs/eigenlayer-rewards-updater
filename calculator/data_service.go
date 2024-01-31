@@ -404,8 +404,8 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithout
 var claimersAtTimestampQuery string = `
 	SELECT DISTINCT ON (account) account, claimer
 	FROM %s.claimer_set
-	WHERE block_timestamp <= $1 AND account in ($2)
-	ORDER BY account, block_timestamp DESC`
+	WHERE block_timestamp <= $1 AND encode(account, 'hex') in (%s)
+	ORDER BY account, block_timestamp DESC;`
 
 func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
@@ -415,10 +415,10 @@ func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big
 	}
 
 	// format the query
-	formattedQuery := fmt.Sprintf(claimersAtTimestampQuery, schemaID)
+	formattedQuery := fmt.Sprintf(claimersAtTimestampQuery, schemaID, toSQLAddreses(accounts))
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, accounts)
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp.String())
 	if err != nil {
 		return nil, err
 	}
@@ -466,6 +466,7 @@ WITH latest_undelegations AS (
         %s.staker_undelegated
     WHERE
         encode(operator, 'hex') = $1
+		AND block_timestamp <= $2
     ORDER BY
         staker,
         block_timestamp DESC
@@ -477,6 +478,7 @@ WITH latest_undelegations AS (
         %s.staker_delegated
     WHERE
         encode(operator, 'hex') = $1
+		AND block_timestamp <= $2
     ORDER BY
         staker,
         block_timestamp DESC
@@ -501,7 +503,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetStakersDelegatedToOperatorAtTimest
 	formattedQuery := fmt.Sprintf(stakerSetAtTimestampQuery, schemaID, schemaID)
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, toSQLAddress(operator))
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, toSQLAddress(operator), timestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -642,6 +644,14 @@ func fillMapFromAddressToBigIntParallel(addresses []gethcommon.Address, getValue
 	}
 
 	return resMap, nil
+}
+
+func toSQLAddreses(addresses []gethcommon.Address) string {
+	var sqlAddresses string
+	for _, address := range addresses {
+		sqlAddresses += fmt.Sprintf("'%s',", toSQLAddress(address))
+	}
+	return strings.TrimRight(sqlAddresses, ",")
 }
 
 func toSQLAddress(address gethcommon.Address) string {
