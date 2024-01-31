@@ -23,7 +23,7 @@ import (
 )
 
 // todo: set this to the global default AVS
-var GLOBAL_DEFAULT_AVS = gethcommon.HexToAddress("0x0000000000000000000000000000000000000000")
+var GLOBAL_DEFAULT_AVS = gethcommon.HexToAddress("0x40daa385572e48af6691364729ca165ae3609655")
 
 // multicall has the same address on all networks
 var MULTICALL3_ADDRESS = gethcommon.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
@@ -329,19 +329,23 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timest
 	// for all operators without a specific commission, get their global default commission
 	operatorsWithoutSpecificCommission := make([]gethcommon.Address, 0)
 	for _, operator := range operators {
-		if _, ok := commissions[operator]; !ok {
+		log.Info().Msgf("operator: %s, commission: %s", operator.Hex(), commissions[operator].String())
+		if big.NewInt(0).Cmp(commissions[operator]) == 0 {
 			operatorsWithoutSpecificCommission = append(operatorsWithoutSpecificCommission, operator)
 		}
 	}
 
-	commissionsWithGlobalDefault, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, GLOBAL_DEFAULT_AVS, operatorsWithoutSpecificCommission)
-	if err != nil {
-		return nil, err
-	}
+	if len(operatorsWithoutSpecificCommission) != 0 {
+		commissionsWithGlobalDefault, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, GLOBAL_DEFAULT_AVS, operatorsWithoutSpecificCommission)
+		if err != nil {
+			return nil, err
+		}
 
-	// merge the two maps
-	for operator, commission := range commissionsWithGlobalDefault {
-		commissions[operator] = commission
+		// merge the two maps
+		for operator, commission := range commissionsWithGlobalDefault {
+			log.Info().Msgf("global operator: %s, commission: %s", operator.Hex(), commissions[operator].String())
+			commissions[operator] = commission
+		}
 	}
 
 	return commissions, nil
@@ -350,8 +354,8 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timest
 var commissionAtTimestampQuery string = `
 	SELECT DISTINCT ON (operator) operator, commission_bips
 	FROM %s.commission_set
-	WHERE block_timestamp <= $1 AND avs = $2 AND operator in ($3)
-	ORDER BY account, block_timestamp DESC`
+	WHERE block_timestamp <= $1 AND encode(avs, 'hex') = $2 AND encode(operator, 'hex') in (%s)
+	ORDER BY operator, block_timestamp DESC;`
 
 func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	// get the schema id for the claiming manager subgraph
@@ -361,10 +365,13 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithout
 	}
 
 	// format the query
-	formattedQuery := fmt.Sprintf(commissionAtTimestampQuery, schemaID)
+	formattedQuery := fmt.Sprintf(commissionAtTimestampQuery, schemaID, toSQLAddreses(operators))
+
+	log.Info().Msgf("formatted query: %s", formattedQuery)
+	log.Info().Msgf("avs: %s", toSQLAddress(avs))
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, avs, operators)
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, toSQLAddress(avs))
 	if err != nil {
 		return nil, err
 	}
@@ -418,7 +425,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big
 	formattedQuery := fmt.Sprintf(claimersAtTimestampQuery, schemaID, toSQLAddreses(accounts))
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp.String())
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp)
 	if err != nil {
 		return nil, err
 	}
