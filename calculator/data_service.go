@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
@@ -223,6 +224,8 @@ func (s *PaymentCalculatorDataServiceImpl) SetDistributionsAtTimestamp(timestamp
 		return err
 	}
 
+	log.Info().Msgf("marshalled distributions %s", marshalledDistributions)
+
 	// write to file
 	err = os.WriteFile(fmt.Sprintf("data/distributions_%d.json", timestamp), marshalledDistributions, 0644)
 	if err != nil {
@@ -233,14 +236,21 @@ func (s *PaymentCalculatorDataServiceImpl) SetDistributionsAtTimestamp(timestamp
 }
 
 func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
+	log.Info().Msgf("getting operator set for avs %s for strategy %s at timestamp %d", avs.Hex(), strategy.Hex(), timestamp)
+
 	operatorSet := common.OperatorSet{}
 	operatorSet.TotalStakedStrategyShares = big.NewInt(0)
+
+	start := time.Now()
 
 	// get all operators for the given strategy at the given timestamp
 	operatorAddresses, err := s.GetOperatorAddressesForAVSAtTimestamp(timestamp, avs, strategy)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info().Msgf("found %d operators in %s", len(operatorAddresses), time.Since(start))
+	start = time.Now()
 
 	operatorSet.Operators = make([]common.Operator, len(operatorAddresses))
 
@@ -250,17 +260,25 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 		return nil, err
 	}
 
+	log.Info().Msgf("got commission of %d operators in %s", len(operatorAddresses), time.Since(start))
+	start = time.Now()
+
 	// loop thru each operator and get their staker sets
 	for i, operatorAddress := range operatorAddresses {
 		operatorSet.Operators[i].Address = operatorAddress
 		operatorSet.Operators[i].Commission = commissions[operatorAddress]
 		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
 
+		start = time.Now()
+
 		// get the stakers of the operator
 		stakers, err := s.GetStakersDelegatedToOperatorAtTimestamp(timestamp, operatorAddress)
 		if err != nil {
 			return nil, err
 		}
+
+		log.Info().Msgf("found %d stakers for operator %s in %s", len(stakers), operatorAddress.Hex(), time.Since(start))
+		start = time.Now()
 
 		operatorSet.Operators[i].Stakers = make([]common.Staker, len(stakers))
 
@@ -270,17 +288,25 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 			return nil, err
 		}
 
+		log.Info().Msgf("got claimers of %d stakers in %s", len(stakers), time.Since(start))
+		start = time.Now()
+
 		// get the blocknumber of the block at the given timestamp
 		blockNumber, err := s.GetBlockNumberAtTimestamp(timestamp)
 		if err != nil {
 			return nil, err
 		}
 
+		log.Info().Msgf("got block number of %d in %s", blockNumber, time.Since(start))
+		start = time.Now()
+
 		// get the shares of each staker
 		strategyShareMap, err := s.GetSharesOfStakersAtBlockNumber(blockNumber, strategy, stakers)
 		if err != nil {
 			return nil, err
 		}
+
+		log.Info().Msgf("got shares of %d stakers in %s", len(stakers), time.Since(start))
 
 		// loop thru each staker and get their shares
 		for j, stakerAddress := range stakers {
@@ -301,8 +327,15 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 }
 
 func (s *PaymentCalculatorDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
-	// TODO
-	return nil, nil
+	// TODO: actually query the database
+
+	operatorAddresses := []gethcommon.Address{
+		gethcommon.HexToAddress("0x9631af6a712d296fedb800132edcf08e493b12cd"),
+		// gethcommon.HexToAddress("0x96091e6a492b17b389d5ae9e0662049890446568"),
+		// gethcommon.HexToAddress("0x63a27fd29a5385561991108e0cefb288c627cc03"),
+	}
+
+	return operatorAddresses, nil
 }
 
 func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
@@ -314,7 +347,6 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timest
 	// for all operators without a specific commission, get their global default commission
 	operatorsWithoutSpecificCommission := make([]gethcommon.Address, 0)
 	for _, operator := range operators {
-		log.Info().Msgf("operator: %s, commission: %s", operator.Hex(), commissions[operator].String())
 		if big.NewInt(0).Cmp(commissions[operator]) == 0 {
 			operatorsWithoutSpecificCommission = append(operatorsWithoutSpecificCommission, operator)
 		}
@@ -328,7 +360,6 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timest
 
 		// merge the two maps
 		for operator, commission := range commissionsWithGlobalDefault {
-			log.Info().Msgf("global operator: %s, commission: %s", operator.Hex(), commissions[operator].String())
 			commissions[operator] = commission
 		}
 	}
@@ -345,9 +376,6 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithout
 
 	// format the query
 	formattedQuery := fmt.Sprintf(commissionAtTimestampQuery, schemaID, toSQLAddreses(operators))
-
-	log.Info().Msgf("formatted query: %s", formattedQuery)
-	log.Info().Msgf("avs: %s", toSQLAddress(avs))
 
 	// query the database
 	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, toSQLAddress(avs))
@@ -490,7 +518,6 @@ func (s *PaymentCalculatorDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *
 		if err != nil {
 			return nil, err
 		}
-		log.Info().Msgf("mid: %d, header time: %d, timestamp: %d", mid, header.Time, timestamp)
 		if header.Time < timestamp.Uint64() {
 			lo = mid.Add(mid, big.NewInt(1))
 		} else {

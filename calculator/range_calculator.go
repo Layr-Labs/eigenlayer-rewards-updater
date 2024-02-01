@@ -48,6 +48,12 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 		return nil, nil, fmt.Errorf("end timestamp must be after start timestamp")
 	}
 
+	// todo remove
+	// clamp the end timestamp to 2 intervals ahead of the start timestamp
+	if endTimestamp.Cmp(new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(1)))) >= 0 {
+		endTimestamp = new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(1)))
+	}
+
 	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
 
 	// get all distributions at the start timestamp
@@ -72,11 +78,13 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
-		distribution := common.NewDistribution()
+
+		var distribution *common.Distribution
+		var ok bool
 		// if we haven't seen this token before, add it to the map
-		if distribution, ok := distributions[rangePayment.Token]; !ok {
-			distribution = common.NewDistribution()
-			distributions[rangePayment.Token] = distribution
+		if distribution, ok = distributions[rangePayment.Token]; !ok {
+			distributions[rangePayment.Token] = common.NewDistribution()
+			distribution = distributions[rangePayment.Token]
 		}
 
 		// calculate the payment per second
@@ -101,16 +109,25 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 				return nil, nil, err
 			}
 
+			// if the operator set has no staked strategy shares, skip
+			if operatorSet.TotalStakedStrategyShares.Cmp(big.NewInt(0)) == 0 {
+				continue
+			}
+
 			// loop through all operators
 			for _, operator := range operatorSet.Operators {
 				// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
 				totalPaymentToOperatorAndStakers := new(big.Int).Div(new(big.Int).Mul(paymentToDistribute, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
+				log.Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
+
+				// if the operator has no delegated strategy shares, skip
+				if operator.TotalDelegatedStrategyShares.Cmp(big.NewInt(0)) == 0 {
+					continue
+				}
 
 				// increment token balance according to the operator's commission
 				operatorAmt := distribution.Get(operator.Address)
-				if operatorAmt == nil {
-					operatorAmt = big.NewInt(0)
-				}
+
 				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions
 				distribution.Set(operator.Address, operatorAmt.Add(operatorAmt, new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission)))
 
@@ -118,9 +135,6 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 				for _, staker := range operator.Stakers {
 					// increment token balance according to the staker's proportion of the strategy shares
 					stakerAmt := distribution.Get(staker.Address)
-					if stakerAmt == nil {
-						stakerAmt = big.NewInt(0)
-					}
 
 					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / operatorDelegatedStrategyShares
 					distribution.Set(staker.Address, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission), totalPaymentToOperatorAndStakers), staker.StrategyShares), operator.TotalDelegatedStrategyShares)))
@@ -128,6 +142,8 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 			}
 		}
 
+		// set the distribution in the map
+		distributions[rangePayment.Token] = distribution
 	}
 
 	// set the distributions at the end timestamp

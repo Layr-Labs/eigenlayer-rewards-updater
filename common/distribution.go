@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"math/big"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -14,19 +15,27 @@ type Distribution struct {
 }
 
 func NewDistribution() *Distribution {
+	data := make(map[gethcommon.Address]*big.Int)
 	return &Distribution{
-		data: make(map[gethcommon.Address]*big.Int),
+		data: data,
 	}
 }
 
 // Set sets the value for a given address.
 func (d *Distribution) Set(address gethcommon.Address, amount *big.Int) {
+	if len(d.data) == 0 {
+		d.data = make(map[gethcommon.Address]*big.Int)
+	}
 	d.data[address] = amount
 }
 
 // Get gets the value for a given address.
 func (d *Distribution) Get(address gethcommon.Address) *big.Int {
-	return d.data[address]
+	amt := d.data[address]
+	if amt == nil {
+		return big.NewInt(0)
+	}
+	return amt
 }
 
 // Add adds the other distribution to this distribution.
@@ -48,12 +57,27 @@ func (d *Distribution) MulDiv(numerator, denominator *big.Int) {
 	}
 }
 
-func NewRandomDistribution(numAddrs int) *Distribution {
-	d := NewDistribution()
-	for i := 0; i < numAddrs; i++ {
-		d.Set(gethcommon.BigToAddress(big.NewInt(int64(i))), big.NewInt(int64(i)))
+func (d *Distribution) MarshalJSON() ([]byte, error) {
+	// dereference the big.Ints
+	data := make(map[gethcommon.Address]string)
+	for address, amount := range d.data {
+		data[address] = amount.String()
 	}
-	return d
+	return json.Marshal(data)
+}
+
+func (d *Distribution) UnmarshalJSON(data []byte) error {
+	// dereference the big.Ints
+	var dataMap map[gethcommon.Address]string
+	if err := json.Unmarshal(data, &dataMap); err != nil {
+		return err
+	}
+	d.data = make(map[gethcommon.Address]*big.Int)
+	for address, amount := range dataMap {
+		d.data[address] = new(big.Int)
+		d.data[address].SetString(amount, 10)
+	}
+	return nil
 }
 
 // Merklizes the distribution and returns the merkle root.

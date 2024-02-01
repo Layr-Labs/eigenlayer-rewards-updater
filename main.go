@@ -74,7 +74,7 @@ func main() {
 
 	claimingManagerAddress := gethcommon.HexToAddress(claimingManagerAddressString)
 
-	elpu, err := updater.NewUpdater(time.Second*10, elpc, chainClient, claimingManagerAddress)
+	elpu, err := updater.NewUpdater(time.Second*1000, elpc, chainClient, claimingManagerAddress)
 	if err != nil {
 		panic(err)
 	}

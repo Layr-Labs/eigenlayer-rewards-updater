@@ -74,12 +74,9 @@ func (u *Updater) update(ctx context.Context) error {
 	}
 
 	// add the pending distribution to the previous distribution
-	log.Info().Msg("adding pending distribution to previous distribution and merklizing")
 	distributionRoots := make([][]byte, len(newDistributions))
 	for token, distribution := range newDistributions {
-		newDistributions[token].Add(distribution)
-
-		distributionRoot, err := newDistributions[token].Merklize(token)
+		distributionRoot, err := distribution.Merklize(token)
 		if err != nil {
 			return err
 		}
