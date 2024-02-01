@@ -89,6 +89,8 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		t.Fail()
 	})
 
+	// TODO: overlapping range payments test
+
 	t.Run("test GetCommissionForAVSAtTimestamp", func(t *testing.T) {
 		firstCommissionSetTimestamp := big.NewInt(1706736660)
 		commissions, err := elpds.GetCommissionForAVSAtTimestamp(firstCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
