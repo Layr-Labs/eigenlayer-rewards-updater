@@ -128,16 +128,16 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 				// increment token balance according to the operator's commission
 				operatorAmt := distribution.Get(operator.Address)
 
-				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions
-				distribution.Set(operator.Address, operatorAmt.Add(operatorAmt, new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission)))
+				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
+				distribution.Set(operator.Address, operatorAmt.Add(operatorAmt, new(big.Int).Div(new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)))
 
 				// loop through all stakers
 				for _, staker := range operator.Stakers {
 					// increment token balance according to the staker's proportion of the strategy shares
 					stakerAmt := distribution.Get(staker.Address)
 
-					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / operatorDelegatedStrategyShares
-					distribution.Set(staker.Address, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission), totalPaymentToOperatorAndStakers), staker.StrategyShares), operator.TotalDelegatedStrategyShares)))
+					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
+					distribution.Set(staker.Address, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(totalPaymentToOperatorAndStakers, new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission)), staker.StrategyShares), BIPS_DENOMINATOR), operator.TotalDelegatedStrategyShares)))
 				}
 			}
 		}
