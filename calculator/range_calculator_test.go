@@ -48,12 +48,12 @@ func TestRangePaymentCalculator(t *testing.T) {
 		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
-		emptyDistributions := make(map[gethcommon.Address]*common.Distribution)
-		mockPaymentCalculatorDataService.On("GetDistributionsAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistributions, nil)
+		emptyDistribution := common.NewDistribution()
+		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
 
 		endTimestampPassedIn := big.NewInt(300)
-		endTimestamp, distributions, err := elpc.CalculateDistributionsUntilTimestamp(context.Background(), endTimestampPassedIn)
+		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -62,9 +62,9 @@ func TestRangePaymentCalculator(t *testing.T) {
 			t.Errorf("expected end timestamp to be %s, got %d", endTimestampPassedIn, endTimestamp)
 		}
 
-		// make sure distributions are empty
-		if len(distributions) != 0 {
-			t.Errorf("expected distributions to be empty, got %v", distributions)
+		// make sure distribution are empty
+		if distribution.GetNumLeaves() != 0 {
+			t.Errorf("expected distribution to be empty, got %v", distribution)
 		}
 	})
 
@@ -74,10 +74,10 @@ func TestRangePaymentCalculator(t *testing.T) {
 		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
-		emptyDistributions := make(map[gethcommon.Address]*common.Distribution)
-		mockPaymentCalculatorDataService.On("GetDistributionsAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistributions, nil)
+		emptyDistribution := common.NewDistribution()
+		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
-		mockPaymentCalculatorDataService.On("SetDistributionsAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("map[common.Address]*common.Distribution")).Return(nil)
+		mockPaymentCalculatorDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*common.Distribution")).Return(nil)
 
 		operatorSet := &common.OperatorSet{
 			Operators: []common.Operator{
@@ -128,7 +128,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 		mockPaymentCalculatorDataService.On("GetOperatorSetForStrategyAtTimestamp", mock.AnythingOfType("*big.Int"), testRangePayments[0].Avs, testRangePayments[0].Strategy).Return(operatorSet, nil)
 		endTimestampPassedIn := big.NewInt(300)
-		endTimestamp, distributions, err := elpc.CalculateDistributionsUntilTimestamp(context.Background(), endTimestampPassedIn)
+		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -137,31 +137,29 @@ func TestRangePaymentCalculator(t *testing.T) {
 			t.Errorf("expected end timestamp to be %s, got %d", endTimestampPassedIn, endTimestamp)
 		}
 
-		if len(distributions) != 1 {
-			t.Errorf("expected distributions to have 1 entry, got %d", len(distributions))
+		if distribution.GetNumLeaves() != 5 {
+			t.Errorf("expected distributions to have 5 entry, got %d", distribution.GetNumLeaves())
 		}
-
-		distribution := distributions[testRangePayments[0].Token]
 
 		// make sure the disitrubution is accurate according to precalculated values
-		if distribution.Get(operatorSet.Operators[0].Address).Cmp(big.NewInt(42857142857)) != 0 {
-			t.Errorf("expected operator balance to be 42857142857, got %s", distribution.Get(operatorSet.Operators[0].Address))
+		if distribution.Get(operatorSet.Operators[0].Address, testRangePayments[0].Token).Cmp(big.NewInt(42857142857)) != 0 {
+			t.Errorf("expected operator balance to be 42857142857, got %s", distribution.Get(operatorSet.Operators[0].Address, testRangePayments[0].Token))
 		}
 
-		if distribution.Get(operatorSet.Operators[0].Stakers[0].Address).Cmp(big.NewInt(14285714285)) != 0 {
-			t.Errorf("expected staker balance to be 14285714285, got %s", distribution.Get(operatorSet.Operators[0].Stakers[0].Address))
+		if distribution.Get(operatorSet.Operators[0].Stakers[0].Address, testRangePayments[0].Token).Cmp(big.NewInt(14285714285)) != 0 {
+			t.Errorf("expected staker balance to be 14285714285, got %s", distribution.Get(operatorSet.Operators[0].Stakers[0].Address, testRangePayments[0].Token))
 		}
 
-		if distribution.Get(operatorSet.Operators[0].Stakers[1].Address).Cmp(big.NewInt(28571428571)) != 0 {
-			t.Errorf("expected staker balance to be 28571428571, got %s", distribution.Get(operatorSet.Operators[0].Stakers[1].Address))
+		if distribution.Get(operatorSet.Operators[0].Stakers[1].Address, testRangePayments[0].Token).Cmp(big.NewInt(28571428571)) != 0 {
+			t.Errorf("expected staker balance to be 28571428571, got %s", distribution.Get(operatorSet.Operators[0].Stakers[1].Address, testRangePayments[0].Token))
 		}
 
-		if distribution.Get(operatorSet.Operators[1].Address).Cmp(big.NewInt(11428571428)) != 0 {
-			t.Errorf("expected operator balance to be 14285714285, got %s", distribution.Get(operatorSet.Operators[1].Address))
+		if distribution.Get(operatorSet.Operators[1].Address, testRangePayments[0].Token).Cmp(big.NewInt(11428571428)) != 0 {
+			t.Errorf("expected operator balance to be 14285714285, got %s", distribution.Get(operatorSet.Operators[1].Address, testRangePayments[0].Token))
 		}
 
-		if distribution.Get(operatorSet.Operators[1].Stakers[0].Address).Cmp(big.NewInt(102857142856)) != 0 {
-			t.Errorf("expected staker balance to be 102857142856, got %s", distribution.Get(operatorSet.Operators[1].Stakers[0].Address))
+		if distribution.Get(operatorSet.Operators[1].Stakers[0].Address, testRangePayments[0].Token).Cmp(big.NewInt(102857142856)) != 0 {
+			t.Errorf("expected staker balance to be 102857142856, got %s", distribution.Get(operatorSet.Operators[1].Stakers[0].Address, testRangePayments[0].Token))
 		}
 	})
 }

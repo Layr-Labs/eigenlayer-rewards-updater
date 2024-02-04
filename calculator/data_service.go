@@ -46,10 +46,10 @@ type PaymentCalculatorDataService interface {
 	GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error)
 	// GetRangePaymentsWithOverlappingRange returns all range payments that overlap with the given range
 	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
-	// GetDistributionsAtTimestamp returns the distributions of all tokens at a given timestamp
-	GetDistributionsAtTimestamp(timestamp *big.Int) (map[gethcommon.Address]*common.Distribution, error)
-	// SetDistributionsAtTimestamp sets the distributions of all tokens at a given timestamp
-	SetDistributionsAtTimestamp(timestamp *big.Int, distributions map[gethcommon.Address]*common.Distribution) error
+	// GetDistributionAtTimestamp returns the distribution of all tokens at a given timestamp
+	GetDistributionAtTimestamp(timestamp *big.Int) (*common.Distribution, error)
+	// SetDistributionAtTimestamp sets the distribution of all tokens at a given timestamp
+	SetDistributionAtTimestamp(timestamp *big.Int, distributions *common.Distribution) error
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
 	GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
 
@@ -187,7 +187,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(
 	return rangePayments, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetDistributionsAtTimestamp(timestamp *big.Int) (map[gethcommon.Address]*common.Distribution, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.Int) (*common.Distribution, error) {
 	// if the data directory doesn't exist, create it and return empty map
 	_, err := os.Stat("./data")
 	if os.IsNotExist(err) {
@@ -195,39 +195,39 @@ func (s *PaymentCalculatorDataServiceImpl) GetDistributionsAtTimestamp(timestamp
 		if err != nil {
 			return nil, err
 		}
-		return make(map[gethcommon.Address]*common.Distribution), nil
+		return common.NewDistribution(), nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	// read from data/distributions_{timestamp}.json
-	file, err := os.ReadFile(fmt.Sprintf("data/distributions_%d.json", timestamp))
+	file, err := os.ReadFile(fmt.Sprintf("data/distribution_%d.json", timestamp))
 	if err != nil {
 		return nil, err
 	}
 
 	// deserialize from json
-	var distributions map[gethcommon.Address]*common.Distribution
-	err = json.Unmarshal(file, &distributions)
+	var distribution *common.Distribution
+	err = json.Unmarshal(file, distribution)
 	if err != nil {
 		return nil, err
 	}
 
-	return distributions, nil
+	return distribution, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) SetDistributionsAtTimestamp(timestamp *big.Int, distributions map[gethcommon.Address]*common.Distribution) error {
+func (s *PaymentCalculatorDataServiceImpl) SetDistributionAtTimestamp(timestamp *big.Int, distribution *common.Distribution) error {
 	// seralize to json and write to data/distributions_{timestamp}.json
-	marshalledDistributions, err := json.Marshal(distributions)
+	marshalledDistribution, err := json.Marshal(distribution)
 	if err != nil {
 		return err
 	}
 
-	log.Info().Msgf("marshalled distributions %s", marshalledDistributions)
+	log.Info().Msgf("marshalled distributions %s", marshalledDistribution)
 
 	// write to file
-	err = os.WriteFile(fmt.Sprintf("data/distributions_%d.json", timestamp), marshalledDistributions, 0644)
+	err = os.WriteFile(fmt.Sprintf("data/distribution_%d.json", timestamp), marshalledDistribution, 0644)
 	if err != nil {
 		return err
 	}

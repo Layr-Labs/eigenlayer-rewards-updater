@@ -5,11 +5,9 @@ package mocks
 import (
 	big "math/big"
 
-	common "github.com/ethereum/go-ethereum/common"
+	common "github.com/Layr-Labs/eigenlayer-payment-updater/common"
 
 	context "context"
-
-	eigenlayer_payment_updatercommon "github.com/Layr-Labs/eigenlayer-payment-updater/common"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -19,18 +17,18 @@ type PaymentCalculator struct {
 	mock.Mock
 }
 
-// CalculateDistributionsUntilTimestamp provides a mock function with given fields: ctx, endTimestamp
-func (_m *PaymentCalculator) CalculateDistributionsUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, map[common.Address]*eigenlayer_payment_updatercommon.Distribution, error) {
+// CalculateDistributionUntilTimestamp provides a mock function with given fields: ctx, endTimestamp
+func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *common.Distribution, error) {
 	ret := _m.Called(ctx, endTimestamp)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CalculateDistributionsUntilTimestamp")
+		panic("no return value specified for CalculateDistributionUntilTimestamp")
 	}
 
 	var r0 *big.Int
-	var r1 map[common.Address]*eigenlayer_payment_updatercommon.Distribution
+	var r1 *common.Distribution
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) (*big.Int, map[common.Address]*eigenlayer_payment_updatercommon.Distribution, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) (*big.Int, *common.Distribution, error)); ok {
 		return rf(ctx, endTimestamp)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) *big.Int); ok {
@@ -41,11 +39,11 @@ func (_m *PaymentCalculator) CalculateDistributionsUntilTimestamp(ctx context.Co
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *big.Int) map[common.Address]*eigenlayer_payment_updatercommon.Distribution); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *big.Int) *common.Distribution); ok {
 		r1 = rf(ctx, endTimestamp)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[common.Address]*eigenlayer_payment_updatercommon.Distribution)
+			r1 = ret.Get(1).(*common.Distribution)
 		}
 	}
 

@@ -68,25 +68,14 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// give the interval to the distribution calculator, get the map from address => token => amount
 	log.Info().Msg("calculating distribution")
-	paymentsCalculatedUntilTimestamp, newDistributions, err := u.calculator.CalculateDistributionsUntilTimestamp(ctx, latestFinalizedTimestamp)
+	paymentsCalculatedUntilTimestamp, newDistribution, err := u.calculator.CalculateDistributionUntilTimestamp(ctx, latestFinalizedTimestamp)
 	if err != nil {
 		return err
 	}
 
-	// add the pending distribution to the previous distribution
-	distributionRoots := make([][]byte, len(newDistributions))
-	for token, distribution := range newDistributions {
-		distributionRoot, err := distribution.Merklize(token)
-		if err != nil {
-			return err
-		}
-
-		distributionRoots = append(distributionRoots, distributionRoot[:])
-	}
-
 	// merklize the distribution roots
 	log.Info().Msg("merklizing distribution roots")
-	root, err := common.Merklize(distributionRoots)
+	root, err := newDistribution.Merklize()
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")

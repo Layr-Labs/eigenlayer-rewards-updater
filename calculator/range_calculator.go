@@ -6,7 +6,6 @@ import (
 	"math/big"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -23,7 +22,7 @@ func NewRangePaymentCalculator(intervalSecondsLength *big.Int, dataService Payme
 	}
 }
 
-func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, map[gethcommon.Address]*common.Distribution, error) {
+func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *common.Distribution, error) {
 	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp(ctx)
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
@@ -56,8 +55,8 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 
 	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
 
-	// get all distributions at the start timestamp
-	distributions, err := c.dataService.GetDistributionsAtTimestamp(startTimestamp)
+	// get distribution at the start timestamp
+	distribution, err := c.dataService.GetDistributionAtTimestamp(startTimestamp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,22 +70,13 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 	}
 	if err == pgx.ErrNoRows {
 		log.Info().Msg("no range payments found")
-		return endTimestamp, distributions, nil
+		return endTimestamp, distribution, nil
 	}
 
 	log.Info().Msgf("found %d range payments", len(rangePayments))
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
-
-		var distribution *common.Distribution
-		var ok bool
-		// if we haven't seen this token before, add it to the map
-		if distribution, ok = distributions[rangePayment.Token]; !ok {
-			distributions[rangePayment.Token] = common.NewDistribution()
-			distribution = distributions[rangePayment.Token]
-		}
-
 		// calculate the payment per second
 		paymentPerSecond := new(big.Int).Div(rangePayment.Amount, new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
 
@@ -126,33 +116,30 @@ func (c *RangePaymentCalculator) CalculateDistributionsUntilTimestamp(ctx contex
 				}
 
 				// increment token balance according to the operator's commission
-				operatorAmt := distribution.Get(operator.Address)
+				operatorAmt := distribution.Get(operator.Address, rangePayment.Token)
 
 				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
-				distribution.Set(operator.Address, operatorAmt.Add(operatorAmt, new(big.Int).Div(new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)))
+				distribution.Set(operator.Address, rangePayment.Token, operatorAmt.Add(operatorAmt, new(big.Int).Div(new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)))
 
 				// loop through all stakers
 				for _, staker := range operator.Stakers {
 					// increment token balance according to the staker's proportion of the strategy shares
-					stakerAmt := distribution.Get(staker.Address)
+					stakerAmt := distribution.Get(staker.Address, rangePayment.Token)
 
 					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
-					distribution.Set(staker.Address, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(totalPaymentToOperatorAndStakers, new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission)), staker.StrategyShares), BIPS_DENOMINATOR), operator.TotalDelegatedStrategyShares)))
+					distribution.Set(staker.Address, rangePayment.Token, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(totalPaymentToOperatorAndStakers, new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission)), staker.StrategyShares), BIPS_DENOMINATOR), operator.TotalDelegatedStrategyShares)))
 				}
 			}
 		}
-
-		// set the distribution in the map
-		distributions[rangePayment.Token] = distribution
 	}
 
 	// set the distributions at the end timestamp
-	err = c.dataService.SetDistributionsAtTimestamp(endTimestamp, distributions)
+	err = c.dataService.SetDistributionAtTimestamp(endTimestamp, distribution)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return endTimestamp, distributions, nil
+	return endTimestamp, distribution, nil
 }
 
 func max(a, b *big.Int) *big.Int {

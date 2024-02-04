@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -11,81 +12,102 @@ import (
 var ZERO_LEAF = make([]byte, 20+32)
 
 type Distribution struct {
-	data map[gethcommon.Address]*big.Int
+	data map[gethcommon.Address]map[gethcommon.Address]*big.Int
 }
 
 func NewDistribution() *Distribution {
-	data := make(map[gethcommon.Address]*big.Int)
+	data := make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
 	return &Distribution{
 		data: data,
 	}
 }
 
 // Set sets the value for a given address.
-func (d *Distribution) Set(address gethcommon.Address, amount *big.Int) {
+func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) {
 	if len(d.data) == 0 {
-		d.data = make(map[gethcommon.Address]*big.Int)
+		d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
 	}
-	d.data[address] = amount
+	if len(d.data[address]) == 0 {
+		d.data[address] = make(map[gethcommon.Address]*big.Int)
+	}
+	d.data[address][token] = amount
 }
 
 // Get gets the value for a given address.
-func (d *Distribution) Get(address gethcommon.Address) *big.Int {
-	amt := d.data[address]
-	if amt == nil {
+func (d *Distribution) Get(address, token gethcommon.Address) *big.Int {
+	if len(d.data) == 0 {
 		return big.NewInt(0)
 	}
-	return amt
+	if len(d.data[address]) == 0 {
+		return big.NewInt(0)
+	}
+	amount := d.data[address][token]
+	if amount == nil {
+		return big.NewInt(0)
+	}
+	return amount
 }
 
 // Add adds the other distribution to this distribution.
 func (d *Distribution) Add(other *Distribution) {
-	for address, amount := range other.data {
-		if d.data[address] == nil {
-			d.data[address] = big.NewInt(0)
+	for address, tokenAmts := range other.data {
+		for token, amount := range tokenAmts {
+			if d.data[address][token] == nil {
+				d.data[address][token] = big.NewInt(0)
+			}
+			d.data[address][token].Add(d.data[address][token], amount)
 		}
-		d.data[address].Add(d.data[address], amount)
-	}
-}
-
-// MulDiv multiplies the distribution by a numerator and divides by a denominator.
-func (d *Distribution) MulDiv(numerator, denominator *big.Int) {
-	for address, amount := range d.data {
-		amount.Mul(amount, numerator)
-		amount.Div(amount, denominator)
-		d.data[address] = amount
 	}
 }
 
 func (d *Distribution) MarshalJSON() ([]byte, error) {
 	// dereference the big.Ints
-	data := make(map[gethcommon.Address]string)
-	for address, amount := range d.data {
-		data[address] = amount.String()
+	data := make(map[gethcommon.Address]map[gethcommon.Address]string)
+	for address, tokenAmts := range d.data {
+		data[address] = make(map[gethcommon.Address]string)
+		for token, amt := range tokenAmts {
+			data[address][token] = amt.String()
+		}
+
 	}
 	return json.Marshal(data)
 }
 
 func (d *Distribution) UnmarshalJSON(data []byte) error {
 	// dereference the big.Ints
-	var dataMap map[gethcommon.Address]string
+	var ok bool
+	var dataMap map[gethcommon.Address]map[gethcommon.Address]string
 	if err := json.Unmarshal(data, &dataMap); err != nil {
 		return err
 	}
-	d.data = make(map[gethcommon.Address]*big.Int)
-	for address, amount := range dataMap {
-		d.data[address] = new(big.Int)
-		d.data[address].SetString(amount, 10)
+	d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
+	for address, tokenAmts := range dataMap {
+		for token, amt := range tokenAmts {
+			d.data[address][token], ok = new(big.Int).SetString(amt, 10)
+			if !ok {
+				return fmt.Errorf("failed to parse big.Int from string: %s", amt)
+			}
+		}
 	}
 	return nil
 }
 
+func (d *Distribution) GetNumLeaves() int {
+	numLeaves := 0
+	for _, tokenAmts := range d.data {
+		numLeaves += len(tokenAmts)
+	}
+	return numLeaves
+}
+
 // Merklizes the distribution and returns the merkle root.
-func (d *Distribution) Merklize(token gethcommon.Address) ([32]byte, error) {
+func (d *Distribution) Merklize() ([32]byte, error) {
 	// todo: parallelize this
 	leafs := make([][]byte, len(d.data))
-	for address, amount := range d.data {
-		leafs = append(leafs, encodeLeaf(address, token, amount))
+	for address, tokenAmts := range d.data {
+		for token, amount := range tokenAmts {
+			leafs = append(leafs, encodeLeaf(address, token, amount))
+		}
 	}
 
 	return Merklize(leafs)
