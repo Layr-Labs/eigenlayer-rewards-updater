@@ -117,7 +117,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			paymentToDistribute := new(big.Int).Mul(paymentPerSecond, new(big.Int).Sub(overlapEnd, overlapStart))
 
 			// get the operator set at the interval start
-			operatorSet, err := c.dataService.GetOperatorSetForStrategyAtTimestamp(intervalStart, rangePayment.Avs, rangePayment.Strategy)
+			operatorSet, err := c.dataService.GetOperatorSetForStrategyAtTimestamp(overlapStart, rangePayment.Avs, rangePayment.Strategy)
 			if err != nil {
 				return nil, err
 			}
@@ -130,7 +130,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			// loop through all operators
 			for _, operator := range operatorSet.Operators {
 				// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
-				totalPaymentToOperatorAndStakers := new(big.Int).Div(new(big.Int).Mul(paymentToDistribute, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
+				totalPaymentToOperatorAndStakers := div(mul(paymentToDistribute, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
 				log.Ctx(ctx).Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
 
 				// if the operator has no delegated strategy shares, skip
