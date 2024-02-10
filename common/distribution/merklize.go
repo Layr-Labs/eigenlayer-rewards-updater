@@ -1,9 +1,11 @@
 package distribution
 
-import "github.com/ethereum/go-ethereum/crypto"
+import (
+	"github.com/ethereum/go-ethereum/crypto"
+)
 
 // Merklizes the leaves and returns the merkle root.
-func Merklize(leafs [][]byte) ([32]byte, error) {
+func Merklize(leafs [][32]byte) ([32]byte, error) {
 	if len(leafs) == 0 {
 		return [32]byte{0xDE, 0xAD}, nil // todo: fix this
 	}
@@ -19,14 +21,12 @@ func Merklize(leafs [][]byte) ([32]byte, error) {
 
 		// combine the leafs into inner nodes
 		for i := 0; i < len(leafs); i += 2 {
-			leafs[i/2] = crypto.Keccak256(leafs[i], leafs[i+1])
+			leafs[i/2] = [32]byte(crypto.Keccak256(leafs[i][:], leafs[i+1][:]))
 		}
 
 		// remove the leafs that were combined
 		numNodes /= 2
 	}
 
-	var root [32]byte
-	copy(root[:], leafs[0])
-	return root, nil
+	return leafs[0], nil
 }

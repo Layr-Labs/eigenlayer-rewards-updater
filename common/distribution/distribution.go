@@ -6,10 +6,11 @@ import (
 	"math/big"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 )
 
-var ZERO_LEAF = make([]byte, 20+32)
+var ZERO_LEAF [32]byte
 
 type Distribution struct {
 	data map[gethcommon.Address]map[gethcommon.Address]*big.Int
@@ -103,21 +104,29 @@ func (d *Distribution) GetNumLeaves() int {
 // Merklizes the distribution and returns the merkle root.
 func (d *Distribution) Merklize() ([32]byte, error) {
 	// todo: parallelize this
-	leafs := make([][]byte, len(d.data))
+	addressLeafs := make([][32]byte, len(d.data))
 	for address, tokenAmts := range d.data {
+		tokenLeafs := make([][32]byte, len(tokenAmts))
 		for token, amount := range tokenAmts {
-			leafs = append(leafs, encodeLeaf(address, token, amount))
+			tokenLeafs = append(tokenLeafs, encodeLeaf(address, token, amount))
 		}
+		// merklize all leaves for this address
+		addressRoot, err := Merklize(tokenLeafs)
+		if err != nil {
+			return [32]byte{}, err
+		}
+		// append the root to the list of leafs
+		addressLeafs = append(addressLeafs, addressRoot)
 	}
 
-	return Merklize(leafs)
+	return Merklize(addressLeafs)
 }
 
 // encodeLeaf encodes an address and an amount into a leaf.
-func encodeLeaf(address, token gethcommon.Address, amount *big.Int) []byte {
+func encodeLeaf(address, token gethcommon.Address, amount *big.Int) [32]byte {
 	// todo: handle this better
 	amountU256, _ := uint256.FromBig(amount)
 	amountBytes := amountU256.Bytes32()
 	// (address || token || amount)
-	return append(append(address.Bytes(), token.Bytes()...), amountBytes[:]...)
+	return [32]byte(crypto.Keccak256(append(append(address.Bytes(), token.Bytes()...), amountBytes[:]...)))
 }
