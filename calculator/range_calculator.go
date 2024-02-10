@@ -142,7 +142,11 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 				operatorAmt := distribution.Get(operator.Address, rangePayment.Token)
 
 				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
-				distribution.Set(operator.Address, rangePayment.Token, operatorAmt.Add(operatorAmt, new(big.Int).Div(new(big.Int).Mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)))
+				distribution.Set(
+					operator.Address,
+					rangePayment.Token,
+					operatorAmt.Add(operatorAmt, div(mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)),
+				)
 
 				// loop through all stakers
 				for _, staker := range operator.Stakers {
@@ -150,7 +154,17 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 					stakerAmt := distribution.Get(staker.Address, rangePayment.Token)
 
 					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
-					distribution.Set(staker.Address, rangePayment.Token, stakerAmt.Add(stakerAmt, new(big.Int).Div(new(big.Int).Div(new(big.Int).Mul(new(big.Int).Mul(totalPaymentToOperatorAndStakers, new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission)), staker.StrategyShares), BIPS_DENOMINATOR), operator.TotalDelegatedStrategyShares)))
+					distribution.Set(
+						staker.Address,
+						rangePayment.Token,
+						stakerAmt.Add(
+							stakerAmt,
+							div(
+								mul(totalPaymentToOperatorAndStakers, new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission), staker.StrategyShares),
+								BIPS_DENOMINATOR, operator.TotalDelegatedStrategyShares,
+							),
+						),
+					)
 				}
 
 				// increment the interval start/end
@@ -175,4 +189,24 @@ func min(a, b *big.Int) *big.Int {
 		return a
 	}
 	return b
+}
+
+// p_0 * p_0 * ...
+func mul(ps ...*big.Int) *big.Int {
+	res := big.NewInt(1)
+	for _, p := range ps {
+		res.Mul(res, p)
+	}
+
+	return res
+}
+
+// p / d_0 / d_1 / ...
+func div(p *big.Int, ds ...*big.Int) *big.Int {
+	res := new(big.Int).Set(p)
+	for _, d := range ds {
+		res.Div(res, d)
+	}
+
+	return res
 }
