@@ -51,6 +51,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 		emptyDistribution := common.NewDistribution()
 		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
+		mockPaymentCalculatorDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*common.Distribution")).Return(nil)
 
 		endTimestampPassedIn := big.NewInt(300)
 		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
