@@ -70,7 +70,8 @@ func main() {
 
 	intervalSecondsLength := big.NewInt(10)
 
-	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, elpds)
+	dds := calculator.NewDistributionDataServiceImpl()
+	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, elpds, dds)
 
 	claimingManagerAddress := gethcommon.HexToAddress(claimingManagerAddressString)
 
