@@ -5,9 +5,9 @@ package mocks
 import (
 	big "math/big"
 
-	common "github.com/Layr-Labs/eigenlayer-payment-updater/common"
-
 	context "context"
+
+	distribution "github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -18,7 +18,7 @@ type PaymentCalculator struct {
 }
 
 // CalculateDistributionUntilTimestamp provides a mock function with given fields: ctx, endTimestamp
-func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *common.Distribution, error) {
+func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
 	ret := _m.Called(ctx, endTimestamp)
 
 	if len(ret) == 0 {
@@ -26,9 +26,9 @@ func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Con
 	}
 
 	var r0 *big.Int
-	var r1 *common.Distribution
+	var r1 *distribution.Distribution
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) (*big.Int, *common.Distribution, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) (*big.Int, *distribution.Distribution, error)); ok {
 		return rf(ctx, endTimestamp)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) *big.Int); ok {
@@ -39,11 +39,11 @@ func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Con
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *big.Int) *common.Distribution); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *big.Int) *distribution.Distribution); ok {
 		r1 = rf(ctx, endTimestamp)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*common.Distribution)
+			r1 = ret.Get(1).(*distribution.Distribution)
 		}
 	}
 

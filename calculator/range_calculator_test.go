@@ -10,6 +10,7 @@ import (
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/mock"
@@ -48,7 +49,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
-		emptyDistribution := common.NewDistribution()
+		emptyDistribution := distribution.NewDistribution()
 		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
 		mockPaymentCalculatorDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*common.Distribution")).Return(nil)
@@ -75,7 +76,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
-		emptyDistribution := common.NewDistribution()
+		emptyDistribution := distribution.NewDistribution()
 		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
 		mockPaymentCalculatorDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*common.Distribution")).Return(nil)

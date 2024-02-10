@@ -1,4 +1,4 @@
-package common
+package distribution
 
 import "github.com/ethereum/go-ethereum/crypto"
 

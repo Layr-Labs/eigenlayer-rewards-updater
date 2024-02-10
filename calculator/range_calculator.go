@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -23,7 +23,7 @@ func NewRangePaymentCalculator(intervalSecondsLength *big.Int, dataService Payme
 	}
 }
 
-func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *common.Distribution, error) {
+func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
 	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp(ctx)
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
@@ -95,9 +95,9 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	ctx context.Context,
 	startTimestamp, endTimestamp *big.Int,
-	distribution *common.Distribution,
+	distribution *distribution.Distribution,
 	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
-) (*common.Distribution, error) {
+) (*distribution.Distribution, error) {
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalSecondsLength).Int64()
 
 	// loop through all range payments

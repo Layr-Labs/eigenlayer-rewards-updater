@@ -5,13 +5,15 @@ package mocks
 import (
 	big "math/big"
 
-	common "github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	common "github.com/ethereum/go-ethereum/common"
 
 	context "context"
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 
-	go_ethereumcommon "github.com/ethereum/go-ethereum/common"
+	distribution "github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
+
+	eigenlayer_payment_updatercommon "github.com/Layr-Labs/eigenlayer-payment-updater/common"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -52,23 +54,23 @@ func (_m *PaymentCalculatorDataService) GetBlockNumberAtTimestamp(timestamp *big
 }
 
 // GetDistributionAtTimestamp provides a mock function with given fields: timestamp
-func (_m *PaymentCalculatorDataService) GetDistributionAtTimestamp(timestamp *big.Int) (*common.Distribution, error) {
+func (_m *PaymentCalculatorDataService) GetDistributionAtTimestamp(timestamp *big.Int) (*distribution.Distribution, error) {
 	ret := _m.Called(timestamp)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDistributionAtTimestamp")
 	}
 
-	var r0 *common.Distribution
+	var r0 *distribution.Distribution
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*big.Int) (*common.Distribution, error)); ok {
+	if rf, ok := ret.Get(0).(func(*big.Int) (*distribution.Distribution, error)); ok {
 		return rf(timestamp)
 	}
-	if rf, ok := ret.Get(0).(func(*big.Int) *common.Distribution); ok {
+	if rf, ok := ret.Get(0).(func(*big.Int) *distribution.Distribution); ok {
 		r0 = rf(timestamp)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*common.Distribution)
+			r0 = ret.Get(0).(*distribution.Distribution)
 		}
 	}
 
@@ -82,27 +84,27 @@ func (_m *PaymentCalculatorDataService) GetDistributionAtTimestamp(timestamp *bi
 }
 
 // GetOperatorSetForStrategyAtTimestamp provides a mock function with given fields: timestamp, avs, strategy
-func (_m *PaymentCalculatorDataService) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs go_ethereumcommon.Address, strategy go_ethereumcommon.Address) (*common.OperatorSet, error) {
+func (_m *PaymentCalculatorDataService) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs common.Address, strategy common.Address) (*eigenlayer_payment_updatercommon.OperatorSet, error) {
 	ret := _m.Called(timestamp, avs, strategy)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetOperatorSetForStrategyAtTimestamp")
 	}
 
-	var r0 *common.OperatorSet
+	var r0 *eigenlayer_payment_updatercommon.OperatorSet
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*big.Int, go_ethereumcommon.Address, go_ethereumcommon.Address) (*common.OperatorSet, error)); ok {
+	if rf, ok := ret.Get(0).(func(*big.Int, common.Address, common.Address) (*eigenlayer_payment_updatercommon.OperatorSet, error)); ok {
 		return rf(timestamp, avs, strategy)
 	}
-	if rf, ok := ret.Get(0).(func(*big.Int, go_ethereumcommon.Address, go_ethereumcommon.Address) *common.OperatorSet); ok {
+	if rf, ok := ret.Get(0).(func(*big.Int, common.Address, common.Address) *eigenlayer_payment_updatercommon.OperatorSet); ok {
 		r0 = rf(timestamp, avs, strategy)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*common.OperatorSet)
+			r0 = ret.Get(0).(*eigenlayer_payment_updatercommon.OperatorSet)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*big.Int, go_ethereumcommon.Address, go_ethereumcommon.Address) error); ok {
+	if rf, ok := ret.Get(1).(func(*big.Int, common.Address, common.Address) error); ok {
 		r1 = rf(timestamp, avs, strategy)
 	} else {
 		r1 = ret.Error(1)
@@ -172,7 +174,7 @@ func (_m *PaymentCalculatorDataService) GetRangePaymentsWithOverlappingRange(sta
 }
 
 // SetDistributionAtTimestamp provides a mock function with given fields: timestamp, distributions
-func (_m *PaymentCalculatorDataService) SetDistributionAtTimestamp(timestamp *big.Int, distributions *common.Distribution) error {
+func (_m *PaymentCalculatorDataService) SetDistributionAtTimestamp(timestamp *big.Int, distributions *distribution.Distribution) error {
 	ret := _m.Called(timestamp, distributions)
 
 	if len(ret) == 0 {
@@ -180,7 +182,7 @@ func (_m *PaymentCalculatorDataService) SetDistributionAtTimestamp(timestamp *bi
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*big.Int, *common.Distribution) error); ok {
+	if rf, ok := ret.Get(0).(func(*big.Int, *distribution.Distribution) error); ok {
 		r0 = rf(timestamp, distributions)
 	} else {
 		r0 = ret.Error(0)

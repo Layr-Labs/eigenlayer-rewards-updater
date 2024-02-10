@@ -15,6 +15,7 @@ import (
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -47,9 +48,9 @@ type PaymentCalculatorDataService interface {
 	// GetRangePaymentsWithOverlappingRange returns all range payments that overlap with the given range
 	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
 	// GetDistributionAtTimestamp returns the distribution of all tokens at a given timestamp
-	GetDistributionAtTimestamp(timestamp *big.Int) (*common.Distribution, error)
+	GetDistributionAtTimestamp(timestamp *big.Int) (*distribution.Distribution, error)
 	// SetDistributionAtTimestamp sets the distribution of all tokens at a given timestamp
-	SetDistributionAtTimestamp(timestamp *big.Int, distributions *common.Distribution) error
+	SetDistributionAtTimestamp(timestamp *big.Int, distributions *distribution.Distribution) error
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
 	GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
 
@@ -187,7 +188,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(
 	return rangePayments, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.Int) (*common.Distribution, error) {
+func (s *PaymentCalculatorDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.Int) (*distribution.Distribution, error) {
 	// if the data directory doesn't exist, create it and return empty map
 	_, err := os.Stat("./data")
 	if os.IsNotExist(err) {
@@ -195,7 +196,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetDistributionAtTimestamp(timestamp 
 		if err != nil {
 			return nil, err
 		}
-		return common.NewDistribution(), nil
+		return distribution.NewDistribution(), nil
 	}
 	if err != nil {
 		return nil, err
@@ -208,7 +209,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetDistributionAtTimestamp(timestamp 
 	}
 
 	// deserialize from json
-	var distribution *common.Distribution
+	var distribution *distribution.Distribution
 	err = json.Unmarshal(file, distribution)
 	if err != nil {
 		return nil, err
@@ -217,7 +218,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetDistributionAtTimestamp(timestamp 
 	return distribution, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) SetDistributionAtTimestamp(timestamp *big.Int, distribution *common.Distribution) error {
+func (s *PaymentCalculatorDataServiceImpl) SetDistributionAtTimestamp(timestamp *big.Int, distribution *distribution.Distribution) error {
 	// seralize to json and write to data/distributions_{timestamp}.json
 	marshalledDistribution, err := json.Marshal(distribution)
 	if err != nil {
