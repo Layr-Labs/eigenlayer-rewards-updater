@@ -11,8 +11,6 @@ import (
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 
-	distribution "github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-
 	eigenlayer_payment_updatercommon "github.com/Layr-Labs/eigenlayer-payment-updater/common"
 
 	mock "github.com/stretchr/testify/mock"
@@ -41,36 +39,6 @@ func (_m *PaymentCalculatorDataService) GetBlockNumberAtTimestamp(timestamp *big
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*big.Int)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(*big.Int) error); ok {
-		r1 = rf(timestamp)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetDistributionAtTimestamp provides a mock function with given fields: timestamp
-func (_m *PaymentCalculatorDataService) GetDistributionAtTimestamp(timestamp *big.Int) (*distribution.Distribution, error) {
-	ret := _m.Called(timestamp)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetDistributionAtTimestamp")
-	}
-
-	var r0 *distribution.Distribution
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*big.Int) (*distribution.Distribution, error)); ok {
-		return rf(timestamp)
-	}
-	if rf, ok := ret.Get(0).(func(*big.Int) *distribution.Distribution); ok {
-		r0 = rf(timestamp)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*distribution.Distribution)
 		}
 	}
 
@@ -171,24 +139,6 @@ func (_m *PaymentCalculatorDataService) GetRangePaymentsWithOverlappingRange(sta
 	}
 
 	return r0, r1
-}
-
-// SetDistributionAtTimestamp provides a mock function with given fields: timestamp, distributions
-func (_m *PaymentCalculatorDataService) SetDistributionAtTimestamp(timestamp *big.Int, distributions *distribution.Distribution) error {
-	ret := _m.Called(timestamp, distributions)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SetDistributionAtTimestamp")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*big.Int, *distribution.Distribution) error); ok {
-		r0 = rf(timestamp, distributions)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // NewPaymentCalculatorDataService creates a new instance of PaymentCalculatorDataService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

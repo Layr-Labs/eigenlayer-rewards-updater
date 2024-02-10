@@ -12,14 +12,16 @@ import (
 )
 
 type RangePaymentCalculator struct {
-	intervalSecondsLength *big.Int
-	dataService           PaymentCalculatorDataService
+	intervalSecondsLength   *big.Int
+	dataService             PaymentCalculatorDataService
+	distributionDataService DistributionDataService
 }
 
-func NewRangePaymentCalculator(intervalSecondsLength *big.Int, dataService PaymentCalculatorDataService) PaymentCalculator {
+func NewRangePaymentCalculator(intervalSecondsLength *big.Int, dataService PaymentCalculatorDataService, distributionDataService DistributionDataService) PaymentCalculator {
 	return &RangePaymentCalculator{
-		intervalSecondsLength: intervalSecondsLength,
-		dataService:           dataService,
+		intervalSecondsLength:   intervalSecondsLength,
+		dataService:             dataService,
+		distributionDataService: distributionDataService,
 	}
 }
 
@@ -57,7 +59,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	log.Ctx(ctx).Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
 
 	// get distribution at the start timestamp
-	distribution, err := c.dataService.GetDistributionAtTimestamp(startTimestamp)
+	distribution, err := c.distributionDataService.GetDistributionAtTimestamp(startTimestamp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,7 +84,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	}
 
 	// set the distributions at the end timestamp
-	err = c.dataService.SetDistributionAtTimestamp(endTimestamp, distribution)
+	err = c.distributionDataService.SetDistributionAtTimestamp(endTimestamp, distribution)
 	if err != nil {
 		return nil, nil, err
 	}

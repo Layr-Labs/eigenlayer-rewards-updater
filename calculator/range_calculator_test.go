@@ -45,14 +45,16 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with no range payments", func(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
+		mockDistributionDataService := &mocks.DistributionDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService)
+		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockDistributionDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
-		emptyDistribution := distribution.NewDistribution()
-		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
-		mockPaymentCalculatorDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*common.Distribution")).Return(nil)
+
+		emptyDistribution := distribution.NewDistribution()
+		mockDistributionDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
+		mockDistributionDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*distribution.Distribution")).Return(nil)
 
 		endTimestampPassedIn := big.NewInt(300)
 		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
@@ -72,14 +74,16 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with single range payment for 1 interval", func(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
+		mockDistributionDataService := &mocks.DistributionDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService)
+		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockDistributionDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
-		emptyDistribution := distribution.NewDistribution()
-		mockPaymentCalculatorDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
-		mockPaymentCalculatorDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*common.Distribution")).Return(nil)
+
+		emptyDistribution := distribution.NewDistribution()
+		mockDistributionDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
+		mockDistributionDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*distribution.Distribution")).Return(nil)
 
 		operatorSet := &common.OperatorSet{
 			Operators: []common.Operator{
