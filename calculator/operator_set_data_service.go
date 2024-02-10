@@ -10,7 +10,6 @@ import (
 	"time"
 
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
-	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -39,149 +38,59 @@ var BEACON_CHAIN_ETH_STRATEGY_ADDRESS = gethcommon.HexToAddress("0xbeaC0eeEeeeeE
 // delegation manager address
 var DELEGATION_MANAGER_ADDRESS = gethcommon.HexToAddress("0x1b7b8F6b258f95Cf9596EabB9aa18B62940Eb0a8")
 
-type PaymentCalculatorDataService interface {
-	// GetPaymentsCalculatedUntilTimestamp returns the timestamp until which payments have been calculated
-	GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error)
-	// GetRangePaymentsWithOverlappingRange returns all range payments that overlap with the given range
-	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
+type OperatorSetDataService interface {
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
 	GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
 
 	GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error)
 }
 
-type PaymentCalculatorDataServiceImpl struct {
-	dbpool                     *pgxpool.Pool
-	schemaService              *common.SubgraphSchemaService
-	subgraphProvider           common.SubgraphProvider
-	claimingManagerSubgraph    string
-	paymentCoordinatorSubgraph string
-	delegationManagerSubgraph  string
-	ethClient                  *ethclient.Client
+type OperatorSetDataServiceImpl struct {
+	dbpool                    *pgxpool.Pool
+	schemaService             *common.SubgraphSchemaService
+	subgraphProvider          common.SubgraphProvider
+	claimingManagerSubgraph   string
+	delegationManagerSubgraph string
+	ethClient                 *ethclient.Client
 }
 
-func NewPaymentCalculatorDataService(
+func NewOperatorSetDataService(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
 	subgraphProvider common.SubgraphProvider,
 	claimingManagerSubgraph string,
-	paymentCoordinatorSubgraph string,
 	delegationManagerSubgraph string,
 	ethClient *ethclient.Client,
-) PaymentCalculatorDataService {
-	return &PaymentCalculatorDataServiceImpl{
-		dbpool:                     dbpool,
-		schemaService:              schemaService,
-		subgraphProvider:           subgraphProvider,
-		claimingManagerSubgraph:    claimingManagerSubgraph,
-		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
-		delegationManagerSubgraph:  delegationManagerSubgraph,
-		ethClient:                  ethClient,
+) OperatorSetDataService {
+	return &OperatorSetDataServiceImpl{
+		dbpool:                    dbpool,
+		schemaService:             schemaService,
+		subgraphProvider:          subgraphProvider,
+		claimingManagerSubgraph:   claimingManagerSubgraph,
+		delegationManagerSubgraph: delegationManagerSubgraph,
+		ethClient:                 ethClient,
 	}
 }
 
-func NewPaymentCalculatorDataServiceImpl(
+func NewOperatorSetDataServiceImpl(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
 	subgraphProvider common.SubgraphProvider,
 	claimingManagerSubgraph string,
-	paymentCoordinatorSubgraph string,
 	delegationManagerSubgraph string,
 	ethClient *ethclient.Client,
-) *PaymentCalculatorDataServiceImpl {
-	return &PaymentCalculatorDataServiceImpl{
-		dbpool:                     dbpool,
-		schemaService:              schemaService,
-		subgraphProvider:           subgraphProvider,
-		claimingManagerSubgraph:    claimingManagerSubgraph,
-		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
-		delegationManagerSubgraph:  delegationManagerSubgraph,
-		ethClient:                  ethClient,
+) *OperatorSetDataServiceImpl {
+	return &OperatorSetDataServiceImpl{
+		dbpool:                    dbpool,
+		schemaService:             schemaService,
+		subgraphProvider:          subgraphProvider,
+		claimingManagerSubgraph:   claimingManagerSubgraph,
+		delegationManagerSubgraph: delegationManagerSubgraph,
+		ethClient:                 ethClient,
 	}
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, s.claimingManagerSubgraph, s.subgraphProvider)
-	if err != nil {
-		return nil, err
-	}
-
-	formattedQuery := fmt.Sprintf(paymentsCalculatedUntilQuery, schemaID)
-	row := s.dbpool.QueryRow(ctx, formattedQuery)
-
-	var resDecimal decimal.Decimal
-	err = row.Scan(
-		&resDecimal,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return resDecimal.BigInt(), nil
-}
-
-//  id                                  | bytea   |           | not null |
-//  range_payment_avs                   | bytea   |           | not null |
-//  range_payment_strategy              | bytea   |           | not null |
-//  range_payment_token                 | bytea   |           | not null |
-//  range_payment_amount                | numeric |           | not null |
-//  range_payment_start_range_timestamp | numeric |           | not null |
-//  range_payment_end_range_timestamp   | numeric |           | not null |
-//  block_number                        | numeric |           | not null |
-//  block_timestamp                     | numeric |           | not null |
-//  transaction_hash                    | bytea   |           | not null |
-
-func (s *PaymentCalculatorDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.paymentCoordinatorSubgraph, s.subgraphProvider)
-	if err != nil {
-		return nil, err
-	}
-
-	formattedQuery := fmt.Sprintf(overlappingRangePaymentsQuery, schemaID)
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, startTimestamp, endTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment
-	for rows.Next() {
-		var (
-			rangePaymentAVSBytes                   []byte
-			rangePaymentStrategyBytes              []byte
-			rangePaymentTokenBytes                 []byte
-			rangePaymentAmountDecimal              decimal.Decimal
-			rangePaymentStartRangeTimestampDecimal decimal.Decimal
-			rangePaymentEndRangeTimestampDecimal   decimal.Decimal
-		)
-
-		err := rows.Scan(
-			&rangePaymentAVSBytes,
-			&rangePaymentStrategyBytes,
-			&rangePaymentTokenBytes,
-			&rangePaymentAmountDecimal,
-			&rangePaymentStartRangeTimestampDecimal,
-			&rangePaymentEndRangeTimestampDecimal,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		rangePayment := &contractIPaymentCoordinator.IPaymentCoordinatorRangePayment{
-			Avs:                 gethcommon.HexToAddress(hex.EncodeToString(rangePaymentAVSBytes)),
-			Strategy:            gethcommon.HexToAddress(hex.EncodeToString(rangePaymentStrategyBytes)),
-			Token:               gethcommon.HexToAddress(hex.EncodeToString(rangePaymentTokenBytes)),
-			Amount:              rangePaymentAmountDecimal.BigInt(),
-			StartRangeTimestamp: rangePaymentStartRangeTimestampDecimal.BigInt(),
-			EndRangeTimestamp:   rangePaymentEndRangeTimestampDecimal.BigInt(),
-		}
-
-		rangePayments = append(rangePayments, rangePayment)
-	}
-	return rangePayments, nil
-}
-
-func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
+func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
 	log.Info().Msgf("getting operator set for avs %s for strategy %s at timestamp %d", avs.Hex(), strategy.Hex(), timestamp)
 
 	operatorSet := common.OperatorSet{}
@@ -272,7 +181,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(
 	return &operatorSet, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
+func (s *OperatorSetDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
 	// TODO: actually query the database
 
 	operatorAddresses := []gethcommon.Address{
@@ -284,7 +193,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp
 	return operatorAddresses, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *OperatorSetDataServiceImpl) GetCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	commissions, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, avs, operators)
 	if err != nil {
 		return nil, err
@@ -313,7 +222,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestamp(timest
 	return commissions, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *OperatorSetDataServiceImpl) GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
@@ -361,7 +270,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetCommissionForAVSAtTimestampWithout
 	return commissions, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
+func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.claimingManagerSubgraph, s.subgraphProvider)
 	if err != nil {
@@ -410,7 +319,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetClaimersAtTimestamp(timestamp *big
 	return claimers, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
+func (s *OperatorSetDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.delegationManagerSubgraph, s.subgraphProvider)
 	if err != nil {
@@ -449,7 +358,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetStakersDelegatedToOperatorAtTimest
 	return stakers, nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
+func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
 	head, err := s.ethClient.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return nil, err
@@ -474,7 +383,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *
 	return lo.Sub(lo, big.NewInt(1)), nil
 }
 
-func (s *PaymentCalculatorDataServiceImpl) GetSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *OperatorSetDataServiceImpl) GetSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	if strategy == BEACON_CHAIN_ETH_STRATEGY_ADDRESS {
 		return s.getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber, stakers)
 	} else {
@@ -482,7 +391,7 @@ func (s *PaymentCalculatorDataServiceImpl) GetSharesOfStakersAtBlockNumber(block
 	}
 }
 
-func (s *PaymentCalculatorDataServiceImpl) getSharesOfStrategyManagerStrategyForStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *OperatorSetDataServiceImpl) getSharesOfStrategyManagerStrategyForStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	strategyManagerContract, err := contractIStrategyManager.NewContractIStrategyManager(STRATEGY_MANAGER_ADDRESS, s.ethClient)
 	if err != nil {
 		return nil, err
@@ -499,7 +408,7 @@ func (s *PaymentCalculatorDataServiceImpl) getSharesOfStrategyManagerStrategyFor
 	})
 }
 
-func (s *PaymentCalculatorDataServiceImpl) getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber *big.Int, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+func (s *OperatorSetDataServiceImpl) getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber *big.Int, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	eigenPodManagerContract, err := contractIEigenPodManager.NewContractIEigenPodManager(EIGEN_POD_MANAGER_ADDRESS, s.ethClient)
 	if err != nil {
 		return nil, err

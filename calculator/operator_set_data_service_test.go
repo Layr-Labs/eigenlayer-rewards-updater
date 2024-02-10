@@ -1,7 +1,6 @@
 package calculator
 
 import (
-	"context"
 	"math/big"
 	"os"
 	"testing"
@@ -15,11 +14,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func TestPaymentCalculatorDataService(t *testing.T) {
+func TestOperatorSetDataService(t *testing.T) {
 	const (
-		claimingManagerSubgraph    = "claiming-manager-raw-events"
-		paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
-		delegationManagerSubgraph  = "eigenlayer-delegation-raw-events-goerli"
+		claimingManagerSubgraph   = "claiming-manager-raw-events"
+		delegationManagerSubgraph = "eigenlayer-delegation-raw-events-goerli"
 	)
 
 	err := godotenv.Load("../.env") // Replace with your file path
@@ -70,30 +68,20 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		panic(err)
 	}
 
-	elpds := NewPaymentCalculatorDataServiceImpl(
+	osds := NewOperatorSetDataServiceImpl(
 		dbpool,
 		schemaService,
 		subgraphProvider,
 		claimingManagerSubgraph,
-		paymentCoordinatorSubgraph,
 		delegationManagerSubgraph,
 		ethClient,
 	)
-
-	t.Run("test GetPaymentsCalculatedUntilTimestamp", func(t *testing.T) {
-		paymentsCalculatedUntilTimestamp, err := elpds.GetPaymentsCalculatedUntilTimestamp(context.Background())
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("payments calculated until timestamp: %v", paymentsCalculatedUntilTimestamp)
-		t.Fail()
-	})
 
 	// TODO: overlapping range payments test
 
 	t.Run("test GetCommissionForAVSAtTimestamp", func(t *testing.T) {
 		firstCommissionSetTimestamp := big.NewInt(1706736660)
-		commissions, err := elpds.GetCommissionForAVSAtTimestamp(firstCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
+		commissions, err := osds.GetCommissionForAVSAtTimestamp(firstCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,7 +95,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		}
 
 		secondCommissionSetTimestamp := big.NewInt(1706736684)
-		commissions, err = elpds.GetCommissionForAVSAtTimestamp(secondCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
+		commissions, err = osds.GetCommissionForAVSAtTimestamp(secondCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +111,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		}
 
 		thirdCommissionSetTimestamp := big.NewInt(1706737056)
-		commissions, err = elpds.GetCommissionForAVSAtTimestamp(thirdCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
+		commissions, err = osds.GetCommissionForAVSAtTimestamp(thirdCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -141,7 +129,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 
 	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
 		firstClaimerSetTimestamp := big.NewInt(1706728896)
-		claimers, err := elpds.GetClaimersAtTimestamp(firstClaimerSetTimestamp, testingAccounts)
+		claimers, err := osds.GetClaimersAtTimestamp(firstClaimerSetTimestamp, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -155,7 +143,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		}
 
 		secondClaimerSetTimestamp := big.NewInt(1706728956)
-		claimers, err = elpds.GetClaimersAtTimestamp(secondClaimerSetTimestamp, testingAccounts)
+		claimers, err = osds.GetClaimersAtTimestamp(secondClaimerSetTimestamp, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -169,7 +157,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		}
 
 		thirdClaimerSetTimestamp := big.NewInt(1706732424)
-		claimers, err = elpds.GetClaimersAtTimestamp(thirdClaimerSetTimestamp, testingAccounts)
+		claimers, err = osds.GetClaimersAtTimestamp(thirdClaimerSetTimestamp, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -186,7 +174,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 	})
 
 	t.Run("test GetStakersDelegatedToOperatorAtTimestamp", func(t *testing.T) {
-		stakersDelegatedToOperator, err := elpds.GetStakersDelegatedToOperatorAtTimestamp(testTimestamp, P2P_OPERATOR_ADDRESS)
+		stakersDelegatedToOperator, err := osds.GetStakersDelegatedToOperatorAtTimestamp(testTimestamp, P2P_OPERATOR_ADDRESS)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -196,7 +184,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 	})
 
 	t.Run("test GetSharesOfStakersAtBlockNumber for steth", func(t *testing.T) {
-		strategyShares, err := elpds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
+		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -208,7 +196,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 	})
 
 	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth", func(t *testing.T) {
-		strategyShares, err := elpds.GetSharesOfStakersAtBlockNumber(testBlockNumber, BEACON_CHAIN_ETH_STRATEGY_ADDRESS, stakers)
+		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, BEACON_CHAIN_ETH_STRATEGY_ADDRESS, stakers)
 		if err != nil {
 			t.Fatal(err)
 		}

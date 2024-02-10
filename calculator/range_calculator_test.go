@@ -46,8 +46,9 @@ func TestRangePaymentCalculator(t *testing.T) {
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with no range payments", func(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
 		mockDistributionDataService := &mocks.DistributionDataService{}
+		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockDistributionDataService)
+		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService, mockDistributionDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
@@ -75,8 +76,9 @@ func TestRangePaymentCalculator(t *testing.T) {
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with single range payment for 1 interval", func(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
 		mockDistributionDataService := &mocks.DistributionDataService{}
+		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockDistributionDataService)
+		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService, mockDistributionDataService)
 
 		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
@@ -132,7 +134,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 			TotalStakedStrategyShares: big.NewInt(700),
 		}
 
-		mockPaymentCalculatorDataService.On("GetOperatorSetForStrategyAtTimestamp", mock.AnythingOfType("*big.Int"), testRangePayments[0].Avs, testRangePayments[0].Strategy).Return(operatorSet, nil)
+		mockOperatorSetDataService.On("GetOperatorSetForStrategyAtTimestamp", mock.AnythingOfType("*big.Int"), testRangePayments[0].Avs, testRangePayments[0].Strategy).Return(operatorSet, nil)
 		endTimestampPassedIn := big.NewInt(300)
 		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
 		if err != nil {

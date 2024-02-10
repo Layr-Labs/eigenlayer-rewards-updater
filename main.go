@@ -58,20 +58,26 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	elpds := calculator.NewPaymentCalculatorDataService(
+	pds := calculator.NewPaymentsDataService(
 		dbpool,
 		schemaService,
 		subgraphProvider,
 		claimingManagerSubgraph,
 		paymentCoordinatorSubgraph,
+	)
+	osds := calculator.NewOperatorSetDataService(
+		dbpool,
+		schemaService,
+		subgraphProvider,
+		claimingManagerSubgraph,
 		delegationManagerSubgraph,
 		ethClient,
 	)
+	dds := calculator.NewDistributionDataServiceImpl()
 
 	intervalSecondsLength := big.NewInt(10)
 
-	dds := calculator.NewDistributionDataServiceImpl()
-	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, elpds, dds)
+	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, pds, osds, dds)
 
 	claimingManagerAddress := gethcommon.HexToAddress(claimingManagerAddressString)
 

@@ -13,20 +13,27 @@ import (
 
 type RangePaymentCalculator struct {
 	intervalSecondsLength   *big.Int
-	dataService             PaymentCalculatorDataService
+	paymentsDataService     PaymentsDataService
+	operatorSetDataService  OperatorSetDataService
 	distributionDataService DistributionDataService
 }
 
-func NewRangePaymentCalculator(intervalSecondsLength *big.Int, dataService PaymentCalculatorDataService, distributionDataService DistributionDataService) PaymentCalculator {
+func NewRangePaymentCalculator(
+	intervalSecondsLength *big.Int,
+	paymentsDataService PaymentsDataService,
+	operatorSetDataService OperatorSetDataService,
+	distributionDataService DistributionDataService,
+) PaymentCalculator {
 	return &RangePaymentCalculator{
 		intervalSecondsLength:   intervalSecondsLength,
-		dataService:             dataService,
+		paymentsDataService:     paymentsDataService,
+		operatorSetDataService:  operatorSetDataService,
 		distributionDataService: distributionDataService,
 	}
 }
 
 func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
-	startTimestamp, err := c.dataService.GetPaymentsCalculatedUntilTimestamp(ctx)
+	startTimestamp, err := c.paymentsDataService.GetPaymentsCalculatedUntilTimestamp(ctx)
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
 	}
@@ -65,7 +72,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	}
 
 	// get all range payments that overlap with the given interval
-	rangePayments, err := c.dataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
+	rangePayments, err := c.paymentsDataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
 	}
@@ -119,7 +126,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			paymentToDistribute := new(big.Int).Mul(paymentPerSecond, new(big.Int).Sub(overlapEnd, overlapStart))
 
 			// get the operator set at the interval start
-			operatorSet, err := c.dataService.GetOperatorSetForStrategyAtTimestamp(overlapStart, rangePayment.Avs, rangePayment.Strategy)
+			operatorSet, err := c.operatorSetDataService.GetOperatorSetForStrategyAtTimestamp(overlapStart, rangePayment.Avs, rangePayment.Strategy)
 			if err != nil {
 				return nil, err
 			}
