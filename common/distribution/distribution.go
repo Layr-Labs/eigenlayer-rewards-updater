@@ -102,7 +102,7 @@ func (d *Distribution) GetNumLeaves() int {
 }
 
 // Merklizes the distribution and returns the merkle root.
-func (d *Distribution) Merklize() ([32]byte, error) {
+func (d *Distribution) Merklize(merklizeFunc func([][32]byte) ([32]byte, error)) ([32]byte, error) {
 	// todo: parallelize this
 	addressLeafs := make([][32]byte, len(d.data))
 	for address, tokenAmts := range d.data {
@@ -111,7 +111,7 @@ func (d *Distribution) Merklize() ([32]byte, error) {
 			tokenLeafs = append(tokenLeafs, encodeLeaf(address, token, amount))
 		}
 		// merklize all leaves for this address
-		addressRoot, err := Merklize(tokenLeafs)
+		addressRoot, err := merklizeFunc(tokenLeafs)
 		if err != nil {
 			return [32]byte{}, err
 		}
@@ -119,7 +119,7 @@ func (d *Distribution) Merklize() ([32]byte, error) {
 		addressLeafs = append(addressLeafs, addressRoot)
 	}
 
-	return Merklize(addressLeafs)
+	return merklizeFunc(addressLeafs)
 }
 
 // encodeLeaf encodes an address and an amount into a leaf.

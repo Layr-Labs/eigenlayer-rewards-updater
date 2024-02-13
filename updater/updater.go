@@ -6,6 +6,7 @@ import (
 
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 )
@@ -75,7 +76,7 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// merklize the distribution roots
 	log.Info().Msg("merklizing distribution roots")
-	root, err := newDistribution.Merklize()
+	root, err := newDistribution.Merklize(distribution.SimpleMerklize)
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")
