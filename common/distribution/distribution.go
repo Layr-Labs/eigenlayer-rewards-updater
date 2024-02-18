@@ -104,29 +104,29 @@ func (d *Distribution) GetNumLeaves() int {
 // Merklizes the distribution and returns the merkle root.
 func (d *Distribution) Merklize(merklizeFunc func([][32]byte) ([32]byte, error)) ([32]byte, error) {
 	// todo: parallelize this
-	addressLeafs := make([][32]byte, len(d.data))
+	accountLeafs := make([][32]byte, len(d.data))
 	for address, tokenAmts := range d.data {
 		tokenLeafs := make([][32]byte, len(tokenAmts))
 		for token, amount := range tokenAmts {
 			tokenLeafs = append(tokenLeafs, encodeLeaf(address, token, amount))
 		}
 		// merklize all leaves for this address
-		addressRoot, err := merklizeFunc(tokenLeafs)
+		accountRoot, err := merklizeFunc(tokenLeafs)
 		if err != nil {
 			return [32]byte{}, err
 		}
 		// append the root to the list of leafs
-		addressLeafs = append(addressLeafs, addressRoot)
+		accountLeafs = append(accountLeafs, accountRoot)
 	}
 
-	return merklizeFunc(addressLeafs)
+	return merklizeFunc(accountLeafs)
 }
 
-// encodeLeaf encodes an address and an amount into a leaf.
-func encodeLeaf(address, token gethcommon.Address, amount *big.Int) [32]byte {
+// encodeLeaf encodes an account and an amount into a leaf.
+func encodeLeaf(account, token gethcommon.Address, amount *big.Int) [32]byte {
 	// todo: handle this better
 	amountU256, _ := uint256.FromBig(amount)
 	amountBytes := amountU256.Bytes32()
-	// (address || token || amount)
-	return [32]byte(crypto.Keccak256(append(append(address.Bytes(), token.Bytes()...), amountBytes[:]...)))
+	// (account || token || amount)
+	return [32]byte(crypto.Keccak256(append(append(account.Bytes(), token.Bytes()...), amountBytes[:]...)))
 }
