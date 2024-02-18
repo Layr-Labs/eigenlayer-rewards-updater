@@ -13,6 +13,7 @@ import (
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
 	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -49,47 +50,32 @@ type OperatorSetDataService interface {
 }
 
 type OperatorSetDataServiceImpl struct {
-	dbpool                    *pgxpool.Pool
-	schemaService             *common.SubgraphSchemaService
-	subgraphProvider          common.SubgraphProvider
-	claimingManagerSubgraph   string
-	delegationManagerSubgraph string
-	ethClient                 *ethclient.Client
+	dbpool        *pgxpool.Pool
+	schemaService *common.SubgraphSchemaService
+	ethClient     *ethclient.Client
 }
 
 func NewOperatorSetDataService(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
-	subgraphProvider common.SubgraphProvider,
-	claimingManagerSubgraph string,
-	delegationManagerSubgraph string,
 	ethClient *ethclient.Client,
 ) OperatorSetDataService {
 	return &OperatorSetDataServiceImpl{
-		dbpool:                    dbpool,
-		schemaService:             schemaService,
-		subgraphProvider:          subgraphProvider,
-		claimingManagerSubgraph:   claimingManagerSubgraph,
-		delegationManagerSubgraph: delegationManagerSubgraph,
-		ethClient:                 ethClient,
+		dbpool:        dbpool,
+		schemaService: schemaService,
+		ethClient:     ethClient,
 	}
 }
 
 func NewOperatorSetDataServiceImpl(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
-	subgraphProvider common.SubgraphProvider,
-	claimingManagerSubgraph string,
-	delegationManagerSubgraph string,
 	ethClient *ethclient.Client,
 ) *OperatorSetDataServiceImpl {
 	return &OperatorSetDataServiceImpl{
-		dbpool:                    dbpool,
-		schemaService:             schemaService,
-		subgraphProvider:          subgraphProvider,
-		claimingManagerSubgraph:   claimingManagerSubgraph,
-		delegationManagerSubgraph: delegationManagerSubgraph,
-		ethClient:                 ethClient,
+		dbpool:        dbpool,
+		schemaService: schemaService,
+		ethClient:     ethClient,
 	}
 }
 
@@ -213,7 +199,7 @@ func (s *OperatorSetDataServiceImpl) GetGlobalCommissionAtBlockNumber(blockNumbe
 
 func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.claimingManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_CLAIMING_MANAGER)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +248,7 @@ func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, 
 
 func (s *OperatorSetDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.delegationManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_DELEGATION_MANAGER)
 	if err != nil {
 		return nil, err
 	}
