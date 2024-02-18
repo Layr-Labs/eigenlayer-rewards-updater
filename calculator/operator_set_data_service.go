@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	contractIClaimingManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IClaimingManager"
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
 	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
@@ -17,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
-	"github.com/shopspring/decimal"
 )
 
 // todo: set this to the global default AVS
@@ -37,6 +37,9 @@ var BEACON_CHAIN_ETH_STRATEGY_ADDRESS = gethcommon.HexToAddress("0xbeaC0eeEeeeeE
 
 // delegation manager address
 var DELEGATION_MANAGER_ADDRESS = gethcommon.HexToAddress("0x1b7b8F6b258f95Cf9596EabB9aa18B62940Eb0a8")
+
+// claiming manager address
+var CLAIMING_MANAGER_ADDRESS = gethcommon.HexToAddress("0xBF81C737bc6871f1Dfa143f0eb416C34Cb22f47d")
 
 type OperatorSetDataService interface {
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
@@ -98,6 +101,24 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 
 	start := time.Now()
 
+	// get the blocknumber of the block at the given timestamp
+	blockNumber, err := s.GetBlockNumberAtTimestamp(timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Msgf("got block number of %d in %s", blockNumber, time.Since(start))
+	start = time.Now()
+
+	// get the global commission at the given block number
+	globalCommission, err := s.GetGlobalCommissionAtBlockNumber(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Msgf("got global commission in %s", time.Since(start))
+	start = time.Now()
+
 	// get all operators for the given strategy at the given timestamp
 	operatorAddresses, err := s.GetOperatorAddressesForAVSAtTimestamp(timestamp, avs, strategy)
 	if err != nil {
@@ -105,23 +126,13 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 	}
 
 	log.Info().Msgf("found %d operators in %s", len(operatorAddresses), time.Since(start))
-	start = time.Now()
 
 	operatorSet.Operators = make([]common.Operator, len(operatorAddresses))
-
-	// get the commission for each operator
-	commissions, err := s.GetCommissionForAVSAtTimestamp(timestamp, avs, operatorAddresses)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Info().Msgf("got commission of %d operators in %s", len(operatorAddresses), time.Since(start))
-	start = time.Now()
 
 	// loop thru each operator and get their staker sets
 	for i, operatorAddress := range operatorAddresses {
 		operatorSet.Operators[i].Address = operatorAddress
-		operatorSet.Operators[i].Commission = commissions[operatorAddress]
+		operatorSet.Operators[i].Commission = globalCommission
 		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
 
 		start = time.Now()
@@ -144,15 +155,6 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 		}
 
 		log.Info().Msgf("got claimers of %d stakers in %s", len(stakers), time.Since(start))
-		start = time.Now()
-
-		// get the blocknumber of the block at the given timestamp
-		blockNumber, err := s.GetBlockNumberAtTimestamp(timestamp)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Info().Msgf("got block number of %d in %s", blockNumber, time.Since(start))
 		start = time.Now()
 
 		// get the shares of each staker
@@ -193,81 +195,20 @@ func (s *OperatorSetDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(times
 	return operatorAddresses, nil
 }
 
-func (s *OperatorSetDataServiceImpl) GetCommissionForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
-	commissions, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, avs, operators)
+func (s *OperatorSetDataServiceImpl) GetGlobalCommissionAtBlockNumber(blockNumber *big.Int) (*big.Int, error) {
+	claimingManagerContract, err := contractIClaimingManager.NewContractIClaimingManager(CLAIMING_MANAGER_ADDRESS, s.ethClient)
 	if err != nil {
 		return nil, err
 	}
 
-	// for all operators without a specific commission, get their global default commission
-	operatorsWithoutSpecificCommission := make([]gethcommon.Address, 0)
-	for _, operator := range operators {
-		if big.NewInt(0).Cmp(commissions[operator]) == 0 {
-			operatorsWithoutSpecificCommission = append(operatorsWithoutSpecificCommission, operator)
-		}
-	}
-
-	if len(operatorsWithoutSpecificCommission) != 0 {
-		commissionsWithGlobalDefault, err := s.GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp, GLOBAL_DEFAULT_AVS, operatorsWithoutSpecificCommission)
-		if err != nil {
-			return nil, err
-		}
-
-		// merge the two maps
-		for operator, commission := range commissionsWithGlobalDefault {
-			commissions[operator] = commission
-		}
-	}
-
-	return commissions, nil
-}
-
-func (s *OperatorSetDataServiceImpl) GetCommissionForAVSAtTimestampWithoutGlobalDefault(timestamp *big.Int, avs gethcommon.Address, operators []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
-	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.claimingManagerSubgraph, s.subgraphProvider)
+	globalCommission, err := claimingManagerContract.GlobalCommissionBips(&bind.CallOpts{BlockNumber: blockNumber})
 	if err != nil {
 		return nil, err
 	}
 
-	// format the query
-	formattedQuery := fmt.Sprintf(commissionAtTimestampQuery, schemaID, toSQLAddreses(operators))
+	log.Info().Msgf("got global commission of %d at block number %d", globalCommission, blockNumber)
 
-	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, toSQLAddress(avs))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// create a map of operator to commission
-	commissions := make(map[gethcommon.Address]*big.Int)
-	for rows.Next() {
-		var (
-			operatorBytes []byte
-			commission    decimal.Decimal
-		)
-
-		err := rows.Scan(
-			&operatorBytes,
-			&commission,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		operator := gethcommon.HexToAddress(hex.EncodeToString(operatorBytes))
-
-		commissions[operator] = commission.BigInt()
-	}
-
-	// for all operators that don't have a commission, set it to 0
-	for _, operator := range operators {
-		if _, ok := commissions[operator]; !ok {
-			commissions[operator] = big.NewInt(0)
-		}
-	}
-
-	return commissions, nil
+	return big.NewInt(int64(globalCommission)), nil
 }
 
 func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {

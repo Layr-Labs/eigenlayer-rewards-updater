@@ -40,7 +40,7 @@ type IClaimingManagerPaymentMerkleClaim struct {
 
 // ContractIClaimingManagerMetaData contains all meta data concerning the ContractIClaimingManager contract.
 var ContractIClaimingManagerMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"activationDelay\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimers\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"cumulativeClaimed\",\"inputs\":[{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getCommission\",\"inputs\":[{\"name\":\"operator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"avs\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"initialOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paymentUpdater\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"processClaims\",\"inputs\":[{\"name\":\"claims\",\"type\":\"tuple[]\",\"internalType\":\"structIClaimingManager.PaymentMerkleClaim[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"rootIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"leafIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setActivationDelay\",\"inputs\":[{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setClaimer\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setCommission\",\"inputs\":[{\"name\":\"avs\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"commissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setGlobalCommission\",\"inputs\":[{\"name\":\"commissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPaymentUpdater\",\"inputs\":[{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRoot\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"ActivationDelaySet\",\"inputs\":[{\"name\":\"oldActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"newActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ClaimerSet\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionSet\",\"inputs\":[{\"name\":\"operator\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"avs\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"commissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentClaimed\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentUpdaterSet\",\"inputs\":[{\"name\":\"oldPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RootSubmitted\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"activatedAfter\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"activationDelay\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimers\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"cumulativeClaimed\",\"inputs\":[{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"globalCommissionBips\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"initialOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paymentUpdater\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"processClaims\",\"inputs\":[{\"name\":\"claims\",\"type\":\"tuple[]\",\"internalType\":\"structIClaimingManager.PaymentMerkleClaim[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"rootIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"leafIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setActivationDelay\",\"inputs\":[{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setClaimer\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setGlobalCommission\",\"inputs\":[{\"name\":\"_globalCommissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPaymentUpdater\",\"inputs\":[{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRoot\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"ActivationDelaySet\",\"inputs\":[{\"name\":\"oldActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"newActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ClaimerSet\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"GlobalCommissionBipsSet\",\"inputs\":[{\"name\":\"oldGlobalCommissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"newGlobalCommissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentClaimed\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentUpdaterSet\",\"inputs\":[{\"name\":\"oldPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RootSubmitted\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"activatedAfter\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
 }
 
 // ContractIClaimingManagerABI is the input ABI used to generate the binding from.
@@ -282,12 +282,12 @@ func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) Cumulati
 	return _ContractIClaimingManager.Contract.CumulativeClaimed(&_ContractIClaimingManager.CallOpts, claimer, token)
 }
 
-// GetCommission is a free data retrieval call binding the contract method 0x1a05ada9.
+// GlobalCommissionBips is a free data retrieval call binding the contract method 0x2c088f0d.
 //
-// Solidity: function getCommission(address operator, address avs) view returns(uint16)
-func (_ContractIClaimingManager *ContractIClaimingManagerCaller) GetCommission(opts *bind.CallOpts, operator common.Address, avs common.Address) (uint16, error) {
+// Solidity: function globalCommissionBips() view returns(uint16)
+func (_ContractIClaimingManager *ContractIClaimingManagerCaller) GlobalCommissionBips(opts *bind.CallOpts) (uint16, error) {
 	var out []interface{}
-	err := _ContractIClaimingManager.contract.Call(opts, &out, "getCommission", operator, avs)
+	err := _ContractIClaimingManager.contract.Call(opts, &out, "globalCommissionBips")
 
 	if err != nil {
 		return *new(uint16), err
@@ -299,18 +299,18 @@ func (_ContractIClaimingManager *ContractIClaimingManagerCaller) GetCommission(o
 
 }
 
-// GetCommission is a free data retrieval call binding the contract method 0x1a05ada9.
+// GlobalCommissionBips is a free data retrieval call binding the contract method 0x2c088f0d.
 //
-// Solidity: function getCommission(address operator, address avs) view returns(uint16)
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) GetCommission(operator common.Address, avs common.Address) (uint16, error) {
-	return _ContractIClaimingManager.Contract.GetCommission(&_ContractIClaimingManager.CallOpts, operator, avs)
+// Solidity: function globalCommissionBips() view returns(uint16)
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) GlobalCommissionBips() (uint16, error) {
+	return _ContractIClaimingManager.Contract.GlobalCommissionBips(&_ContractIClaimingManager.CallOpts)
 }
 
-// GetCommission is a free data retrieval call binding the contract method 0x1a05ada9.
+// GlobalCommissionBips is a free data retrieval call binding the contract method 0x2c088f0d.
 //
-// Solidity: function getCommission(address operator, address avs) view returns(uint16)
-func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) GetCommission(operator common.Address, avs common.Address) (uint16, error) {
-	return _ContractIClaimingManager.Contract.GetCommission(&_ContractIClaimingManager.CallOpts, operator, avs)
+// Solidity: function globalCommissionBips() view returns(uint16)
+func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) GlobalCommissionBips() (uint16, error) {
+	return _ContractIClaimingManager.Contract.GlobalCommissionBips(&_ContractIClaimingManager.CallOpts)
 }
 
 // PaymentUpdater is a free data retrieval call binding the contract method 0x66d3b16b.
@@ -428,46 +428,25 @@ func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetC
 	return _ContractIClaimingManager.Contract.SetClaimer(&_ContractIClaimingManager.TransactOpts, account, claimer)
 }
 
-// SetCommission is a paid mutator transaction binding the contract method 0xf000322c.
+// SetGlobalCommission is a paid mutator transaction binding the contract method 0x9d284a8a.
 //
-// Solidity: function setCommission(address avs, uint16 commissionBips) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SetCommission(opts *bind.TransactOpts, avs common.Address, commissionBips uint16) (*types.Transaction, error) {
-	return _ContractIClaimingManager.contract.Transact(opts, "setCommission", avs, commissionBips)
-}
-
-// SetCommission is a paid mutator transaction binding the contract method 0xf000322c.
-//
-// Solidity: function setCommission(address avs, uint16 commissionBips) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetCommission(avs common.Address, commissionBips uint16) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SetCommission(&_ContractIClaimingManager.TransactOpts, avs, commissionBips)
-}
-
-// SetCommission is a paid mutator transaction binding the contract method 0xf000322c.
-//
-// Solidity: function setCommission(address avs, uint16 commissionBips) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetCommission(avs common.Address, commissionBips uint16) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SetCommission(&_ContractIClaimingManager.TransactOpts, avs, commissionBips)
+// Solidity: function setGlobalCommission(uint16 _globalCommissionBips) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SetGlobalCommission(opts *bind.TransactOpts, _globalCommissionBips uint16) (*types.Transaction, error) {
+	return _ContractIClaimingManager.contract.Transact(opts, "setGlobalCommission", _globalCommissionBips)
 }
 
 // SetGlobalCommission is a paid mutator transaction binding the contract method 0x9d284a8a.
 //
-// Solidity: function setGlobalCommission(uint16 commissionBips) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SetGlobalCommission(opts *bind.TransactOpts, commissionBips uint16) (*types.Transaction, error) {
-	return _ContractIClaimingManager.contract.Transact(opts, "setGlobalCommission", commissionBips)
+// Solidity: function setGlobalCommission(uint16 _globalCommissionBips) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetGlobalCommission(_globalCommissionBips uint16) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.SetGlobalCommission(&_ContractIClaimingManager.TransactOpts, _globalCommissionBips)
 }
 
 // SetGlobalCommission is a paid mutator transaction binding the contract method 0x9d284a8a.
 //
-// Solidity: function setGlobalCommission(uint16 commissionBips) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetGlobalCommission(commissionBips uint16) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SetGlobalCommission(&_ContractIClaimingManager.TransactOpts, commissionBips)
-}
-
-// SetGlobalCommission is a paid mutator transaction binding the contract method 0x9d284a8a.
-//
-// Solidity: function setGlobalCommission(uint16 commissionBips) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetGlobalCommission(commissionBips uint16) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SetGlobalCommission(&_ContractIClaimingManager.TransactOpts, commissionBips)
+// Solidity: function setGlobalCommission(uint16 _globalCommissionBips) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetGlobalCommission(_globalCommissionBips uint16) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.SetGlobalCommission(&_ContractIClaimingManager.TransactOpts, _globalCommissionBips)
 }
 
 // SetPaymentUpdater is a paid mutator transaction binding the contract method 0x18190f53.
@@ -782,9 +761,9 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseClaimerS
 	return event, nil
 }
 
-// ContractIClaimingManagerCommissionSetIterator is returned from FilterCommissionSet and is used to iterate over the raw logs and unpacked data for CommissionSet events raised by the ContractIClaimingManager contract.
-type ContractIClaimingManagerCommissionSetIterator struct {
-	Event *ContractIClaimingManagerCommissionSet // Event containing the contract specifics and raw log
+// ContractIClaimingManagerGlobalCommissionBipsSetIterator is returned from FilterGlobalCommissionBipsSet and is used to iterate over the raw logs and unpacked data for GlobalCommissionBipsSet events raised by the ContractIClaimingManager contract.
+type ContractIClaimingManagerGlobalCommissionBipsSetIterator struct {
+	Event *ContractIClaimingManagerGlobalCommissionBipsSet // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -798,7 +777,7 @@ type ContractIClaimingManagerCommissionSetIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *ContractIClaimingManagerCommissionSetIterator) Next() bool {
+func (it *ContractIClaimingManagerGlobalCommissionBipsSetIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -807,7 +786,7 @@ func (it *ContractIClaimingManagerCommissionSetIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(ContractIClaimingManagerCommissionSet)
+			it.Event = new(ContractIClaimingManagerGlobalCommissionBipsSet)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -822,7 +801,7 @@ func (it *ContractIClaimingManagerCommissionSetIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(ContractIClaimingManagerCommissionSet)
+		it.Event = new(ContractIClaimingManagerGlobalCommissionBipsSet)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -838,43 +817,42 @@ func (it *ContractIClaimingManagerCommissionSetIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *ContractIClaimingManagerCommissionSetIterator) Error() error {
+func (it *ContractIClaimingManagerGlobalCommissionBipsSetIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *ContractIClaimingManagerCommissionSetIterator) Close() error {
+func (it *ContractIClaimingManagerGlobalCommissionBipsSetIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// ContractIClaimingManagerCommissionSet represents a CommissionSet event raised by the ContractIClaimingManager contract.
-type ContractIClaimingManagerCommissionSet struct {
-	Operator       common.Address
-	Avs            common.Address
-	CommissionBips uint16
-	Raw            types.Log // Blockchain specific contextual infos
+// ContractIClaimingManagerGlobalCommissionBipsSet represents a GlobalCommissionBipsSet event raised by the ContractIClaimingManager contract.
+type ContractIClaimingManagerGlobalCommissionBipsSet struct {
+	OldGlobalCommissionBips uint16
+	NewGlobalCommissionBips uint16
+	Raw                     types.Log // Blockchain specific contextual infos
 }
 
-// FilterCommissionSet is a free log retrieval operation binding the contract event 0x8e554a714c601d1603191bc6b22f1b7522acade497ec4f439a4d09e58a2da1d6.
+// FilterGlobalCommissionBipsSet is a free log retrieval operation binding the contract event 0x8cdc428b0431b82d1619763f443a48197db344ba96905f3949643acd1c863a06.
 //
-// Solidity: event CommissionSet(address operator, address avs, uint16 commissionBips)
-func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterCommissionSet(opts *bind.FilterOpts) (*ContractIClaimingManagerCommissionSetIterator, error) {
+// Solidity: event GlobalCommissionBipsSet(uint16 oldGlobalCommissionBips, uint16 newGlobalCommissionBips)
+func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterGlobalCommissionBipsSet(opts *bind.FilterOpts) (*ContractIClaimingManagerGlobalCommissionBipsSetIterator, error) {
 
-	logs, sub, err := _ContractIClaimingManager.contract.FilterLogs(opts, "CommissionSet")
+	logs, sub, err := _ContractIClaimingManager.contract.FilterLogs(opts, "GlobalCommissionBipsSet")
 	if err != nil {
 		return nil, err
 	}
-	return &ContractIClaimingManagerCommissionSetIterator{contract: _ContractIClaimingManager.contract, event: "CommissionSet", logs: logs, sub: sub}, nil
+	return &ContractIClaimingManagerGlobalCommissionBipsSetIterator{contract: _ContractIClaimingManager.contract, event: "GlobalCommissionBipsSet", logs: logs, sub: sub}, nil
 }
 
-// WatchCommissionSet is a free log subscription operation binding the contract event 0x8e554a714c601d1603191bc6b22f1b7522acade497ec4f439a4d09e58a2da1d6.
+// WatchGlobalCommissionBipsSet is a free log subscription operation binding the contract event 0x8cdc428b0431b82d1619763f443a48197db344ba96905f3949643acd1c863a06.
 //
-// Solidity: event CommissionSet(address operator, address avs, uint16 commissionBips)
-func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchCommissionSet(opts *bind.WatchOpts, sink chan<- *ContractIClaimingManagerCommissionSet) (event.Subscription, error) {
+// Solidity: event GlobalCommissionBipsSet(uint16 oldGlobalCommissionBips, uint16 newGlobalCommissionBips)
+func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchGlobalCommissionBipsSet(opts *bind.WatchOpts, sink chan<- *ContractIClaimingManagerGlobalCommissionBipsSet) (event.Subscription, error) {
 
-	logs, sub, err := _ContractIClaimingManager.contract.WatchLogs(opts, "CommissionSet")
+	logs, sub, err := _ContractIClaimingManager.contract.WatchLogs(opts, "GlobalCommissionBipsSet")
 	if err != nil {
 		return nil, err
 	}
@@ -884,8 +862,8 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchCommissi
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(ContractIClaimingManagerCommissionSet)
-				if err := _ContractIClaimingManager.contract.UnpackLog(event, "CommissionSet", log); err != nil {
+				event := new(ContractIClaimingManagerGlobalCommissionBipsSet)
+				if err := _ContractIClaimingManager.contract.UnpackLog(event, "GlobalCommissionBipsSet", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -906,12 +884,12 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchCommissi
 	}), nil
 }
 
-// ParseCommissionSet is a log parse operation binding the contract event 0x8e554a714c601d1603191bc6b22f1b7522acade497ec4f439a4d09e58a2da1d6.
+// ParseGlobalCommissionBipsSet is a log parse operation binding the contract event 0x8cdc428b0431b82d1619763f443a48197db344ba96905f3949643acd1c863a06.
 //
-// Solidity: event CommissionSet(address operator, address avs, uint16 commissionBips)
-func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseCommissionSet(log types.Log) (*ContractIClaimingManagerCommissionSet, error) {
-	event := new(ContractIClaimingManagerCommissionSet)
-	if err := _ContractIClaimingManager.contract.UnpackLog(event, "CommissionSet", log); err != nil {
+// Solidity: event GlobalCommissionBipsSet(uint16 oldGlobalCommissionBips, uint16 newGlobalCommissionBips)
+func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseGlobalCommissionBipsSet(log types.Log) (*ContractIClaimingManagerGlobalCommissionBipsSet, error) {
+	event := new(ContractIClaimingManagerGlobalCommissionBipsSet)
+	if err := _ContractIClaimingManager.contract.UnpackLog(event, "GlobalCommissionBipsSet", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

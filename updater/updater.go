@@ -67,6 +67,8 @@ func (u *Updater) update(ctx context.Context) error {
 		return err
 	}
 
+	log.Info().Msgf("latest finalized timestamp: %d", latestFinalizedTimestamp)
+
 	// give the interval to the distribution calculator, get the map from address => token => amount
 	log.Info().Msg("calculating distribution")
 	paymentsCalculatedUntilTimestamp, newDistribution, err := u.calculator.CalculateDistributionUntilTimestamp(ctx, latestFinalizedTimestamp)
@@ -77,6 +79,9 @@ func (u *Updater) update(ctx context.Context) error {
 	// merklize the distribution roots
 	log.Info().Msg("merklizing distribution roots")
 	root, err := newDistribution.Merklize(distribution.SimpleMerklize)
+	if err != nil {
+		return err
+	}
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")

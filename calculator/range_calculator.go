@@ -37,11 +37,10 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
 	}
+
 	if err == pgx.ErrNoRows {
 		// TODO: this correctly
-		// set timestamp to 1 interval behind end timestamp
-		startTimestamp = new(big.Int).Sub(endTimestamp, c.intervalSecondsLength)
-		startTimestamp.Sub(startTimestamp, new(big.Int).Mod(startTimestamp, c.intervalSecondsLength))
+		startTimestamp = big.NewInt(0)
 	}
 
 	// make sure the start timestamp is rounded to the nearest interval granularity
@@ -63,7 +62,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 		endTimestamp = new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(1)))
 	}
 
-	log.Ctx(ctx).Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
+	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
 
 	// get distribution at the start timestamp
 	distribution, err := c.distributionDataService.GetDistributionAtTimestamp(startTimestamp)
@@ -77,12 +76,12 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 		return nil, nil, err
 	}
 	if err == pgx.ErrNoRows {
-		log.Ctx(ctx).Info().Msg("no range payments found")
+		log.Info().Msg("no range payments found")
 		// should we return the distribution at the end timestamp? or just "skip" somehow?
 		return endTimestamp, distribution, nil
 	}
 
-	log.Ctx(ctx).Info().Msgf("found %d range payments", len(rangePayments))
+	log.Info().Msgf("found %d range payments", len(rangePayments))
 
 	// calculate the distribution over the range
 	distribution, err = c.CalculateDistributionFromRangePayments(ctx, startTimestamp, endTimestamp, distribution, rangePayments)
@@ -140,7 +139,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			for _, operator := range operatorSet.Operators {
 				// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
 				totalPaymentToOperatorAndStakers := div(mul(paymentToDistribute, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
-				log.Ctx(ctx).Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
+				log.Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
 
 				// if the operator has no delegated strategy shares, skip
 				if operator.TotalDelegatedStrategyShares.Cmp(big.NewInt(0)) == 0 {

@@ -27,11 +27,8 @@
   },
   {
     "type": "function",
-    "name": "getCommission",
-    "inputs": [
-      { "name": "operator", "type": "address", "internalType": "address" },
-      { "name": "avs", "type": "address", "internalType": "address" }
-    ],
+    "name": "globalCommissionBips",
+    "inputs": [],
     "outputs": [{ "name": "", "type": "uint16", "internalType": "uint16" }],
     "stateMutability": "view"
   },
@@ -102,19 +99,13 @@
   },
   {
     "type": "function",
-    "name": "setCommission",
-    "inputs": [
-      { "name": "avs", "type": "address", "internalType": "address" },
-      { "name": "commissionBips", "type": "uint16", "internalType": "uint16" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "setGlobalCommission",
     "inputs": [
-      { "name": "commissionBips", "type": "uint16", "internalType": "uint16" }
+      {
+        "name": "_globalCommissionBips",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -186,22 +177,16 @@
   },
   {
     "type": "event",
-    "name": "CommissionSet",
+    "name": "GlobalCommissionBipsSet",
     "inputs": [
       {
-        "name": "operator",
-        "type": "address",
+        "name": "oldGlobalCommissionBips",
+        "type": "uint16",
         "indexed": false,
-        "internalType": "address"
+        "internalType": "uint16"
       },
       {
-        "name": "avs",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "commissionBips",
+        "name": "newGlobalCommissionBips",
         "type": "uint16",
         "indexed": false,
         "internalType": "uint16"

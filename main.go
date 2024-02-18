@@ -8,7 +8,6 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
-	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -24,8 +23,6 @@ const (
 	claimingManagerSubgraph    = "claiming-manager-raw-events"
 	paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
 	delegationManagerSubgraph  = "eigenlayer-delegation-raw-events-goerli"
-
-	claimingManagerAddressString = "0x44F49aC9B4CB1D0CC891Bfb2C0Cc5dbc34BA7181"
 )
 
 func main() {
@@ -79,9 +76,7 @@ func main() {
 
 	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, pds, osds, dds)
 
-	claimingManagerAddress := gethcommon.HexToAddress(claimingManagerAddressString)
-
-	elpu, err := updater.NewUpdater(time.Second*100, elpc, chainClient, claimingManagerAddress)
+	elpu, err := updater.NewUpdater(time.Second*100, elpc, chainClient, calculator.CLAIMING_MANAGER_ADDRESS)
 	if err != nil {
 		panic(err)
 	}

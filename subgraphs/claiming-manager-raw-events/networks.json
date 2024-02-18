@@ -1,8 +1,8 @@
 {
   "goerli": {
     "ClaimingManager": {
-      "address": "0x44F49aC9B4CB1D0CC891Bfb2C0Cc5dbc34BA7181",
-      "startBlock": 10000000
+      "address": "0xBF81C737bc6871f1Dfa143f0eb416C34Cb22f47d",
+      "startBlock": 10558714
     }
   }
 }
