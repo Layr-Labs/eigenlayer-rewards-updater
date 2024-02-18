@@ -1,7 +1,7 @@
 import {
   ActivationDelaySet as ActivationDelaySetEvent,
   ClaimerSet as ClaimerSetEvent,
-  CommissionSet as CommissionSetEvent,
+  GlobalCommissionBipsSet as GlobalCommissionBipsSetEvent,
   PaymentClaimed as PaymentClaimedEvent,
   PaymentUpdaterSet as PaymentUpdaterSetEvent,
   RootSubmitted as RootSubmittedEvent
@@ -9,7 +9,7 @@ import {
 import {
   ActivationDelaySet,
   ClaimerSet,
-  CommissionSet,
+  GlobalCommissionBipsSet,
   PaymentClaimed,
   PaymentUpdaterSet,
   RootSubmitted
@@ -43,13 +43,14 @@ export function handleClaimerSet(event: ClaimerSetEvent): void {
   entity.save()
 }
 
-export function handleCommissionSet(event: CommissionSetEvent): void {
-  let entity = new CommissionSet(
+export function handleGlobalCommissionBipsSet(
+  event: GlobalCommissionBipsSetEvent
+): void {
+  let entity = new GlobalCommissionBipsSet(
     event.transaction.hash.concatI32(event.logIndex.toI32())
   )
-  entity.operator = event.params.operator
-  entity.avs = event.params.avs
-  entity.commissionBips = event.params.commissionBips
+  entity.oldGlobalCommissionBips = event.params.oldGlobalCommissionBips
+  entity.newGlobalCommissionBips = event.params.newGlobalCommissionBips
 
   entity.blockNumber = event.block.number
   entity.blockTimestamp = event.block.timestamp

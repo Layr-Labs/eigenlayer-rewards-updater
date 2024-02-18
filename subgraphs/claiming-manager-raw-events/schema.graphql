@@ -16,11 +16,10 @@ type ClaimerSet @entity(immutable: true) {
   transactionHash: Bytes!
 }
 
-type CommissionSet @entity(immutable: true) {
+type GlobalCommissionBipsSet @entity(immutable: true) {
   id: Bytes!
-  operator: Bytes! # address
-  avs: Bytes! # address
-  commissionBips: Int! # uint16
+  oldGlobalCommissionBips: Int! # uint16
+  newGlobalCommissionBips: Int! # uint16
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!

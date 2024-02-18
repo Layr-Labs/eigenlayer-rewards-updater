@@ -3,46 +3,90 @@
     "type": "function",
     "name": "activationDelay",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "claimers",
     "inputs": [
-      { "name": "account", "type": "address", "internalType": "address" }
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "cumulativeClaimed",
     "inputs": [
-      { "name": "claimer", "type": "address", "internalType": "address" },
-      { "name": "token", "type": "address", "internalType": "contract IERC20" }
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
     ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "globalCommissionBips",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint16", "internalType": "uint16" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "initialize",
     "inputs": [
-      { "name": "initialOwner", "type": "address", "internalType": "address" },
+      {
+        "name": "initialOwner",
+        "type": "address",
+        "internalType": "address"
+      },
       {
         "name": "_paymentUpdater",
         "type": "address",
         "internalType": "address"
       },
-      { "name": "_activationDelay", "type": "uint32", "internalType": "uint32" }
+      {
+        "name": "_activationDelay",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -51,7 +95,13 @@
     "type": "function",
     "name": "paymentUpdater",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "stateMutability": "view"
   },
   {
@@ -68,10 +118,26 @@
             "type": "address",
             "internalType": "contract IERC20"
           },
-          { "name": "amount", "type": "uint256", "internalType": "uint256" },
-          { "name": "rootIndex", "type": "uint32", "internalType": "uint32" },
-          { "name": "leafIndex", "type": "uint32", "internalType": "uint32" },
-          { "name": "proof", "type": "bytes", "internalType": "bytes" }
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "rootIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "leafIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "proof",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
         ]
       }
     ],
@@ -82,7 +148,11 @@
     "type": "function",
     "name": "setActivationDelay",
     "inputs": [
-      { "name": "_activationDelay", "type": "uint32", "internalType": "uint32" }
+      {
+        "name": "_activationDelay",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -91,8 +161,16 @@
     "type": "function",
     "name": "setClaimer",
     "inputs": [
-      { "name": "account", "type": "address", "internalType": "address" },
-      { "name": "claimer", "type": "address", "internalType": "address" }
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -127,7 +205,11 @@
     "type": "function",
     "name": "submitRoot",
     "inputs": [
-      { "name": "root", "type": "bytes32", "internalType": "bytes32" },
+      {
+        "name": "root",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
       {
         "name": "paymentsCalculatedUntilTimestamp",
         "type": "uint32",

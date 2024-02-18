@@ -1,4 +1,4 @@
-specVersion: 0.0.8
+specVersion: 1.0.0
 indexerHints:
   prune: auto
 schema:
@@ -8,9 +8,9 @@ dataSources:
     name: ClaimingManager
     network: goerli
     source:
-      address: "0x44F49aC9B4CB1D0CC891Bfb2C0Cc5dbc34BA7181"
+      address: "0xBF81C737bc6871f1Dfa143f0eb416C34Cb22f47d"
       abi: ClaimingManager
-      startBlock: 10000000
+      startBlock: 10558714
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -18,7 +18,7 @@ dataSources:
       entities:
         - ActivationDelaySet
         - ClaimerSet
-        - CommissionSet
+        - GlobalCommissionBipsSet
         - PaymentClaimed
         - PaymentUpdaterSet
         - RootSubmitted
@@ -30,8 +30,8 @@ dataSources:
           handler: handleActivationDelaySet
         - event: ClaimerSet(address,address)
           handler: handleClaimerSet
-        - event: CommissionSet(address,address,uint16)
-          handler: handleCommissionSet
+        - event: GlobalCommissionBipsSet(uint16,uint16)
+          handler: handleGlobalCommissionBipsSet
         - event: PaymentClaimed(address,address,uint256)
           handler: handlePaymentClaimed
         - event: PaymentUpdaterSet(address,address)

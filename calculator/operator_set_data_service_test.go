@@ -28,8 +28,6 @@ func TestOperatorSetDataService(t *testing.T) {
 	testBlockNumber := big.NewInt(10102668)
 	testTimestamp := big.NewInt(1700880588)
 
-	EIGENDA_ADDRESS := gethcommon.HexToAddress("0x9FcE30E01a740660189bD8CbEaA48Abd36040010")
-
 	P2P_OPERATOR_ADDRESS := gethcommon.HexToAddress("0xb1bd1266ec811048161424f534e74c76c48e6ce2")
 	STETH_STRATEGY_ADDRESS := gethcommon.HexToAddress("0xB613E78E2068d7489bb66419fB1cfa11275d14da")
 
@@ -78,54 +76,6 @@ func TestOperatorSetDataService(t *testing.T) {
 	)
 
 	// TODO: overlapping range payments test
-
-	t.Run("test GetCommissionForAVSAtTimestamp", func(t *testing.T) {
-		firstCommissionSetTimestamp := big.NewInt(1706736660)
-		commissions, err := osds.GetCommissionForAVSAtTimestamp(firstCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, account := range testingAccounts {
-			if account == testingAccounts[0] {
-				assert.Equal(t, big.NewInt(5000), commissions[account])
-			} else {
-				assert.Equal(t, big.NewInt(0), commissions[account])
-			}
-		}
-
-		secondCommissionSetTimestamp := big.NewInt(1706736684)
-		commissions, err = osds.GetCommissionForAVSAtTimestamp(secondCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, account := range testingAccounts {
-			if account == testingAccounts[0] {
-				assert.Equal(t, big.NewInt(5000), commissions[account])
-			} else if testingAccounts[3] == account {
-				assert.Equal(t, big.NewInt(5000), commissions[account])
-			} else {
-				assert.Equal(t, big.NewInt(0), commissions[account])
-			}
-		}
-
-		thirdCommissionSetTimestamp := big.NewInt(1706737056)
-		commissions, err = osds.GetCommissionForAVSAtTimestamp(thirdCommissionSetTimestamp, EIGENDA_ADDRESS, testingAccounts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, account := range testingAccounts {
-			if account == testingAccounts[0] {
-				assert.Equal(t, big.NewInt(5001), commissions[account])
-			} else if testingAccounts[3] == account {
-				assert.Equal(t, big.NewInt(5000), commissions[account])
-			} else {
-				assert.Equal(t, big.NewInt(0), commissions[account])
-			}
-		}
-	})
 
 	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
 		firstClaimerSetTimestamp := big.NewInt(1706728896)

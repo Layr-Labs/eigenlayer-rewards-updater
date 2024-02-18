@@ -3,7 +3,7 @@ import { ethereum, BigInt, Address, Bytes } from "@graphprotocol/graph-ts"
 import {
   ActivationDelaySet,
   ClaimerSet,
-  CommissionSet,
+  GlobalCommissionBipsSet,
   PaymentClaimed,
   PaymentUpdaterSet,
   RootSubmitted
@@ -51,29 +51,30 @@ export function createClaimerSetEvent(
   return claimerSetEvent
 }
 
-export function createCommissionSetEvent(
-  operator: Address,
-  avs: Address,
-  commissionBips: i32
-): CommissionSet {
-  let commissionSetEvent = changetype<CommissionSet>(newMockEvent())
-
-  commissionSetEvent.parameters = new Array()
-
-  commissionSetEvent.parameters.push(
-    new ethereum.EventParam("operator", ethereum.Value.fromAddress(operator))
+export function createGlobalCommissionBipsSetEvent(
+  oldGlobalCommissionBips: i32,
+  newGlobalCommissionBips: i32
+): GlobalCommissionBipsSet {
+  let globalCommissionBipsSetEvent = changetype<GlobalCommissionBipsSet>(
+    newMockEvent()
   )
-  commissionSetEvent.parameters.push(
-    new ethereum.EventParam("avs", ethereum.Value.fromAddress(avs))
-  )
-  commissionSetEvent.parameters.push(
+
+  globalCommissionBipsSetEvent.parameters = new Array()
+
+  globalCommissionBipsSetEvent.parameters.push(
     new ethereum.EventParam(
-      "commissionBips",
-      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(commissionBips))
+      "oldGlobalCommissionBips",
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(oldGlobalCommissionBips))
+    )
+  )
+  globalCommissionBipsSetEvent.parameters.push(
+    new ethereum.EventParam(
+      "newGlobalCommissionBips",
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(newGlobalCommissionBips))
     )
   )
 
-  return commissionSetEvent
+  return globalCommissionBipsSetEvent
 }
 
 export function createPaymentClaimedEvent(
