@@ -20,9 +20,7 @@ const (
 	DB_PORT = "5432"
 	DB_NAME = "graph_node_eigenlabs_3"
 
-	claimingManagerSubgraph    = "claiming-manager-raw-events"
-	paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
-	delegationManagerSubgraph  = "eigenlayer-delegation-raw-events-goerli"
+	GOERLI_ENV = "testnet-goerli"
 )
 
 func main() {
@@ -47,27 +45,18 @@ func main() {
 		DB_PORT,
 		DB_NAME,
 	)
-	dbpool := common.MustCreateConnection(connString)
+	dbpool := common.CreateConnectionOrDie(connString)
 	defer dbpool.Close()
-	schemaService := common.NewSubgraphSchemaService(dbpool)
 
-	subgraphProvider, err := common.ToSubgraphProvider("satsuma")
-	if err != nil {
-		panic(err)
-	}
+	schemaService := common.NewSubgraphSchemaService(GOERLI_ENV, dbpool)
+
 	pds := calculator.NewPaymentsDataService(
 		dbpool,
 		schemaService,
-		subgraphProvider,
-		claimingManagerSubgraph,
-		paymentCoordinatorSubgraph,
 	)
 	osds := calculator.NewOperatorSetDataService(
 		dbpool,
 		schemaService,
-		subgraphProvider,
-		claimingManagerSubgraph,
-		delegationManagerSubgraph,
 		ethClient,
 	)
 	dds := calculator.NewDistributionDataServiceImpl()

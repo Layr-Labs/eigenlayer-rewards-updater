@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
@@ -17,15 +16,6 @@ const (
 )
 
 const (
-	DefaultSubgraphProviderName = "default"
-	SatsumaSubgraphProviderName = "satsuma"
-
-	defaultSchemaIDQuery = `
-		SELECT schema_name
-		FROM info.subgraph_info
-		WHERE status = 'current' AND name = $1
-	`
-
 	satsumaSchemaIDQuery = `
 		SELECT entity_schema
 		FROM satsuma.subgraph_schema
@@ -33,29 +23,33 @@ const (
 	`
 )
 
+var subgraphNameSuffix = map[string]string{
+	"test":             "-test",
+	"dev-goerli":       "-dev-goerli",
+	"testnet-goerli":   "-goerli",
+	"testnet-holesky":  "-holesky",
+	"mainnet-ethereum": "-mainnet",
+}
+
 type SubgraphSchemaService struct {
+	env    string
 	dbpool *pgxpool.Pool
 }
 
-func NewSubgraphSchemaService(dbpool *pgxpool.Pool) *SubgraphSchemaService {
+func NewSubgraphSchemaService(env string, dbpool *pgxpool.Pool) *SubgraphSchemaService {
 	return &SubgraphSchemaService{
+		env:    env,
 		dbpool: dbpool,
 	}
 }
 
-func (s *SubgraphSchemaService) GetSubgraphSchema(ctx context.Context, subgraphName string, provider SubgraphProvider) (string, error) {
+func (s *SubgraphSchemaService) GetSubgraphSchema(ctx context.Context, subgraphName string) (string, error) {
 	var (
-		query      string
+		query      = satsumaSchemaIDQuery
 		schemaName string
 	)
-	switch provider {
-	case DefaultSubgraphProvider:
-		query = defaultSchemaIDQuery
-	case SatsumaSubgraphProvider:
-		query = satsumaSchemaIDQuery
-	default:
-		return "", fmt.Errorf("invalid subgraph provider: %d", provider)
-	}
+
+	subgraphName += subgraphNameSuffix[s.env]
 
 	err := s.dbpool.QueryRow(ctx, query, subgraphName).Scan(&schemaName)
 	if err != nil {
@@ -64,15 +58,4 @@ func (s *SubgraphSchemaService) GetSubgraphSchema(ctx context.Context, subgraphN
 	}
 
 	return schemaName, nil
-}
-
-func ToSubgraphProvider(provider string) (SubgraphProvider, error) {
-	switch provider {
-	case DefaultSubgraphProviderName:
-		return DefaultSubgraphProvider, nil
-	case SatsumaSubgraphProviderName:
-		return SatsumaSubgraphProvider, nil
-	default:
-		return UnknownSubgraphProvider, fmt.Errorf("invalid subgraph provider: %s", provider)
-	}
 }

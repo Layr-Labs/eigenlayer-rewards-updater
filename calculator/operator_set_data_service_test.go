@@ -15,11 +15,6 @@ import (
 )
 
 func TestOperatorSetDataService(t *testing.T) {
-	const (
-		claimingManagerSubgraph   = "claiming-manager-raw-events"
-		delegationManagerSubgraph = "eigenlayer-delegation-raw-events-goerli"
-	)
-
 	err := godotenv.Load("../.env") // Replace with your file path
 	if err != nil {
 		t.Fatal("Error loading .env file", err)
@@ -57,21 +52,13 @@ func TestOperatorSetDataService(t *testing.T) {
 		"5432",
 		"graph_node_eigenlabs_3",
 	)
-	dbpool := common.MustCreateConnection(connString)
+	dbpool := common.CreateConnectionOrDie(connString)
 	defer dbpool.Close()
-	schemaService := common.NewSubgraphSchemaService(dbpool)
-
-	subgraphProvider, err := common.ToSubgraphProvider("satsuma")
-	if err != nil {
-		panic(err)
-	}
+	schemaService := common.NewSubgraphSchemaService("test", dbpool)
 
 	osds := NewOperatorSetDataServiceImpl(
 		dbpool,
 		schemaService,
-		subgraphProvider,
-		claimingManagerSubgraph,
-		delegationManagerSubgraph,
 		ethClient,
 	)
 

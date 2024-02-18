@@ -12,11 +12,6 @@ import (
 )
 
 func TestPaymentCalculatorDataService(t *testing.T) {
-	const (
-		claimingManagerSubgraph    = "claiming-manager-raw-events"
-		paymentCoordinatorSubgraph = "payment-coordinator-raw-events"
-	)
-
 	err := godotenv.Load("../.env") // Replace with your file path
 	if err != nil {
 		t.Fatal("Error loading .env file", err)
@@ -29,21 +24,13 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		"5432",
 		"graph_node_eigenlabs_3",
 	)
-	dbpool := common.MustCreateConnection(connString)
+	dbpool := common.CreateConnectionOrDie(connString)
 	defer dbpool.Close()
-	schemaService := common.NewSubgraphSchemaService(dbpool)
-
-	subgraphProvider, err := common.ToSubgraphProvider("satsuma")
-	if err != nil {
-		panic(err)
-	}
+	schemaService := common.NewSubgraphSchemaService("test", dbpool)
 
 	elpds := NewPaymentsDataServiceImpl(
 		dbpool,
 		schemaService,
-		subgraphProvider,
-		claimingManagerSubgraph,
-		paymentCoordinatorSubgraph,
 	)
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp", func(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
@@ -21,47 +22,32 @@ type PaymentsDataService interface {
 }
 
 type PaymentsDataServiceImpl struct {
-	dbpool                     *pgxpool.Pool
-	schemaService              *common.SubgraphSchemaService
-	subgraphProvider           common.SubgraphProvider
-	claimingManagerSubgraph    string
-	paymentCoordinatorSubgraph string
+	dbpool        *pgxpool.Pool
+	schemaService *common.SubgraphSchemaService
 }
 
 func NewPaymentsDataService(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
-	subgraphProvider common.SubgraphProvider,
-	claimingManagerSubgraph string,
-	paymentCoordinatorSubgraph string,
 ) PaymentsDataService {
 	return &PaymentsDataServiceImpl{
-		dbpool:                     dbpool,
-		schemaService:              schemaService,
-		subgraphProvider:           subgraphProvider,
-		claimingManagerSubgraph:    claimingManagerSubgraph,
-		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
+		dbpool:        dbpool,
+		schemaService: schemaService,
 	}
 }
 
 func NewPaymentsDataServiceImpl(
 	dbpool *pgxpool.Pool,
 	schemaService *common.SubgraphSchemaService,
-	subgraphProvider common.SubgraphProvider,
-	claimingManagerSubgraph string,
-	paymentCoordinatorSubgraph string,
 ) *PaymentsDataServiceImpl {
 	return &PaymentsDataServiceImpl{
-		dbpool:                     dbpool,
-		schemaService:              schemaService,
-		subgraphProvider:           subgraphProvider,
-		claimingManagerSubgraph:    claimingManagerSubgraph,
-		paymentCoordinatorSubgraph: paymentCoordinatorSubgraph,
+		dbpool:        dbpool,
+		schemaService: schemaService,
 	}
 }
 
 func (s *PaymentsDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, s.claimingManagerSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, utils.SUBGRAPH_CLAIMING_MANAGER)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +77,7 @@ func (s *PaymentsDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx contex
 // block_timestamp                     | numeric |           | not null |
 // transaction_hash                    | bytea   |           | not null |
 func (s *PaymentsDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.paymentCoordinatorSubgraph, s.subgraphProvider)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_PAYMENT_COORDINATOR)
 	if err != nil {
 		return nil, err
 	}
