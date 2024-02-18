@@ -32,14 +32,6 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 }
 
 func createRootSubmittedTable() {
-
-	// id                                  | bytea   |           | not null |
-	// root                                | bytea   |           | not null |
-	// payments_calculated_until_timestamp | numeric |           | not null |
-	// activated_after                     | numeric |           | not null |
-	// block_number                        | numeric |           | not null |
-	// block_timestamp                     | numeric |           | not null |
-	// transaction_hash                    | bytea   |           | not null |
 	conn.ExecSQL(`
 		CREATE TABLE IF NOT EXISTS sgd34.root_submitted (
 			id bytea PRIMARY KEY,
