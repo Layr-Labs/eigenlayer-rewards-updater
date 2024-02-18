@@ -2,10 +2,8 @@ package calculator
 
 import (
 	"math/big"
-	"os"
 	"testing"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -44,17 +42,6 @@ func TestOperatorSetDataService(t *testing.T) {
 	}
 
 	ethClient := ethclient.NewClient(rpcClient)
-
-	connString := common.CreateConnectionString(
-		"eigenlabs_team",
-		os.Getenv("DB_PASSWORD"),
-		"eigenlabs-graph-node-production-3.cg7azkhq5rv5.us-east-1.rds.amazonaws.com",
-		"5432",
-		"graph_node_eigenlabs_3",
-	)
-	dbpool := common.CreateConnectionOrDie(connString)
-	defer dbpool.Close()
-	schemaService := common.NewSubgraphSchemaService("test", dbpool)
 
 	osds := NewOperatorSetDataServiceImpl(
 		dbpool,

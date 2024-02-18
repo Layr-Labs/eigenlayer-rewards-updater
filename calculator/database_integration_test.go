@@ -1,4 +1,4 @@
-package test_helpers
+package calculator
 
 import (
 	"log"
@@ -14,17 +14,17 @@ import (
 var (
 	pool          *dockertest.Pool
 	resource      *dockertest.Resource
-	dbPool        *pgxpool.Pool
+	dbpool        *pgxpool.Pool
 	schemaService *common.SubgraphSchemaService
 	conn          *utils.TestPGConnection
 )
 
 func TestMain(m *testing.M) {
-	pool, resource, dbPool = utils.InitializePGDocker()
+	pool, resource, dbpool = utils.InitializePGDocker()
 
 	// Initialize setups
-	schemaService = common.NewSubgraphSchemaService("test", dbPool)
-	conn = utils.NewTestPGConnection(dbPool)
+	schemaService = common.NewSubgraphSchemaService("test", dbpool)
+	conn = utils.NewTestPGConnection(dbpool)
 	conn.CreateSubgraphDeployments()
 
 	//Run tests

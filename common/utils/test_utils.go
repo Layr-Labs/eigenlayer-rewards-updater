@@ -36,33 +36,20 @@ func (conn *TestPGConnection) ExecSQL(sql string, arguments ...any) {
 }
 
 func (conn *TestPGConnection) CleanSubgraphDeployment() {
-	conn.ExecSQL(`DROP TABLE subgraphs.subgraph_version`)
-	conn.ExecSQL(`DROP TABLE subgraphs.subgraph`)
-	conn.ExecSQL(`DROP SCHEMA subgraphs`)
+	conn.ExecSQL(`DROP TABLE satsuma.subgraph_schema`)
+	conn.ExecSQL(`DROP SCHEMA satsuma`)
 }
 
 func (conn *TestPGConnection) CreateSubgraphDeployments() {
-	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS subgraphs`)
-	conn.ExecSQL(`CREATE TABLE IF NOT EXISTS subgraphs.subgraph_version(id text, subgraph text, vid bigint)`)
-	conn.ExecSQL(`INSERT INTO subgraphs.subgraph_version VALUES ($1, $2, $3)`, "anytext", TEST_SUBGRAPH_CLAIMING_MANAGER, 34)
-	conn.ExecSQL(`INSERT INTO subgraphs.subgraph_version VALUES ($1, $2, $3)`, "anytext", TEST_SUBGRAPH_PAYMENT_COORDINATOR, 34)
-	conn.ExecSQL(`INSERT INTO subgraphs.subgraph_version VALUES ($1, $2, $3)`, "anytext", TEST_SUBGRAPH_DELEGATION_MANAGER, 34)
+	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS satsuma`)
+	// 	satsuma_subgraph_name | character varying |           | not null |
+	//  entity_schema         | character varying |           | not null |
+	conn.ExecSQL(`CREATE TABLE IF NOT EXISTS satsuma.subgraph_schema(satsuma_subgraph_name text, entity_schema text)`)
+	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_CLAIMING_MANAGER, "sgd34")
+	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_PAYMENT_COORDINATOR, "sgd34")
+	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_DELEGATION_MANAGER, "sgd34")
 
 	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS sgd34`)
-
-	schema_name := "sgd34"
-	status := "current"
-	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS info`)
-	conn.ExecSQL(`CREATE TABLE IF NOT EXISTS info.subgraph_info(schema_name text, name text, status text)`)
-	conn.ExecSQL(`INSERT INTO info.subgraph_info VALUES ($1, $2, $3)`, schema_name, TEST_SUBGRAPH_CLAIMING_MANAGER, status)
-	conn.ExecSQL(`INSERT INTO info.subgraph_info VALUES ($1, $2, $3)`, schema_name, TEST_SUBGRAPH_PAYMENT_COORDINATOR, status)
-	conn.ExecSQL(`INSERT INTO info.subgraph_info VALUES ($1, $2, $3)`, schema_name, TEST_SUBGRAPH_DELEGATION_MANAGER, status)
-
-	conn.ExecSQL(`CREATE TABLE IF NOT EXISTS sgd34."poi2$"(block_range int4range)`)
-	conn.ExecSQL(`INSERT INTO sgd34."poi2$" VALUES ($1)`, "[100000001,)")
-	conn.ExecSQL(`INSERT INTO sgd34."poi2$" VALUES ($1)`, "[100000,100000001)")
-
-	conn.ExecSQL(`CREATE TYPE registration_status AS ENUM ('REGISTERED', 'UNREGISTERED')`)
 }
 
 func InitializePGDocker() (*dockertest.Pool, *dockertest.Resource, *pgxpool.Pool) {
