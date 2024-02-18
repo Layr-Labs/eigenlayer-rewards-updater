@@ -1,14 +1,8 @@
 {
   "goerli": {
     "PaymentCoordinator": {
-      "address": "0x672826643803C4EEF3EE45411F9705C5557C6A21",
+      "address": "0xB55c0640E1FF7E1448aeAB58255Bb94F52069f19",
       "startBlock": 10000000
-    }
-  },
-  "sepolia": {
-    "PaymentCoordinator": {
-      "address": "0x307FF89CFA452F696B0d2B4281DF32Fb01c7b968",
-      "startBlock": 0
     }
   }
 }
