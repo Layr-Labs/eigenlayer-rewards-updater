@@ -15,12 +15,6 @@ var paymentsCalculatedUntilQuery string = `
 	LIMIT 1;
 `
 
-var commissionAtTimestampQuery string = `
-	SELECT DISTINCT ON (operator) operator, commission_bips
-	FROM %s.commission_set
-	WHERE block_timestamp <= $1 AND encode(avs, 'hex') = $2 AND encode(operator, 'hex') in (%s)
-	ORDER BY operator, block_timestamp DESC;`
-
 var claimersAtTimestampQuery string = `
 	SELECT DISTINCT ON (account) account, claimer
 	FROM %s.claimer_set

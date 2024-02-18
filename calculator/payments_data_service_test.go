@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/joho/godotenv"
 )
@@ -50,8 +51,7 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("payments calculated until timestamp: %v", paymentsCalculatedUntilTimestamp)
-		t.Fail()
+		assert.GreaterOrEqual(t, paymentsCalculatedUntilTimestamp.Int64(), int64(1708285990))
 	})
 
 	// TODO: overlapping range payments test

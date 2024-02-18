@@ -80,17 +80,16 @@ func (s *PaymentsDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx contex
 	return resDecimal.BigInt(), nil
 }
 
-//  id                                  | bytea   |           | not null |
-//  range_payment_avs                   | bytea   |           | not null |
-//  range_payment_strategy              | bytea   |           | not null |
-//  range_payment_token                 | bytea   |           | not null |
-//  range_payment_amount                | numeric |           | not null |
-//  range_payment_start_range_timestamp | numeric |           | not null |
-//  range_payment_end_range_timestamp   | numeric |           | not null |
-//  block_number                        | numeric |           | not null |
-//  block_timestamp                     | numeric |           | not null |
-//  transaction_hash                    | bytea   |           | not null |
-
+// id                                  | bytea   |           | not null |
+// range_payment_avs                   | bytea   |           | not null |
+// range_payment_strategy              | bytea   |           | not null |
+// range_payment_token                 | bytea   |           | not null |
+// range_payment_amount                | numeric |           | not null |
+// range_payment_start_range_timestamp | numeric |           | not null |
+// range_payment_end_range_timestamp   | numeric |           | not null |
+// block_number                        | numeric |           | not null |
+// block_timestamp                     | numeric |           | not null |
+// transaction_hash                    | bytea   |           | not null |
 func (s *PaymentsDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), s.paymentCoordinatorSubgraph, s.subgraphProvider)
 	if err != nil {

@@ -39,7 +39,7 @@ var BEACON_CHAIN_ETH_STRATEGY_ADDRESS = gethcommon.HexToAddress("0xbeaC0eeEeeeeE
 var DELEGATION_MANAGER_ADDRESS = gethcommon.HexToAddress("0x1b7b8F6b258f95Cf9596EabB9aa18B62940Eb0a8")
 
 // claiming manager address
-var CLAIMING_MANAGER_ADDRESS = gethcommon.HexToAddress("0x1b7b8F6b258f95Cf9596EabB9aa18B62940Eb0a8")
+var CLAIMING_MANAGER_ADDRESS = gethcommon.HexToAddress("0xBF81C737bc6871f1Dfa143f0eb416C34Cb22f47d")
 
 type OperatorSetDataService interface {
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
@@ -126,7 +126,6 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 	}
 
 	log.Info().Msgf("found %d operators in %s", len(operatorAddresses), time.Since(start))
-	start = time.Now()
 
 	operatorSet.Operators = make([]common.Operator, len(operatorAddresses))
 
@@ -206,6 +205,8 @@ func (s *OperatorSetDataServiceImpl) GetGlobalCommissionAtBlockNumber(blockNumbe
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info().Msgf("got global commission of %d at block number %d", globalCommission, blockNumber)
 
 	return big.NewInt(int64(globalCommission)), nil
 }
