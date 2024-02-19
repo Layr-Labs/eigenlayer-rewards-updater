@@ -7,36 +7,37 @@ import (
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
 type RangePaymentCalculator struct {
-	intervalSecondsLength  *big.Int
-	paymentsDataService    PaymentsDataService
-	operatorSetDataService OperatorSetDataService
+	calculationIntervalSeconds *big.Int
+	paymentsDataService        services.PaymentsDataService
+	operatorSetDataService     OperatorSetDataService
 }
 
 func NewRangePaymentCalculator(
-	intervalSecondsLength *big.Int,
-	paymentsDataService PaymentsDataService,
+	calculationIntervalSeconds int64,
+	paymentsDataService services.PaymentsDataService,
 	operatorSetDataService OperatorSetDataService,
 ) PaymentCalculator {
 	return &RangePaymentCalculator{
-		intervalSecondsLength:  intervalSecondsLength,
-		paymentsDataService:    paymentsDataService,
-		operatorSetDataService: operatorSetDataService,
+		calculationIntervalSeconds: big.NewInt(calculationIntervalSeconds),
+		paymentsDataService:        paymentsDataService,
+		operatorSetDataService:     operatorSetDataService,
 	}
 }
 
 func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, startTimestamp, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
 	// make sure the start timestamp is rounded to the nearest interval granularity
-	if new(big.Int).Mod(startTimestamp, c.intervalSecondsLength).Cmp(big.NewInt(0)) != 0 {
+	if new(big.Int).Mod(startTimestamp, c.calculationIntervalSeconds).Cmp(big.NewInt(0)) != 0 {
 		return nil, nil, fmt.Errorf("start timestamp must be rounded to the nearest interval granularity")
 	}
 
 	// round the end timestamp to the nearest interval granularity. the start is assumed to be rounded already
-	endTimestamp.Sub(endTimestamp, new(big.Int).Mod(endTimestamp, c.intervalSecondsLength))
+	endTimestamp.Sub(endTimestamp, new(big.Int).Mod(endTimestamp, c.calculationIntervalSeconds))
 
 	// make sure the end timestamp is after the start timestamp
 	if endTimestamp.Cmp(startTimestamp) <= 0 {
@@ -45,8 +46,8 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 
 	// todo remove
 	// clamp the end timestamp to 2 intervals ahead of the start timestamp
-	if endTimestamp.Cmp(new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(1)))) >= 0 {
-		endTimestamp = new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.intervalSecondsLength, big.NewInt(1)))
+	if endTimestamp.Cmp(new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.calculationIntervalSeconds, big.NewInt(1)))) >= 0 {
+		endTimestamp = new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.calculationIntervalSeconds, big.NewInt(1)))
 	}
 
 	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
@@ -80,7 +81,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	startTimestamp, endTimestamp *big.Int,
 	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
 ) (*distribution.Distribution, error) {
-	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalSecondsLength).Int64()
+	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.calculationIntervalSeconds).Int64()
 
 	diffDistribution := distribution.NewDistribution()
 
@@ -90,7 +91,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 		paymentPerSecond := new(big.Int).Div(rangePayment.Amount, new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
 
 		intervalStart := new(big.Int).Set(startTimestamp)
-		intervalEnd := new(big.Int).Add(intervalStart, c.intervalSecondsLength)
+		intervalEnd := new(big.Int).Add(intervalStart, c.calculationIntervalSeconds)
 		// loop through all intervals
 		for i := int64(0); i < numIntervals; i++ {
 			// calculate overlap between the interval and the range payment
@@ -152,8 +153,8 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 				}
 
 				// increment the interval start/end
-				intervalStart.Add(intervalStart, c.intervalSecondsLength)
-				intervalEnd.Add(intervalEnd, c.intervalSecondsLength)
+				intervalStart.Add(intervalStart, c.calculationIntervalSeconds)
+				intervalEnd.Add(intervalEnd, c.calculationIntervalSeconds)
 			}
 		}
 	}
