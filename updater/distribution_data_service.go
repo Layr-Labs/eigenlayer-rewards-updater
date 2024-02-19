@@ -1,9 +1,9 @@
 package updater
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
@@ -11,10 +11,10 @@ import (
 )
 
 type DistributionDataService interface {
-	// GetDistributionAtTimestamp returns the distribution of all tokens at a given timestamp
-	GetDistributionAtTimestamp(timestamp *big.Int) (*distribution.Distribution, error)
-	// SetDistributionAtTimestamp sets the distribution of all tokens at a given timestamp
-	SetDistributionAtTimestamp(timestamp *big.Int, distributions *distribution.Distribution) error
+	// GetDistribution returns the distribution of payments for the given root
+	GetDistribution(root [32]byte) (*distribution.Distribution, error)
+	// SetDistribution sets the distribution of payments for the given root
+	SetDistribution(root [32]byte, distribution *distribution.Distribution) error
 }
 
 type DistributionDataServiceImpl struct{}
@@ -27,7 +27,7 @@ func NewDistributionDataServiceImpl() *DistributionDataServiceImpl {
 	return &DistributionDataServiceImpl{}
 }
 
-func (s *DistributionDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.Int) (*distribution.Distribution, error) {
+func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*distribution.Distribution, error) {
 	// if the data directory doesn't exist, create it and return empty map
 	_, err := os.Stat("./data")
 	if os.IsNotExist(err) {
@@ -42,7 +42,7 @@ func (s *DistributionDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.
 	}
 
 	// read from data/distributions_{timestamp}.json
-	file, err := os.ReadFile(fmt.Sprintf("data/distribution_%d.json", timestamp))
+	file, err := os.ReadFile(distributionFileName(root))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *DistributionDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.
 	return distribution, nil
 }
 
-func (s *DistributionDataServiceImpl) SetDistributionAtTimestamp(timestamp *big.Int, distribution *distribution.Distribution) error {
+func (s *DistributionDataServiceImpl) SetDistribution(root [32]byte, distribution *distribution.Distribution) error {
 	// seralize to json and write to data/distributions_{timestamp}.json
 	marshalledDistribution, err := json.Marshal(distribution)
 	if err != nil {
@@ -67,10 +67,14 @@ func (s *DistributionDataServiceImpl) SetDistributionAtTimestamp(timestamp *big.
 	log.Info().Msgf("marshalled distributions %s", marshalledDistribution)
 
 	// write to file
-	err = os.WriteFile(fmt.Sprintf("data/distribution_%d.json", timestamp), marshalledDistribution, 0644)
+	err = os.WriteFile(distributionFileName(root), marshalledDistribution, 0644)
 	if err != nil {
 		return err
 	}
 
 	return err
+}
+
+func distributionFileName(root [32]byte) string {
+	return fmt.Sprintf("data/distribution_%s.json", hex.EncodeToString(root[:]))
 }

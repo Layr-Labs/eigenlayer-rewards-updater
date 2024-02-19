@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,10 +16,15 @@ func TestPaymentCalculatorDataService(t *testing.T) {
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp", func(t *testing.T) {
 		createRootSubmittedTable()
-		paymentsCalculatedUntilTimestamp, err := elpds.GetPaymentsCalculatedUntilTimestamp(context.Background())
+		root, paymentsCalculatedUntilTimestamp, err := elpds.GetLatestRootSubmission(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
+		expectedRootBytes, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002")
+		expectedRoot := [32]byte{}
+		copy(expectedRoot[:], expectedRootBytes)
+
+		assert.Equal(t, root, expectedRoot)
 		assert.Equal(t, paymentsCalculatedUntilTimestamp.Int64(), int64(1708385990))
 	})
 

@@ -74,7 +74,7 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// get the time until which payments have been calculated
 	log.Info().Msg("getting payments calculated until timestamp")
-	paymentsCalculatedUntilTimestamp, err := u.paymentsDataService.GetPaymentsCalculatedUntilTimestamp(ctx)
+	latestRoot, paymentsCalculatedUntilTimestamp, err := u.paymentsDataService.GetLatestRootSubmission(ctx)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// get the current distribution
 	log.Info().Msg("getting current distribution")
-	currentDistribution, err := u.distributionDataService.GetDistributionAtTimestamp(paymentsCalculatedUntilTimestamp)
+	currentDistribution, err := u.distributionDataService.GetDistribution(latestRoot)
 	if err != nil {
 		return err
 	}
@@ -102,20 +102,20 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// merklize the distribution roots
 	log.Info().Msg("merklizing distribution roots")
-	root, err := newDistribution.Merklize(distribution.SimpleMerklize)
+	newRoot, err := newDistribution.Merklize(distribution.SimpleMerklize)
 	if err != nil {
 		return err
 	}
 
 	// set the distribution at the timestamp
 	log.Info().Msg("setting distribution")
-	if err := u.distributionDataService.SetDistributionAtTimestamp(newPaymentsCalculatedUntilTimestamp, newDistribution); err != nil {
+	if err := u.distributionDataService.SetDistribution(newRoot, newDistribution); err != nil {
 		return err
 	}
 
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")
-	if err := u.transactor.SubmitRoot(ctx, root, newPaymentsCalculatedUntilTimestamp); err != nil {
+	if err := u.transactor.SubmitRoot(ctx, newRoot, newPaymentsCalculatedUntilTimestamp); err != nil {
 		return err
 	}
 
