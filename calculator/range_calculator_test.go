@@ -10,6 +10,7 @@ import (
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	commonmocks "github.com/Layr-Labs/eigenlayer-payment-updater/common/services/mocks"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/mock"
@@ -43,12 +44,12 @@ func TestRangePaymentCalculator(t *testing.T) {
 	}
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with no range payments", func(t *testing.T) {
-		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
+		mockPaymentsDataService := &commonmocks.PaymentsDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentCalculatorDataService, mockOperatorSetDataService)
+		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentsDataService, mockOperatorSetDataService)
 
-		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
+		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
 
 		endTimestampPassedIn := big.NewInt(300)
 		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), startTimestamp, endTimestampPassedIn)
@@ -67,12 +68,12 @@ func TestRangePaymentCalculator(t *testing.T) {
 	})
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with single range payment for 1 interval", func(t *testing.T) {
-		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
+		mockPaymentsDataService := &commonmocks.PaymentsDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentCalculatorDataService, mockOperatorSetDataService)
+		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentsDataService, mockOperatorSetDataService)
 
-		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
+		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
 
 		operatorSet := &common.OperatorSet{
 			Operators: []common.Operator{

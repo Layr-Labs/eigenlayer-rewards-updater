@@ -15,8 +15,8 @@ import (
 )
 
 type PaymentsDataService interface {
-	// GetPaymentsCalculatedUntilTimestamp returns the timestamp until which payments have been calculated
-	GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error)
+	// GetLatestRootSubmission returns the latest root and timestamp until which payments have been calculated
+	GetLatestRootSubmission(ctx context.Context) ([32]byte, *big.Int, error)
 	// GetRangePaymentsWithOverlappingRange returns all range payments that overlap with the given range
 	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
 }
@@ -46,24 +46,29 @@ func NewPaymentsDataServiceImpl(
 	}
 }
 
-func (s *PaymentsDataServiceImpl) GetPaymentsCalculatedUntilTimestamp(ctx context.Context) (*big.Int, error) {
+func (s *PaymentsDataServiceImpl) GetLatestRootSubmission(ctx context.Context) ([32]byte, *big.Int, error) {
 	schemaID, err := s.schemaService.GetSubgraphSchema(ctx, utils.SUBGRAPH_CLAIMING_MANAGER)
 	if err != nil {
-		return nil, err
+		return [32]byte{}, nil, err
 	}
 
-	formattedQuery := fmt.Sprintf(paymentsCalculatedUntilQuery, schemaID)
+	formattedQuery := fmt.Sprintf(latestRootSubmissionQuery, schemaID)
 	row := s.dbpool.QueryRow(ctx, formattedQuery)
 
-	var resDecimal decimal.Decimal
+	var resRootBytes []byte
+	var resTimestampDecimal decimal.Decimal
 	err = row.Scan(
-		&resDecimal,
+		&resRootBytes,
+		&resTimestampDecimal,
 	)
 	if err != nil {
-		return nil, err
+		return [32]byte{}, nil, err
 	}
 
-	return resDecimal.BigInt(), nil
+	fixedResRootBytes := [32]byte{}
+	copy(fixedResRootBytes[:], resRootBytes)
+
+	return fixedResRootBytes, resTimestampDecimal.BigInt(), nil
 }
 
 func (s *PaymentsDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
