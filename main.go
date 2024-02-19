@@ -1,12 +1,11 @@
 package main
 
 import (
-	"math/big"
 	"os"
-	"time"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -50,7 +49,7 @@ func main() {
 
 	schemaService := common.NewSubgraphSchemaService(GOERLI_ENV, dbpool)
 
-	cpds := calculator.NewPaymentsDataService(
+	pds := services.NewPaymentsDataService(
 		dbpool,
 		schemaService,
 	)
@@ -60,17 +59,15 @@ func main() {
 		ethClient,
 	)
 
-	intervalSecondsLength := big.NewInt(10)
+	calculationIntervalSeconds := int64(10)
 
-	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, cpds, osds)
+	elpc := calculator.NewRangePaymentCalculator(calculationIntervalSeconds, pds, osds)
 
-	upds := updater.NewPaymentsDataServiceImpl(
-		dbpool,
-		schemaService,
-	)
 	dds := updater.NewDistributionDataServiceImpl()
 
-	elpu, err := updater.NewUpdater(time.Second*100, upds, dds, elpc, chainClient, calculator.CLAIMING_MANAGER_ADDRESS)
+	updateIntervalSeconds := 100
+
+	elpu, err := updater.NewUpdater(updateIntervalSeconds, pds, dds, elpc, chainClient, calculator.CLAIMING_MANAGER_ADDRESS)
 	if err != nil {
 		panic(err)
 	}

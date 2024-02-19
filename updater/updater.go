@@ -7,21 +7,22 @@ import (
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 )
 
 type Updater struct {
 	UpdateInterval          time.Duration
-	paymentsDataService     PaymentsDataService
+	paymentsDataService     services.PaymentsDataService
 	distributionDataService DistributionDataService
 	calculator              calculator.PaymentCalculator
 	transactor              Transactor
 }
 
 func NewUpdater(
-	updateInterval time.Duration,
-	paymentsDataService PaymentsDataService,
+	updateIntervalSeconds int,
+	paymentsDataService services.PaymentsDataService,
 	distributionDataService DistributionDataService,
 	calculator calculator.PaymentCalculator,
 	chainClient *common.ChainClient,
@@ -33,7 +34,7 @@ func NewUpdater(
 	}
 
 	return &Updater{
-		UpdateInterval:          updateInterval,
+		UpdateInterval:          time.Second * time.Duration(updateIntervalSeconds),
 		distributionDataService: distributionDataService,
 		paymentsDataService:     paymentsDataService,
 		calculator:              calculator,

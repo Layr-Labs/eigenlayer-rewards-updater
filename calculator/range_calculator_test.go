@@ -20,7 +20,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 	STETH_ADDRESS := gethcommon.HexToAddress("0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84")
 	WETH_ADDRESS := gethcommon.HexToAddress("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
 
-	intervalSecondsLength := big.NewInt(100)
+	calculationIntervalSeconds := int64(100)
 	startTimestamp := big.NewInt(200)
 
 	testRangePayments := []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment{
@@ -46,7 +46,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService)
+		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentCalculatorDataService, mockOperatorSetDataService)
 
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
 
@@ -70,7 +70,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService)
+		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentCalculatorDataService, mockOperatorSetDataService)
 
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
 
