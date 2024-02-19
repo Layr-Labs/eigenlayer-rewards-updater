@@ -9,28 +9,47 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-type UpdaterTransactor interface {
+const FINALIZATION_DEPTH = 100
+
+type Transactor interface {
+	GetLatestFinalizedTimestamp(ctx context.Context) (*big.Int, error)
 	SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error
 }
 
-type UpdaterTransactorImpl struct {
+type TransactorImpl struct {
 	ChainClient     *common.ChainClient
 	ClaimingManager *contractIClaimingManager.ContractIClaimingManager
 }
 
-func NewUpdaterTransactor(chainClient *common.ChainClient, claimingManagerAddress gethcommon.Address) (UpdaterTransactor, error) {
+func NewTransactor(chainClient *common.ChainClient, claimingManagerAddress gethcommon.Address) (Transactor, error) {
 	claimingManager, err := contractIClaimingManager.NewContractIClaimingManager(claimingManagerAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
 	}
 
-	return &UpdaterTransactorImpl{
+	return &TransactorImpl{
 		ChainClient:     chainClient,
 		ClaimingManager: claimingManager,
 	}, nil
 }
 
-func (t *UpdaterTransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
+func (s *TransactorImpl) GetLatestFinalizedTimestamp(ctx context.Context) (*big.Int, error) {
+	latestBlockNumber, err := s.ChainClient.GetCurrentBlockNumber(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	latestFinalizedBlockNumber := latestBlockNumber - FINALIZATION_DEPTH
+
+	latestFinalizedBlock, err := s.ChainClient.HeaderByNumber(ctx, big.NewInt(int64(latestFinalizedBlockNumber)))
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(int64(latestFinalizedBlock.Time)), nil
+}
+
+func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
 	tx, err := t.ClaimingManager.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, uint32(paymentsCalculatedUntilTimestamp.Uint64()))
 	if err != nil {
 		return err

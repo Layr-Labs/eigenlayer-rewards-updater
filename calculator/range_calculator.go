@@ -12,37 +12,24 @@ import (
 )
 
 type RangePaymentCalculator struct {
-	intervalSecondsLength   *big.Int
-	paymentsDataService     PaymentsDataService
-	operatorSetDataService  OperatorSetDataService
-	distributionDataService DistributionDataService
+	intervalSecondsLength  *big.Int
+	paymentsDataService    PaymentsDataService
+	operatorSetDataService OperatorSetDataService
 }
 
 func NewRangePaymentCalculator(
 	intervalSecondsLength *big.Int,
 	paymentsDataService PaymentsDataService,
 	operatorSetDataService OperatorSetDataService,
-	distributionDataService DistributionDataService,
 ) PaymentCalculator {
 	return &RangePaymentCalculator{
-		intervalSecondsLength:   intervalSecondsLength,
-		paymentsDataService:     paymentsDataService,
-		operatorSetDataService:  operatorSetDataService,
-		distributionDataService: distributionDataService,
+		intervalSecondsLength:  intervalSecondsLength,
+		paymentsDataService:    paymentsDataService,
+		operatorSetDataService: operatorSetDataService,
 	}
 }
 
-func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
-	startTimestamp, err := c.paymentsDataService.GetPaymentsCalculatedUntilTimestamp(ctx)
-	if err != nil && err != pgx.ErrNoRows {
-		return nil, nil, err
-	}
-
-	if err == pgx.ErrNoRows {
-		// TODO: this correctly
-		startTimestamp = big.NewInt(0)
-	}
-
+func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, startTimestamp, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
 	// make sure the start timestamp is rounded to the nearest interval granularity
 	if new(big.Int).Mod(startTimestamp, c.intervalSecondsLength).Cmp(big.NewInt(0)) != 0 {
 		return nil, nil, fmt.Errorf("start timestamp must be rounded to the nearest interval granularity")
@@ -64,12 +51,6 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 
 	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
 
-	// get distribution at the start timestamp
-	distribution, err := c.distributionDataService.GetDistributionAtTimestamp(startTimestamp)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	// get all range payments that overlap with the given interval
 	rangePayments, err := c.paymentsDataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
 	if err != nil && err != pgx.ErrNoRows {
@@ -78,24 +59,18 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	if err == pgx.ErrNoRows {
 		log.Info().Msg("no range payments found")
 		// should we return the distribution at the end timestamp? or just "skip" somehow?
-		return endTimestamp, distribution, nil
+		return endTimestamp, distribution.NewDistribution(), nil
 	}
 
 	log.Info().Msgf("found %d range payments", len(rangePayments))
 
 	// calculate the distribution over the range
-	distribution, err = c.CalculateDistributionFromRangePayments(ctx, startTimestamp, endTimestamp, distribution, rangePayments)
+	diffDistribution, err := c.CalculateDistributionFromRangePayments(ctx, startTimestamp, endTimestamp, rangePayments)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// set the distributions at the end timestamp
-	err = c.distributionDataService.SetDistributionAtTimestamp(endTimestamp, distribution)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return endTimestamp, distribution, nil
+	return endTimestamp, diffDistribution, nil
 }
 
 // CalculateDistributionFromRangePayments is a pure function for easier testing
@@ -103,10 +78,11 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	ctx context.Context,
 	startTimestamp, endTimestamp *big.Int,
-	distribution *distribution.Distribution,
 	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
 ) (*distribution.Distribution, error) {
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.intervalSecondsLength).Int64()
+
+	diffDistribution := distribution.NewDistribution()
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
@@ -147,10 +123,10 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 				}
 
 				// increment token balance according to the operator's commission
-				operatorAmt := distribution.Get(operator.Address, rangePayment.Token)
+				operatorAmt := diffDistribution.Get(operator.Address, rangePayment.Token)
 
 				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
-				distribution.Set(
+				diffDistribution.Set(
 					operator.Address,
 					rangePayment.Token,
 					operatorAmt.Add(operatorAmt, div(mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)),
@@ -159,10 +135,10 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 				// loop through all stakers
 				for _, staker := range operator.Stakers {
 					// increment token balance according to the staker's proportion of the strategy shares
-					stakerAmt := distribution.Get(staker.Address, rangePayment.Token)
+					stakerAmt := diffDistribution.Get(staker.Address, rangePayment.Token)
 
-					// stakerBalance += totalPaymentToOperatorAndStakers * (1 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
-					distribution.Set(
+					// stakerBalance += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
+					diffDistribution.Set(
 						staker.Address,
 						rangePayment.Token,
 						stakerAmt.Add(
@@ -182,7 +158,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 		}
 	}
 
-	return distribution, nil
+	return diffDistribution, nil
 }
 
 func max(a, b *big.Int) *big.Int {

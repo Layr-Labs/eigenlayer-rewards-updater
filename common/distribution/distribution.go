@@ -25,6 +25,7 @@ func NewDistribution() *Distribution {
 
 // Set sets the value for a given address.
 func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) {
+	// TODO: fix this
 	if len(d.data) == 0 {
 		d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
 	}
@@ -51,9 +52,21 @@ func (d *Distribution) Get(address, token gethcommon.Address) *big.Int {
 
 // Add adds the other distribution to this distribution.
 func (d *Distribution) Add(other *Distribution) {
+	// TODO: fix this
+	if len(d.data) == 0 {
+		d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
+	}
+	if len(other.data) == 0 {
+		other.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
+	}
+
 	for address, tokenAmts := range other.data {
 		for token, amount := range tokenAmts {
 			if d.data[address][token] == nil {
+				// TODO: fix this
+				if len(d.data[address]) == 0 {
+					d.data[address] = make(map[gethcommon.Address]*big.Int)
+				}
 				d.data[address][token] = big.NewInt(0)
 			}
 			d.data[address][token].Add(d.data[address][token], amount)
@@ -84,6 +97,9 @@ func (d *Distribution) UnmarshalJSON(data []byte) error {
 	d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
 	for address, tokenAmts := range dataMap {
 		for token, amt := range tokenAmts {
+			if d.data[address] == nil {
+				d.data[address] = make(map[gethcommon.Address]*big.Int)
+			}
 			d.data[address][token], ok = new(big.Int).SetString(amt, 10)
 			if !ok {
 				return fmt.Errorf("failed to parse big.Int from string: %s", amt)

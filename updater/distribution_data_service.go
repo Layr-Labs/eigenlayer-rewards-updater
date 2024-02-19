@@ -1,4 +1,4 @@
-package calculator
+package updater
 
 import (
 	"encoding/json"
@@ -48,7 +48,7 @@ func (s *DistributionDataServiceImpl) GetDistributionAtTimestamp(timestamp *big.
 	}
 
 	// deserialize from json
-	var distribution *distribution.Distribution
+	distribution := &distribution.Distribution{}
 	err = json.Unmarshal(file, distribution)
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package calculator
+package updater
 
 import (
 	"context"
