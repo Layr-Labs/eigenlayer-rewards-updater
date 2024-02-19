@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
@@ -9,6 +10,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
@@ -74,9 +76,12 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// get the time until which payments have been calculated
 	log.Info().Msg("getting payments calculated until timestamp")
-	latestRoot, paymentsCalculatedUntilTimestamp, err := u.paymentsDataService.GetLatestRootSubmission(ctx)
-	if err != nil {
-		return err
+	latestRoot, paymentsCalculatedUntilTimestamp, fetchRootSubmissionErr := u.paymentsDataService.GetLatestRootSubmission(ctx)
+	if fetchRootSubmissionErr == pgx.ErrNoRows {
+		// if there are no rows, then we haven't submitted any roots yet, so we should start from 0
+		paymentsCalculatedUntilTimestamp = big.NewInt(0)
+	} else if fetchRootSubmissionErr != nil {
+		return fetchRootSubmissionErr
 	}
 
 	log.Info().Msgf("payments calculated until timestamp: %d", paymentsCalculatedUntilTimestamp)
@@ -90,9 +95,12 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// get the current distribution
 	log.Info().Msg("getting current distribution")
-	currentDistribution, err := u.distributionDataService.GetDistribution(latestRoot)
-	if err != nil {
-		return err
+	currentDistribution := distribution.NewDistribution()
+	if paymentsCalculatedUntilTimestamp.Cmp(big.NewInt(0)) != 0 {
+		currentDistribution, err = u.distributionDataService.GetDistribution(latestRoot)
+		if err != nil {
+			return err
+		}
 	}
 
 	// add the diff distribution to the current distribution
