@@ -17,9 +17,9 @@ type PaymentCalculator struct {
 	mock.Mock
 }
 
-// CalculateDistributionUntilTimestamp provides a mock function with given fields: ctx, endTimestamp
-func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
-	ret := _m.Called(ctx, endTimestamp)
+// CalculateDistributionUntilTimestamp provides a mock function with given fields: ctx, startTimestamp, endTimestamp
+func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Context, startTimestamp *big.Int, endTimestamp *big.Int) (*big.Int, *distribution.Distribution, error) {
+	ret := _m.Called(ctx, startTimestamp, endTimestamp)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CalculateDistributionUntilTimestamp")
@@ -28,27 +28,27 @@ func (_m *PaymentCalculator) CalculateDistributionUntilTimestamp(ctx context.Con
 	var r0 *big.Int
 	var r1 *distribution.Distribution
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) (*big.Int, *distribution.Distribution, error)); ok {
-		return rf(ctx, endTimestamp)
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, *big.Int) (*big.Int, *distribution.Distribution, error)); ok {
+		return rf(ctx, startTimestamp, endTimestamp)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *big.Int) *big.Int); ok {
-		r0 = rf(ctx, endTimestamp)
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, *big.Int) *big.Int); ok {
+		r0 = rf(ctx, startTimestamp, endTimestamp)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*big.Int)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *big.Int) *distribution.Distribution); ok {
-		r1 = rf(ctx, endTimestamp)
+	if rf, ok := ret.Get(1).(func(context.Context, *big.Int, *big.Int) *distribution.Distribution); ok {
+		r1 = rf(ctx, startTimestamp, endTimestamp)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*distribution.Distribution)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, *big.Int) error); ok {
-		r2 = rf(ctx, endTimestamp)
+	if rf, ok := ret.Get(2).(func(context.Context, *big.Int, *big.Int) error); ok {
+		r2 = rf(ctx, startTimestamp, endTimestamp)
 	} else {
 		r2 = ret.Error(2)
 	}

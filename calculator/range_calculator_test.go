@@ -10,7 +10,6 @@ import (
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/mock"
@@ -45,20 +44,14 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with no range payments", func(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
-		mockDistributionDataService := &mocks.DistributionDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService, mockDistributionDataService)
+		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService)
 
-		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
 
-		emptyDistribution := distribution.NewDistribution()
-		mockDistributionDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
-		mockDistributionDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*distribution.Distribution")).Return(nil)
-
 		endTimestampPassedIn := big.NewInt(300)
-		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
+		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), startTimestamp, endTimestampPassedIn)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -75,17 +68,11 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with single range payment for 1 interval", func(t *testing.T) {
 		mockPaymentCalculatorDataService := &mocks.PaymentCalculatorDataService{}
-		mockDistributionDataService := &mocks.DistributionDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
-		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService, mockDistributionDataService)
+		elpc := NewRangePaymentCalculator(intervalSecondsLength, mockPaymentCalculatorDataService, mockOperatorSetDataService)
 
-		mockPaymentCalculatorDataService.On("GetPaymentsCalculatedUntilTimestamp", mock.Anything).Return(startTimestamp, nil)
 		mockPaymentCalculatorDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
-
-		emptyDistribution := distribution.NewDistribution()
-		mockDistributionDataService.On("GetDistributionAtTimestamp", mock.AnythingOfType("*big.Int")).Return(emptyDistribution, nil)
-		mockDistributionDataService.On("SetDistributionAtTimestamp", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*distribution.Distribution")).Return(nil)
 
 		operatorSet := &common.OperatorSet{
 			Operators: []common.Operator{
@@ -136,7 +123,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 		mockOperatorSetDataService.On("GetOperatorSetForStrategyAtTimestamp", mock.AnythingOfType("*big.Int"), testRangePayments[0].Avs, testRangePayments[0].Strategy).Return(operatorSet, nil)
 		endTimestampPassedIn := big.NewInt(300)
-		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), endTimestampPassedIn)
+		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), startTimestamp, endTimestampPassedIn)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}

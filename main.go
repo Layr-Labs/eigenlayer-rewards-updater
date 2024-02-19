@@ -50,7 +50,7 @@ func main() {
 
 	schemaService := common.NewSubgraphSchemaService(GOERLI_ENV, dbpool)
 
-	pds := calculator.NewPaymentsDataService(
+	cpds := calculator.NewPaymentsDataService(
 		dbpool,
 		schemaService,
 	)
@@ -59,13 +59,18 @@ func main() {
 		schemaService,
 		ethClient,
 	)
-	dds := calculator.NewDistributionDataServiceImpl()
 
 	intervalSecondsLength := big.NewInt(10)
 
-	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, pds, osds, dds)
+	elpc := calculator.NewRangePaymentCalculator(intervalSecondsLength, cpds, osds)
 
-	elpu, err := updater.NewUpdater(time.Second*100, elpc, chainClient, calculator.CLAIMING_MANAGER_ADDRESS)
+	upds := updater.NewPaymentsDataServiceImpl(
+		dbpool,
+		schemaService,
+	)
+	dds := updater.NewDistributionDataServiceImpl()
+
+	elpu, err := updater.NewUpdater(time.Second*100, upds, dds, elpc, chainClient, calculator.CLAIMING_MANAGER_ADDRESS)
 	if err != nil {
 		panic(err)
 	}
