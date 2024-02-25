@@ -110,10 +110,13 @@ func (u *Updater) update(ctx context.Context) error {
 
 	// merklize the distribution roots
 	log.Info().Msg("merklizing distribution roots")
-	newRoot, err := newDistribution.Merklize(distribution.SimpleMerklize)
+	accountTree, _, err := newDistribution.Merklize()
 	if err != nil {
 		return err
 	}
+
+	var newRoot [32]byte
+	copy(newRoot[:], accountTree.Root())
 
 	// set the distribution at the timestamp
 	log.Info().Msg("setting distribution")

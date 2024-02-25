@@ -6,8 +6,9 @@ import (
 	"math/big"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
+	"github.com/wealdtech/go-merkletree/v2"
+	"github.com/wealdtech/go-merkletree/v2/keccak256"
 )
 
 var ZERO_LEAF [32]byte
@@ -117,38 +118,55 @@ func (d *Distribution) GetNumLeaves() int {
 	return numLeaves
 }
 
-// Merklizes the distribution and returns the merkle root.
-func (d *Distribution) Merklize(merklizeFunc func([][32]byte) ([32]byte, error)) ([32]byte, error) {
+// Merklizes the distribution and returns the account tree and the token trees.
+func (d *Distribution) Merklize() (*merkletree.MerkleTree, []*merkletree.MerkleTree, error) {
+	tokenTrees := make([]*merkletree.MerkleTree, 0)
+
 	// todo: parallelize this
-	accountLeafs := make([][32]byte, len(d.data))
+	accountLeafs := make([][]byte, len(d.data))
 	for address, tokenAmts := range d.data {
-		tokenLeafs := make([][32]byte, len(tokenAmts))
+		tokenLeafs := make([][]byte, len(tokenAmts))
 		for token, amount := range tokenAmts {
 			tokenLeafs = append(tokenLeafs, encodeTokenLeaf(token, amount))
 		}
-		// merklize all leaves for this address
-		accountRoot, err := merklizeFunc(tokenLeafs)
+
+		// create a merkle tree for the tokens for this account
+		tokenTree, err := merkletree.NewTree(
+			merkletree.WithData(tokenLeafs),
+			merkletree.WithHashType(keccak256.New()),
+		)
 		if err != nil {
-			return [32]byte{}, err
+			return nil, nil, err
 		}
-		// append the root to the list of leafs
+		tokenTrees = append(tokenTrees, tokenTree)
+
+		// append the root to the list of account leafs
+		accountRoot := tokenTree.Root()
 		accountLeafs = append(accountLeafs, encodeAccountLeaf(address, accountRoot))
 	}
 
-	return merklizeFunc(accountLeafs)
+	accountTree, err := merkletree.NewTree(
+		merkletree.WithData(accountLeafs),
+		merkletree.WithHashType(keccak256.New()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return accountTree, tokenTrees, nil
 }
 
 // encodeAccountLeaf encodes an account leaf for a token distribution.
-func encodeAccountLeaf(account gethcommon.Address, accountRoot [32]byte) [32]byte {
+func encodeAccountLeaf(account gethcommon.Address, accountRoot []byte) []byte {
 	// (account || accountRoot)
-	return [32]byte(crypto.Keccak256(append(account.Bytes(), accountRoot[:]...)))
+	return append(account.Bytes(), accountRoot[:]...)
 }
 
 // encodeTokenLeaf encodes a token leaf for a token distribution.
-func encodeTokenLeaf(token gethcommon.Address, amount *big.Int) [32]byte {
+func encodeTokenLeaf(token gethcommon.Address, amount *big.Int) []byte {
 	// todo: handle this better
 	amountU256, _ := uint256.FromBig(amount)
 	amountBytes := amountU256.Bytes32()
 	// (token || amount)
-	return [32]byte(crypto.Keccak256(append(token.Bytes(), amountBytes[:]...)))
+	return append(token.Bytes(), amountBytes[:]...)
 }
