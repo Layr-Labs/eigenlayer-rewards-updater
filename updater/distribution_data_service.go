@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/rs/zerolog/log"
 )
 
 type DistributionDataService interface {
@@ -63,8 +62,6 @@ func (s *DistributionDataServiceImpl) SetDistribution(root [32]byte, distributio
 	if err != nil {
 		return err
 	}
-
-	log.Info().Msgf("marshalled distributions %s", marshalledDistribution)
 
 	// write to file
 	err = os.WriteFile(distributionFileName(root), marshalledDistribution, 0644)

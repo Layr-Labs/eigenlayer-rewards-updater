@@ -52,21 +52,45 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 
 	log.Info().Msgf("calculating distributions from %d to %d", startTimestamp, endTimestamp)
 
-	// get all range payments that overlap with the given interval
-	rangePayments, err := c.paymentsDataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp)
+	// get all range payments that overlap with the given interval that are coninuing, meaning they were created before the start timestamp
+	// calculation for them has already been done up until startTimestamp
+	continuingRangePayments, err := c.paymentsDataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp, big.NewInt(0), startTimestamp)
 	if err != nil && err != pgx.ErrNoRows {
 		return nil, nil, err
 	}
 	if err == pgx.ErrNoRows {
 		log.Info().Msg("no range payments found")
 		// should we return the distribution at the end timestamp? or just "skip" somehow?
-		return endTimestamp, distribution.NewDistribution(), nil
 	}
 
-	log.Info().Msgf("found %d range payments", len(rangePayments))
+	log.Info().Msgf("found %d coninuing range payments", len(continuingRangePayments))
 
 	// calculate the distribution over the range
-	diffDistribution, err := c.CalculateDistributionFromRangePayments(ctx, startTimestamp, endTimestamp, rangePayments)
+	diffDistribution := distribution.NewDistribution()
+	err = c.CalculateDistributionFromRangePayments(ctx, startTimestamp, endTimestamp, continuingRangePayments, diffDistribution)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// get all range payments that overlap with the given interval that were created after the start timestamp
+	// calculation for them has not been done yet until startTimestamp
+	newRangePayments, err := c.paymentsDataService.GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp, startTimestamp, endTimestamp)
+	if err != nil && err != pgx.ErrNoRows {
+		return nil, nil, err
+	}
+
+	log.Info().Msgf("found %d new range payments", len(newRangePayments))
+
+	// the range for calculaton for new range payments should be the minimum start timestamp of the new range payments
+	// and the end timestamp
+
+	startTimestampNewRangePayments := new(big.Int).Set(startTimestamp)
+	for _, rangePayment := range newRangePayments {
+		startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartRangeTimestamp)
+	}
+
+	// calculate the distribution over the range
+	err = c.CalculateDistributionFromRangePayments(ctx, startTimestampNewRangePayments, endTimestamp, newRangePayments, diffDistribution)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -74,37 +98,36 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	return endTimestamp, diffDistribution, nil
 }
 
-// CalculateDistributionFromRangePayments is a pure function for easier testing
+// CalculateDistributionFromRangePayments calculates the distribution of payments over the given range for the given range payments.
+// it overwrites the diffDistribution with the new updated values
 // it assumes that startTimestamp < endTimestamp and they are at an interval boundary
 func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	ctx context.Context,
 	startTimestamp, endTimestamp *big.Int,
 	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
-) (*distribution.Distribution, error) {
+	diffDistribution *distribution.Distribution,
+) error {
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.calculationIntervalSeconds).Int64()
-
-	diffDistribution := distribution.NewDistribution()
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
-		// calculate the payment per second
-		paymentPerSecond := new(big.Int).Div(rangePayment.Amount, new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
+		// calculate the payment to distribute over each interval
+		paymentToDistribute := div(mul(rangePayment.Amount, c.calculationIntervalSeconds), new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
 
-		intervalStart := new(big.Int).Set(startTimestamp)
+		intervalStart := new(big.Int).Set(rangePayment.StartRangeTimestamp)
 		intervalEnd := new(big.Int).Add(intervalStart, c.calculationIntervalSeconds)
+
 		// loop through all intervals
 		for i := int64(0); i < numIntervals; i++ {
-			// calculate overlap between the interval and the range payment
-			overlapStart := max(intervalStart, rangePayment.StartRangeTimestamp)
-			overlapEnd := min(intervalEnd, rangePayment.EndRangeTimestamp)
-
-			// calculate the payment to distribute
-			paymentToDistribute := new(big.Int).Mul(paymentPerSecond, new(big.Int).Sub(overlapEnd, overlapStart))
+			// if the interval start is at or after the end of the range payment's range, move to the next range payment
+			if intervalStart.Cmp(rangePayment.EndRangeTimestamp) >= 0 {
+				break
+			}
 
 			// get the operator set at the interval start
-			operatorSet, err := c.operatorSetDataService.GetOperatorSetForStrategyAtTimestamp(overlapStart, rangePayment.Avs, rangePayment.Strategy)
+			operatorSet, err := c.operatorSetDataService.GetOperatorSetForStrategyAtTimestamp(intervalStart, rangePayment.Avs, rangePayment.Strategy)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			// if the operator set has no staked strategy shares, skip
@@ -159,7 +182,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 		}
 	}
 
-	return diffDistribution, nil
+	return nil
 }
 
 func max(a, b *big.Int) *big.Int {

@@ -54,9 +54,9 @@ func (_m *PaymentsDataService) GetLatestRootSubmission(ctx context.Context) ([32
 	return r0, r1, r2
 }
 
-// GetRangePaymentsWithOverlappingRange provides a mock function with given fields: startTimestamp, endTimestamp
-func (_m *PaymentsDataService) GetRangePaymentsWithOverlappingRange(startTimestamp *big.Int, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
-	ret := _m.Called(startTimestamp, endTimestamp)
+// GetRangePaymentsWithOverlappingRange provides a mock function with given fields: rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp
+func (_m *PaymentsDataService) GetRangePaymentsWithOverlappingRange(rangeStartTimestamp *big.Int, rangeEndTimestamp *big.Int, creationStartTimestamp *big.Int, creationEndTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
+	ret := _m.Called(rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRangePaymentsWithOverlappingRange")
@@ -64,19 +64,19 @@ func (_m *PaymentsDataService) GetRangePaymentsWithOverlappingRange(startTimesta
 
 	var r0 []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*big.Int, *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)); ok {
-		return rf(startTimestamp, endTimestamp)
+	if rf, ok := ret.Get(0).(func(*big.Int, *big.Int, *big.Int, *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)); ok {
+		return rf(rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp)
 	}
-	if rf, ok := ret.Get(0).(func(*big.Int, *big.Int) []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment); ok {
-		r0 = rf(startTimestamp, endTimestamp)
+	if rf, ok := ret.Get(0).(func(*big.Int, *big.Int, *big.Int, *big.Int) []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment); ok {
+		r0 = rf(rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*big.Int, *big.Int) error); ok {
-		r1 = rf(startTimestamp, endTimestamp)
+	if rf, ok := ret.Get(1).(func(*big.Int, *big.Int, *big.Int, *big.Int) error); ok {
+		r1 = rf(rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp)
 	} else {
 		r1 = ret.Error(1)
 	}

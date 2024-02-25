@@ -49,7 +49,7 @@ func TestRangePaymentCalculator(t *testing.T) {
 
 		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentsDataService, mockOperatorSetDataService)
 
-		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
+		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(nil, pgx.ErrNoRows)
 
 		endTimestampPassedIn := big.NewInt(300)
 		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), startTimestamp, endTimestampPassedIn)
@@ -67,13 +67,14 @@ func TestRangePaymentCalculator(t *testing.T) {
 		}
 	})
 
-	t.Run("test GetPaymentsCalculatedUntilTimestamp with single range payment for 1 interval", func(t *testing.T) {
+	t.Run("test GetPaymentsCalculatedUntilTimestamp with single continuing range payment for 1 interval", func(t *testing.T) {
 		mockPaymentsDataService := &commonmocks.PaymentsDataService{}
 		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
 
 		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentsDataService, mockOperatorSetDataService)
 
-		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
+		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int"), big.NewInt(0), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
+		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int"), startTimestamp, mock.AnythingOfType("*big.Int")).Return([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment{}, nil)
 
 		operatorSet := &common.OperatorSet{
 			Operators: []common.Operator{

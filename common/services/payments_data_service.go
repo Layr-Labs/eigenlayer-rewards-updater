@@ -11,14 +11,15 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 	"github.com/shopspring/decimal"
 )
 
 type PaymentsDataService interface {
 	// GetLatestRootSubmission returns the latest root and timestamp until which payments have been calculated
 	GetLatestRootSubmission(ctx context.Context) ([32]byte, *big.Int, error)
-	// GetRangePaymentsWithOverlappingRange returns all range payments that overlap with the given range
-	GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
+	// GetRangePaymentsWithOverlappingRange returns all range payments that overlap with the given range that were created within the given creation range
+	GetRangePaymentsWithOverlappingRange(rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error)
 }
 
 type PaymentsDataServiceImpl struct {
@@ -71,14 +72,17 @@ func (s *PaymentsDataServiceImpl) GetLatestRootSubmission(ctx context.Context) (
 	return fixedResRootBytes, resTimestampDecimal.BigInt(), nil
 }
 
-func (s *PaymentsDataServiceImpl) GetRangePaymentsWithOverlappingRange(startTimestamp, endTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
+func (s *PaymentsDataServiceImpl) GetRangePaymentsWithOverlappingRange(rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp *big.Int) ([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment, error) {
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_PAYMENT_COORDINATOR)
 	if err != nil {
 		return nil, err
 	}
 
 	formattedQuery := fmt.Sprintf(overlappingRangePaymentsQuery, schemaID)
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, startTimestamp, endTimestamp)
+
+	log.Info().Msgf("executing query: %s, %d, %d, %d, %d", formattedQuery, rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp)
+
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, rangeStartTimestamp, rangeEndTimestamp, creationStartTimestamp, creationEndTimestamp)
 	if err != nil {
 		return nil, err
 	}
