@@ -3,17 +3,25 @@ package calculator
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOperatorSetDataService(t *testing.T) {
+	err := godotenv.Load("../.env") // Replace with your file path
+	if err != nil {
+		t.Fatal("Error loading .env file", err)
+	}
+
 	testBlockNumber := big.NewInt(10102668)
 
 	STETH_STRATEGY_ADDRESS := gethcommon.HexToAddress("0xB613E78E2068d7489bb66419fB1cfa11275d14da")
@@ -41,7 +49,7 @@ func TestOperatorSetDataService(t *testing.T) {
 		gethcommon.HexToAddress("0xe82Bcae45bC947620274a576f3A5F96Cf425e01c"),
 	}
 
-	rpcClient, err := rpc.Dial("https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161")
+	rpcClient, err := rpc.Dial(os.Getenv("RPC_URL"))
 	if err != nil {
 		panic(err)
 	}
@@ -155,7 +163,18 @@ func TestOperatorSetDataService(t *testing.T) {
 	})
 
 	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth with no stakers", func(t *testing.T) {
-		strategyShares, err := osds.GetStrategyManagerSharesOfStakers(testBlockNumber, STETH_STRATEGY_ADDRESS, stETHStakers)
+		stakers := []gethcommon.Address{}
+		// add 10000 addresses
+		for i := 0; i < 600; i++ {
+			stakers = append(stakers, common.GetRandomAddress())
+		}
+
+		strategyShares, err := osds.GetStrategyManagerSharesOfStakers(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		strategyShares, err = osds.GetStrategyManagerSharesOfStakers(testBlockNumber, STETH_STRATEGY_ADDRESS, stETHStakers)
 		if err != nil {
 			t.Fatal(err)
 		}
