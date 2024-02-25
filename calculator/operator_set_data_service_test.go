@@ -154,6 +154,18 @@ func TestOperatorSetDataService(t *testing.T) {
 		assert.Equal(t, "0", strategyShares[beaconChainETHStakers[1]].String())
 	})
 
+	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth with no stakers", func(t *testing.T) {
+		strategyShares, err := osds.GetStrategyManagerSharesOfStakers(testBlockNumber, STETH_STRATEGY_ADDRESS, stETHStakers)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, 3, len(strategyShares))
+		assert.Equal(t, "0", strategyShares[stETHStakers[0]].String())
+		assert.Equal(t, "43069823021157214260", strategyShares[stETHStakers[1]].String())
+		assert.Equal(t, "151291540795049465", strategyShares[stETHStakers[2]].String())
+	})
+
 	t.Cleanup(func() {
 		conn.ExecSQL(`
 			DROP TABLE IF EXISTS sgd34.claimer_set;

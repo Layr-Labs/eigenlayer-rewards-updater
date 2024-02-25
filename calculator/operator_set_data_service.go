@@ -12,6 +12,7 @@ import (
 	contractIClaimingManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IClaimingManager"
 	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
 	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
+	contractMulticall3 "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/Multicall3"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -355,6 +356,36 @@ func (s *OperatorSetDataServiceImpl) getSharesOfStrategyManagerStrategyForStaker
 	})
 }
 
+func (s *OperatorSetDataServiceImpl) GetStrategyManagerSharesOfStakers(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
+	strategyManagerAbi, _ := contractIStrategyManager.ContractIStrategyManagerMetaData.GetAbi()
+
+	calls := make([]contractMulticall3.Multicall3Call, 0)
+	for _, staker := range stakers {
+		sharesCall, err := strategyManagerAbi.Pack("stakerStrategyShares", staker, strategy)
+		if err != nil {
+			return nil, err
+		}
+
+		calls = append(calls, contractMulticall3.Multicall3Call{
+			Target:   STRATEGY_MANAGER_ADDRESS,
+			CallData: sharesCall,
+		})
+	}
+
+	results, err := s.aggregateMulticall(blockNumber, calls)
+	if err != nil {
+		return nil, err
+	}
+
+	stakerStrategyToShares := make(map[gethcommon.Address]*big.Int)
+	for i, shareBytes := range results {
+		staker := stakers[i]
+		stakerStrategyToShares[staker] = new(big.Int).SetBytes(shareBytes)
+	}
+
+	return stakerStrategyToShares, nil
+}
+
 func (s *OperatorSetDataServiceImpl) getSharesOfBeaconChainETHStrategyForStakersAtBlockNumber(blockNumber *big.Int, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
 	eigenPodManagerContract, err := contractIEigenPodManager.NewContractIEigenPodManager(EIGEN_POD_MANAGER_ADDRESS, s.ethClient)
 	if err != nil {
@@ -370,6 +401,23 @@ func (s *OperatorSetDataServiceImpl) getSharesOfBeaconChainETHStrategyForStakers
 
 		return shares, nil
 	})
+}
+
+func (s *OperatorSetDataServiceImpl) aggregateMulticall(blockNumber *big.Int, calls []contractMulticall3.Multicall3Call) ([][]byte, error) {
+	multicallAbi, err := contractMulticall3.ContractMulticall3MetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
+	multicallContract := bind.NewBoundContract(MULTICALL3_ADDRESS, *multicallAbi, s.ethClient, s.ethClient, s.ethClient)
+
+	var res []interface{}
+	err = multicallContract.Call(&bind.CallOpts{BlockNumber: blockNumber}, &res, "aggregate", calls)
+	if err != nil {
+		return nil, err
+	}
+
+	return res[1].([][]byte), nil
 }
 
 func fillMapFromAddressToBigIntParallel(addresses []gethcommon.Address, getValue func(gethcommon.Address) (*big.Int, error)) (map[gethcommon.Address]*big.Int, error) {
