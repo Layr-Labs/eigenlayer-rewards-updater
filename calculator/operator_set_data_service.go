@@ -113,7 +113,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 
 	log.Info().Msgf("found %d operators in %s", len(operatorAddresses), time.Since(start))
 
-	operatorSet.Operators = make([]common.Operator, len(operatorAddresses))
+	operatorSet.Operators = make([]*common.Operator, len(operatorAddresses))
 
 	// loop thru each operator and get their staker sets
 	for i, operatorAddress := range operatorAddresses {
@@ -132,7 +132,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 		log.Info().Msgf("found %d stakers for operator %s in %s", len(stakers), operatorAddress.Hex(), time.Since(start))
 		start = time.Now()
 
-		operatorSet.Operators[i].Stakers = make([]common.Staker, len(stakers))
+		operatorSet.Operators[i].Stakers = make([]*common.Staker, len(stakers))
 
 		// get the claimers of each staker and the operator
 		claimers, err := s.GetClaimersAtTimestamp(timestamp, append(stakers, operatorAddress))

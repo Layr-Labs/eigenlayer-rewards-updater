@@ -6,8 +6,10 @@ import (
 	"math/big"
 
 	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
+	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
@@ -23,6 +25,14 @@ func NewRangePaymentCalculator(
 	paymentsDataService services.PaymentsDataService,
 	operatorSetDataService OperatorSetDataService,
 ) PaymentCalculator {
+	return NewRangePaymentCalculatorImpl(calculationIntervalSeconds, paymentsDataService, operatorSetDataService)
+}
+
+func NewRangePaymentCalculatorImpl(
+	calculationIntervalSeconds int64,
+	paymentsDataService services.PaymentsDataService,
+	operatorSetDataService OperatorSetDataService,
+) *RangePaymentCalculator {
 	return &RangePaymentCalculator{
 		calculationIntervalSeconds: big.NewInt(calculationIntervalSeconds),
 		paymentsDataService:        paymentsDataService,
@@ -67,7 +77,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 
 	// calculate the distribution over the range
 	diffDistribution := distribution.NewDistribution()
-	err = c.CalculateDistributionFromRangePayments(ctx, startTimestamp, endTimestamp, continuingRangePayments, diffDistribution)
+	err = c.CalculateDistributionFromRangePayments(ctx, diffDistribution, startTimestamp, endTimestamp, continuingRangePayments)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -90,7 +100,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	}
 
 	// calculate the distribution over the range
-	err = c.CalculateDistributionFromRangePayments(ctx, startTimestampNewRangePayments, endTimestamp, newRangePayments, diffDistribution)
+	err = c.CalculateDistributionFromRangePayments(ctx, diffDistribution, startTimestampNewRangePayments, endTimestamp, newRangePayments)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -103,16 +113,16 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 // it assumes that startTimestamp < endTimestamp and they are at an interval boundary
 func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	ctx context.Context,
+	diffDistribution *distribution.Distribution,
 	startTimestamp, endTimestamp *big.Int,
 	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
-	diffDistribution *distribution.Distribution,
 ) error {
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.calculationIntervalSeconds).Int64()
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
 		// calculate the payment to distribute over each interval
-		paymentToDistribute := div(mul(rangePayment.Amount, c.calculationIntervalSeconds), new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
+		paymentToDistributePerInterval := div(mul(rangePayment.Amount, c.calculationIntervalSeconds), new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
 
 		intervalStart := new(big.Int).Set(rangePayment.StartRangeTimestamp)
 		intervalEnd := new(big.Int).Add(intervalStart, c.calculationIntervalSeconds)
@@ -136,53 +146,68 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			}
 
 			// loop through all operators
-			for _, operator := range operatorSet.Operators {
-				// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
-				totalPaymentToOperatorAndStakers := div(mul(paymentToDistribute, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
-				log.Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
-
-				// if the operator has no delegated strategy shares, skip
-				if operator.TotalDelegatedStrategyShares.Cmp(big.NewInt(0)) == 0 {
-					continue
-				}
-
-				// increment token balance according to the operator's commission
-				operatorAmt := diffDistribution.Get(operator.Address, rangePayment.Token)
-
-				// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
-				diffDistribution.Set(
-					operator.Address,
-					rangePayment.Token,
-					operatorAmt.Add(operatorAmt, div(mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)),
-				)
-
-				// loop through all stakers
-				for _, staker := range operator.Stakers {
-					// increment token balance according to the staker's proportion of the strategy shares
-					stakerAmt := diffDistribution.Get(staker.Address, rangePayment.Token)
-
-					// stakerBalance += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
-					diffDistribution.Set(
-						staker.Address,
-						rangePayment.Token,
-						stakerAmt.Add(
-							stakerAmt,
-							div(
-								mul(totalPaymentToOperatorAndStakers, new(big.Int).Sub(BIPS_DENOMINATOR, operator.Commission), staker.StrategyShares),
-								BIPS_DENOMINATOR, operator.TotalDelegatedStrategyShares,
-							),
-						),
-					)
-				}
-
-				// increment the interval start/end
-				intervalStart.Add(intervalStart, c.calculationIntervalSeconds)
-				intervalEnd.Add(intervalEnd, c.calculationIntervalSeconds)
+			for i, _ := range operatorSet.Operators {
+				// calculate the distribution to the operator and stakers for the interval
+				diffDistribution = CalculateDistributionToOperatorForInterval(ctx, diffDistribution, i, operatorSet, rangePayment.Token, paymentToDistributePerInterval)
 			}
+
+			// increment the interval start/end
+			intervalStart.Add(intervalStart, c.calculationIntervalSeconds)
+			intervalEnd.Add(intervalEnd, c.calculationIntervalSeconds)
 		}
 	}
 
 	return nil
+}
+
+func CalculateDistributionToOperatorForInterval(
+	ctx context.Context,
+	diffDistribution *distribution.Distribution,
+	index int,
+	operatorSet *common.OperatorSet,
+	token gethcommon.Address,
+	paymentToDistributePerInterval *big.Int,
+) *distribution.Distribution {
+	operator := operatorSet.Operators[index]
+
+	// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
+	totalPaymentToOperatorAndStakers := div(mul(paymentToDistributePerInterval, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
+	log.Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
+
+	// if the operator has no delegated strategy shares, skip
+	if operator.TotalDelegatedStrategyShares.Cmp(big.NewInt(0)) == 0 {
+		return diffDistribution
+	}
+
+	// increment token balance according to the operator's commission
+	operatorAmt := diffDistribution.Get(operator.Claimer, token)
+
+	// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
+	diffDistribution.Set(
+		operator.Claimer,
+		token,
+		operatorAmt.Add(operatorAmt, div(mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)),
+	)
+
+	totalPaymentToStakers := new(big.Int).Sub(totalPaymentToOperatorAndStakers, operatorAmt)
+
+	// loop through all stakers
+	for _, staker := range operator.Stakers {
+		// increment token balance according to the staker's proportion of the strategy shares
+		stakerAmt := diffDistribution.Get(staker.Claimer, token)
+
+		// stakerBalance += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
+		diffDistribution.Set(
+			staker.Claimer,
+			token,
+			stakerAmt.Add(
+				stakerAmt,
+				div(mul(totalPaymentToStakers, staker.StrategyShares), operator.TotalDelegatedStrategyShares),
+			),
+		)
+	}
+
+	return diffDistribution
 }
 
 func max(a, b *big.Int) *big.Int {

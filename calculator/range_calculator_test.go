@@ -2,46 +2,49 @@ package calculator
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"math/big"
 	"testing"
 
-	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator/mocks"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator/utils"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	commonmocks "github.com/Layr-Labs/eigenlayer-payment-updater/common/services/mocks"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+var (
+	EIGENDA_ADDRESS = gethcommon.HexToAddress("0x9FcE30E01a740660189bD8CbEaA48Abd36040010")
+	STETH_ADDRESS   = gethcommon.HexToAddress("0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84")
+	WETH_ADDRESS    = gethcommon.HexToAddress("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
+)
+
 func TestRangePaymentCalculator(t *testing.T) {
-	EIGENDA_ADDRESS := gethcommon.HexToAddress("0x9FcE30E01a740660189bD8CbEaA48Abd36040010")
-	STETH_ADDRESS := gethcommon.HexToAddress("0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84")
-	WETH_ADDRESS := gethcommon.HexToAddress("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
 
 	calculationIntervalSeconds := int64(100)
 	startTimestamp := big.NewInt(200)
 
-	testRangePayments := []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment{
-		{
-			Avs:                 EIGENDA_ADDRESS,
-			Strategy:            BEACON_CHAIN_ETH_STRATEGY_ADDRESS,
-			Token:               STETH_ADDRESS,
-			Amount:              big.NewInt(1000000000000),
-			StartRangeTimestamp: big.NewInt(200),
-			EndRangeTimestamp:   big.NewInt(700),
-		},
-		{
-			Avs:                 EIGENDA_ADDRESS,
-			Strategy:            BEACON_CHAIN_ETH_STRATEGY_ADDRESS,
-			Token:               WETH_ADDRESS,
-			Amount:              big.NewInt(2000000000000),
-			StartRangeTimestamp: big.NewInt(450),
-			EndRangeTimestamp:   big.NewInt(700),
-		},
-	}
+	// testRangePayments := []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment{
+	// 	{
+	// 		Avs:                 EIGENDA_ADDRESS,
+	// 		Strategy:            BEACON_CHAIN_ETH_STRATEGY_ADDRESS,
+	// 		Token:               STETH_ADDRESS,
+	// 		Amount:              big.NewInt(1000000000000),
+	// 		StartRangeTimestamp: big.NewInt(200),
+	// 		EndRangeTimestamp:   big.NewInt(700),
+	// 	},
+	// 	{
+	// 		Avs:                 EIGENDA_ADDRESS,
+	// 		Strategy:            BEACON_CHAIN_ETH_STRATEGY_ADDRESS,
+	// 		Token:               WETH_ADDRESS,
+	// 		Amount:              big.NewInt(2000000000000),
+	// 		StartRangeTimestamp: big.NewInt(450),
+	// 		EndRangeTimestamp:   big.NewInt(700),
+	// 	},
+	// }
 
 	t.Run("test GetPaymentsCalculatedUntilTimestamp with no range payments", func(t *testing.T) {
 		mockPaymentsDataService := &commonmocks.PaymentsDataService{}
@@ -66,147 +69,136 @@ func TestRangePaymentCalculator(t *testing.T) {
 			t.Errorf("expected distribution to be empty, got %v", distribution)
 		}
 	})
+}
 
-	t.Run("test GetPaymentsCalculatedUntilTimestamp with single continuing range payment for 1 interval", func(t *testing.T) {
-		mockPaymentsDataService := &commonmocks.PaymentsDataService{}
-		mockOperatorSetDataService := &mocks.OperatorSetDataService{}
+func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
+	tinyPaymentToDistributePerInterval := big.NewInt(50)
+	normalPaymentToDistributePerInterval := big.NewInt(1000000000000)
 
-		elpc := NewRangePaymentCalculator(calculationIntervalSeconds, mockPaymentsDataService, mockOperatorSetDataService)
-
-		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int"), big.NewInt(0), mock.AnythingOfType("*big.Int")).Return(testRangePayments[:1], nil)
-		mockPaymentsDataService.On("GetRangePaymentsWithOverlappingRange", mock.AnythingOfType("*big.Int"), mock.AnythingOfType("*big.Int"), startTimestamp, mock.AnythingOfType("*big.Int")).Return([]*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment{}, nil)
-
+	t.Run("test CalculateDistributionToOperatorForInterval for single operator operatorSet", func(t *testing.T) {
 		operatorSet := &common.OperatorSet{
-			Operators: []common.Operator{
-				{
-					Earner: common.Earner{
-						Claimer: getRandomAddress(),
-					},
-					Address:    getRandomAddress(),
-					Commission: big.NewInt(5000), // 50%
-					Stakers: []common.Staker{
-						{
-							Earner: common.Earner{
-								Claimer: getRandomAddress(),
-							},
-							Address:        getRandomAddress(),
-							StrategyShares: big.NewInt(100),
-						},
-						{
-							Earner: common.Earner{
-								Claimer: getRandomAddress(),
-							},
-							Address:        getRandomAddress(),
-							StrategyShares: big.NewInt(200),
-						},
-					},
-					TotalDelegatedStrategyShares: big.NewInt(300),
-				},
-				{
-					Earner: common.Earner{
-						Claimer: getRandomAddress(),
-					},
-					Address:    getRandomAddress(),
-					Commission: big.NewInt(1000), // 10%
-					Stakers: []common.Staker{
-						{
-							Earner: common.Earner{
-								Claimer: getRandomAddress(),
-							},
-							Address:        getRandomAddress(),
-							StrategyShares: big.NewInt(400),
-						},
-					},
-					TotalDelegatedStrategyShares: big.NewInt(400),
-				},
-			},
-			TotalStakedStrategyShares: big.NewInt(700),
+			Operators: []*common.Operator{utils.GetSelfDelegatedOperator()},
 		}
+		operatorSet.FillTotals()
 
-		mockOperatorSetDataService.On("GetOperatorSetForStrategyAtTimestamp", mock.AnythingOfType("*big.Int"), testRangePayments[0].Avs, testRangePayments[0].Strategy).Return(operatorSet, nil)
-		endTimestampPassedIn := big.NewInt(300)
-		endTimestamp, distribution, err := elpc.CalculateDistributionUntilTimestamp(context.Background(), startTimestamp, endTimestampPassedIn)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
+		diffDistribution := distribution.NewDistribution()
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
-		if endTimestamp.Cmp(endTimestampPassedIn) != 0 {
-			t.Errorf("expected end timestamp to be %s, got %d", endTimestampPassedIn, endTimestamp)
-		}
-
-		if distribution.GetNumLeaves() != 5 {
-			t.Errorf("expected distributions to have 5 entry, got %d", distribution.GetNumLeaves())
-		}
-
-		// make sure the disitrubution is accurate according to precalculated values
-		if distribution.Get(operatorSet.Operators[0].Address, testRangePayments[0].Token).Cmp(big.NewInt(42857142857)) != 0 {
-			t.Errorf("expected operator balance to be 42857142857, got %s", distribution.Get(operatorSet.Operators[0].Address, testRangePayments[0].Token))
-		}
-
-		if distribution.Get(operatorSet.Operators[0].Stakers[0].Address, testRangePayments[0].Token).Cmp(big.NewInt(14285714285)) != 0 {
-			t.Errorf("expected staker balance to be 14285714285, got %s", distribution.Get(operatorSet.Operators[0].Stakers[0].Address, testRangePayments[0].Token))
-		}
-
-		if distribution.Get(operatorSet.Operators[0].Stakers[1].Address, testRangePayments[0].Token).Cmp(big.NewInt(28571428571)) != 0 {
-			t.Errorf("expected staker balance to be 28571428571, got %s", distribution.Get(operatorSet.Operators[0].Stakers[1].Address, testRangePayments[0].Token))
-		}
-
-		if distribution.Get(operatorSet.Operators[1].Address, testRangePayments[0].Token).Cmp(big.NewInt(11428571428)) != 0 {
-			t.Errorf("expected operator balance to be 14285714285, got %s", distribution.Get(operatorSet.Operators[1].Address, testRangePayments[0].Token))
-		}
-
-		if distribution.Get(operatorSet.Operators[1].Stakers[0].Address, testRangePayments[0].Token).Cmp(big.NewInt(102857142856)) != 0 {
-			t.Errorf("expected staker balance to be 102857142856, got %s", distribution.Get(operatorSet.Operators[1].Stakers[0].Address, testRangePayments[0].Token))
-		}
+		assert.Equal(t, normalPaymentToDistributePerInterval, diffDistribution.Get(utils.SelfDelegatedOperator.Claimer, STETH_ADDRESS))
 	})
-}
 
-func fillInTotals(operatorSet common.OperatorSet) common.OperatorSet {
-	operatorSet.TotalStakedStrategyShares = big.NewInt(0)
-	for i := 0; i < len(operatorSet.Operators); i++ {
-		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
-		for j := 0; j < len(operatorSet.Operators[i].Stakers); j++ {
-			operatorSet.Operators[i].TotalDelegatedStrategyShares.Add(operatorSet.Operators[i].TotalDelegatedStrategyShares, operatorSet.Operators[i].Stakers[j].StrategyShares)
+	t.Run("test CalculateDistributionToOperatorForInterval for single operator with 2 outside stakers", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{
+			Operators: []*common.Operator{utils.GetOperatorWith2OutsideStakers()},
 		}
-		operatorSet.TotalStakedStrategyShares.Add(operatorSet.TotalStakedStrategyShares, operatorSet.Operators[i].TotalDelegatedStrategyShares)
-	}
-	return operatorSet
-}
+		operatorSet.FillTotals()
 
-func getStakerList(num int, minStake, maxStake *big.Int) []common.Staker {
-	stakers := make([]common.Staker, num)
-	for i := 0; i < num; i++ {
-		stakers[i] = getRandomStaker(minStake, maxStake)
-	}
-	return stakers
-}
+		diffDistribution := distribution.NewDistribution()
 
-func getRandomStaker(minStake, maxStake *big.Int) common.Staker {
-	return common.Staker{
-		Earner: common.Earner{
-			Claimer: getRandomAddress(),
-		},
-		Address:        getRandomAddress(),
-		StrategyShares: getRandomBigInt(minStake, maxStake),
-	}
-}
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
-func getRandomBigInt(min, max *big.Int) *big.Int {
-	diff := new(big.Int).Sub(max, min)
-	randBigInt, _ := rand.Int(rand.Reader, diff)
-	randBigInt.Add(randBigInt, min)
-	return randBigInt
-}
+		assert.Equal(t, big.NewInt(100000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(450000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[1].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(450000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[2].Claimer, STETH_ADDRESS))
+	})
 
-func getRandomAddress() gethcommon.Address {
-	randomHex, _ := getRandomHex(20)
-	return gethcommon.HexToAddress(randomHex)
-}
+	t.Run("test CalculateDistributionToOperatorForInterval for single operator with 1 outside staker", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{
+			Operators: []*common.Operator{utils.GetOperatorWith1OutsideStaker()},
+		}
+		operatorSet.FillTotals()
 
-func getRandomHex(n int) (string, error) {
-	bytes := make([]byte, n)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
+		diffDistribution := distribution.NewDistribution()
+
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+
+		assert.Equal(t, big.NewInt(550000000000), diffDistribution.Get(utils.OperatorWith1OutsideStaker.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(450000000000), diffDistribution.Get(utils.OperatorWith1OutsideStaker.Stakers[1].Claimer, STETH_ADDRESS))
+	})
+
+	t.Run("test CalculateDistributionToOperatorForInterval for three operators equal split", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{
+			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers(), utils.GetOperatorWith1OutsideStaker()},
+		}
+		operatorSet.FillTotals()
+
+		diffDistribution := distribution.NewDistribution()
+
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+
+		assert.Equal(t, big.NewInt(333333333333), diffDistribution.Get(utils.SelfDelegatedOperator.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(33333333333), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(150000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[1].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(150000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[2].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(183333333333), diffDistribution.Get(utils.OperatorWith1OutsideStaker.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(150000000000), diffDistribution.Get(utils.OperatorWith1OutsideStaker.Stakers[1].Claimer, STETH_ADDRESS))
+	})
+
+	t.Run("test CalculateDistributionToOperatorForInterval for three operators 1/10 3/10 6/10", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{
+			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers(), utils.GetOperatorWith1OutsideStaker()},
+		}
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_1, utils.TEST_OPERATOR_ADDRESS_1, big.NewInt(1e17))
+
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(2e17))
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
+
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_OPERATOR_ADDRESS_3, big.NewInt(4e17))
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_STAKER_ADDRESS_3, big.NewInt(2e17))
+
+		operatorSet.FillTotals()
+
+		diffDistribution := distribution.NewDistribution()
+
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+
+		assert.Equal(t, big.NewInt(100000000000), diffDistribution.Get(utils.SelfDelegatedOperator.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(30000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(180000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[1].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(90000000000), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[2].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(420000000000), diffDistribution.Get(utils.OperatorWith1OutsideStaker.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(180000000000), diffDistribution.Get(utils.OperatorWith1OutsideStaker.Stakers[1].Claimer, STETH_ADDRESS))
+	})
+
+	t.Run("test CalculateDistributionToOperatorForInterval for two operators with tiny payment", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{
+			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers()},
+		}
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
+		operatorSet.FillTotals()
+
+		diffDistribution := distribution.NewDistribution()
+
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+
+		assert.Equal(t, big.NewInt(31), diffDistribution.Get(utils.SelfDelegatedOperator.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(1), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(2), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[1].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(14), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[2].Claimer, STETH_ADDRESS))
+	})
+
+	t.Run("test CalculateDistributionToOperatorForInterval for two operators with tiny payment round down to 0", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{
+			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers()},
+		}
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
+		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
+		operatorSet.FillTotals()
+
+		diffDistribution := distribution.NewDistribution()
+
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+
+		assert.Equal(t, big.NewInt(41), diffDistribution.Get(utils.SelfDelegatedOperator.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(0), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(4), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[1].Claimer, STETH_ADDRESS))
+		assert.Equal(t, big.NewInt(4), diffDistribution.Get(utils.OperatorWith2OutsideStakers.Stakers[2].Claimer, STETH_ADDRESS))
+	})
+
 }
