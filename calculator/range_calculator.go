@@ -95,9 +95,9 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	// and the end timestamp
 
 	startTimestampNewRangePayments := new(big.Int).Set(startTimestamp)
-	// for _, rangePayment := range newRangePayments {
-	// 	startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartRangeTimestamp)
-	// }
+	for _, rangePayment := range newRangePayments {
+		startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartRangeTimestamp)
+	}
 
 	// calculate the distribution over the range
 	err = c.CalculateDistributionFromRangePayments(ctx, diffDistribution, startTimestampNewRangePayments, endTimestamp, newRangePayments)
