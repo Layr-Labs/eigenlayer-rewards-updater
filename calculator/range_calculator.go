@@ -147,7 +147,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			}
 
 			// loop through all operators
-			for i, _ := range operatorSet.Operators {
+			for i := range operatorSet.Operators {
 				// calculate the distribution to the operator and stakers for the interval
 				diffDistribution = CalculateDistributionToOperatorForInterval(ctx, diffDistribution, i, operatorSet, rangePayment.Token, paymentToDistributePerInterval)
 			}
@@ -202,12 +202,12 @@ func CalculateDistributionToOperatorForInterval(
 	return diffDistribution
 }
 
-func max(a, b *big.Int) *big.Int {
-	if a.Cmp(b) == 1 {
-		return a
-	}
-	return b
-}
+// func max(a, b *big.Int) *big.Int {
+// 	if a.Cmp(b) == 1 {
+// 		return a
+// 	}
+// 	return b
+// }
 
 func min(a, b *big.Int) *big.Int {
 	if a.Cmp(b) == -1 {
