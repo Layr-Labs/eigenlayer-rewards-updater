@@ -4,10 +4,12 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,11 +55,22 @@ func TestOperatorSetDataService(t *testing.T) {
 	)
 
 	t.Run("test GetBlockNumberAtTimestamp", func(t *testing.T) {
-		blockNumber, err := osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(1708285982))
+		start := time.Now()
+		_, err := osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(1708285982))
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, big.NewInt(10558769), blockNumber)
+		// assert.Equal(t, big.NewInt(10558769), blockNumber)
+		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
+
+		start = time.Now()
+		_, err = osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(time.Now().Unix()-3*24*60*60/2))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
+		t.Fail()
 	})
 
 	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
