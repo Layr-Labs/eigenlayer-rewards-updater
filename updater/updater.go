@@ -15,9 +15,9 @@ import (
 )
 
 type Updater struct {
-	UpdateInterval          time.Duration
+	updateInterval          time.Duration
 	paymentsDataService     services.PaymentsDataService
-	distributionDataService distribution.DistributionDataService
+	distributionDataService services.DistributionDataService
 	calculator              calculator.PaymentCalculator
 	transactor              Transactor
 }
@@ -25,7 +25,7 @@ type Updater struct {
 func NewUpdater(
 	updateIntervalSeconds int,
 	paymentsDataService services.PaymentsDataService,
-	distributionDataService distribution.DistributionDataService,
+	distributionDataService services.DistributionDataService,
 	calculator calculator.PaymentCalculator,
 	chainClient *common.ChainClient,
 	claimingManagerAddress gethcommon.Address,
@@ -36,7 +36,7 @@ func NewUpdater(
 	}
 
 	return &Updater{
-		UpdateInterval:          time.Second * time.Duration(updateIntervalSeconds),
+		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),
 		distributionDataService: distributionDataService,
 		paymentsDataService:     paymentsDataService,
 		calculator:              calculator,
@@ -54,7 +54,7 @@ func (u *Updater) Start() error {
 		log.Error().Msgf("failed to update: %s", err)
 	}
 
-	ticker := time.NewTicker(u.UpdateInterval)
+	ticker := time.NewTicker(u.updateInterval)
 	for range ticker.C {
 		log.Info().Msg("running update")
 		if err := u.update(ctx); err != nil {

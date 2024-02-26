@@ -1,4 +1,4 @@
-package distribution
+package services
 
 import (
 	"encoding/hex"
@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/rs/zerolog/log"
 )
 
 type DistributionDataService interface {
 	// GetDistribution returns the distribution of payments for the given root
-	GetDistribution(root [32]byte) (*Distribution, error)
+	GetDistribution(root [32]byte) (*distribution.Distribution, error)
 	// SetDistribution sets the distribution of payments for the given root
-	SetDistribution(root [32]byte, distribution *Distribution) error
+	SetDistribution(root [32]byte, distribution *distribution.Distribution) error
 }
 
 type DistributionDataServiceImpl struct{}
@@ -26,7 +27,7 @@ func NewDistributionDataServiceImpl() *DistributionDataServiceImpl {
 	return &DistributionDataServiceImpl{}
 }
 
-func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*Distribution, error) {
+func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*distribution.Distribution, error) {
 	// if the data directory doesn't exist, create it and return empty map
 	_, err := os.Stat("./data")
 	if os.IsNotExist(err) {
@@ -34,7 +35,7 @@ func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*Distribut
 		if err != nil {
 			return nil, err
 		}
-		return NewDistribution(), nil
+		return distribution.NewDistribution(), nil
 	}
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*Distribut
 	}
 
 	// deserialize from json
-	distribution := &Distribution{}
+	distribution := &distribution.Distribution{}
 	err = json.Unmarshal(file, distribution)
 	if err != nil {
 		return nil, err
@@ -56,7 +57,7 @@ func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*Distribut
 	return distribution, nil
 }
 
-func (s *DistributionDataServiceImpl) SetDistribution(root [32]byte, distribution *Distribution) error {
+func (s *DistributionDataServiceImpl) SetDistribution(root [32]byte, distribution *distribution.Distribution) error {
 
 	// seralize to json and write to data/distributions_{root}.json
 	marshalledDistribution, err := json.Marshal(distribution)

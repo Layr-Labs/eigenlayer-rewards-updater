@@ -54,17 +54,17 @@ func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) {
 	allocatedTokens.Set(token, &BigInt{Int: amount})
 }
 
-// Get gets the value for a given address.
-func (d *Distribution) Get(address, token gethcommon.Address) *big.Int {
+// Get gets the value for a given address and whether it was in the distribution
+func (d *Distribution) Get(address, token gethcommon.Address) (*big.Int, bool) {
 	allocatedTokens, found := d.data.Get(address)
 	if !found {
-		return big.NewInt(0)
+		return big.NewInt(0), false
 	}
 	amount, found := allocatedTokens.Get(token)
 	if !found {
-		return big.NewInt(0)
+		return big.NewInt(0), false
 	}
-	return amount.Int
+	return amount.Int, true
 }
 
 // Add adds the other distribution to this distribution.
@@ -75,7 +75,7 @@ func (d *Distribution) Add(other *Distribution) {
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
 			token := tokenPair.Key
 			amount := tokenPair.Value
-			currentAmount := d.Get(address, token)
+			currentAmount, _ := d.Get(address, token)
 			d.Set(address, token, currentAmount.Add(currentAmount, amount.Int))
 		}
 	}
@@ -104,8 +104,9 @@ func (d *Distribution) UnmarshalJSON(p []byte) error {
 }
 
 // Merklizes the distribution and returns the account tree and the token trees.
-func (d *Distribution) Merklize() (*merkletree.MerkleTree, []*merkletree.MerkleTree, error) {
-	tokenTrees := make([]*merkletree.MerkleTree, 0)
+// TODO: Do we need to have an option to merklize without all returning all the token trees and data?
+func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, error) {
+	tokenTrees := make(map[gethcommon.Address]*merkletree.MerkleTree, d.data.Len())
 
 	// todo: parallelize this
 	accountLeafs := make([][]byte, d.data.Len())
@@ -117,7 +118,7 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, []*merkletree.MerkleT
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
 			token := tokenPair.Key
 			amount := tokenPair.Value
-			tokenLeafs = append(tokenLeafs, encodeTokenLeaf(token, amount.Int))
+			tokenLeafs = append(tokenLeafs, EncodeTokenLeaf(token, amount.Int))
 		}
 
 		// create a merkle tree for the tokens for this account
@@ -128,11 +129,11 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, []*merkletree.MerkleT
 		if err != nil {
 			return nil, nil, err
 		}
-		tokenTrees = append(tokenTrees, tokenTree)
+		tokenTrees[address] = tokenTree
 
 		// append the root to the list of account leafs
 		accountRoot := tokenTree.Root()
-		accountLeafs = append(accountLeafs, encodeAccountLeaf(address, accountRoot))
+		accountLeafs = append(accountLeafs, EncodeAccountLeaf(address, accountRoot))
 	}
 
 	accountTree, err := merkletree.NewTree(
@@ -147,13 +148,13 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, []*merkletree.MerkleT
 }
 
 // encodeAccountLeaf encodes an account leaf for a token distribution.
-func encodeAccountLeaf(account gethcommon.Address, accountRoot []byte) []byte {
+func EncodeAccountLeaf(account gethcommon.Address, accountRoot []byte) []byte {
 	// (account || accountRoot)
 	return append(account.Bytes(), accountRoot[:]...)
 }
 
 // encodeTokenLeaf encodes a token leaf for a token distribution.
-func encodeTokenLeaf(token gethcommon.Address, amount *big.Int) []byte {
+func EncodeTokenLeaf(token gethcommon.Address, amount *big.Int) []byte {
 	// todo: handle this better
 	amountU256, _ := uint256.FromBig(amount)
 	amountBytes := amountU256.Bytes32()
