@@ -3,6 +3,7 @@ package calculator
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -50,6 +51,17 @@ func TestOperatorSetDataService(t *testing.T) {
 		schemaService,
 		ethClient,
 	)
+
+	t.Run("test GetBlockNumberAtTimestamp", func(t *testing.T) {
+		start := time.Now()
+		_, err := osds.GetBlockNumberAtTimestamp(big.NewInt(time.Now().Unix() - 2*24*60*60))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("GetBlockNumberAtTimestamp took %s", time.Since(start))
+
+		t.Fail()
+	})
 
 	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
 		createClaimerSetTable()

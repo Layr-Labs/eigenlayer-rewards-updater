@@ -21,6 +21,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var SECONDS_PER_BLOCK_ESTIMATE = big.NewInt(12)
+
 // todo: set this to the global default AVS
 var GLOBAL_DEFAULT_AVS = gethcommon.HexToAddress("0x40daa385572e48af6691364729ca165ae3609655")
 
@@ -293,7 +295,25 @@ func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.In
 		return nil, err
 	}
 
-	var lo, hi = big.NewInt(0), head.Number
+	headTimestamp := big.NewInt(int64(head.Time))
+	if headTimestamp.Cmp(timestamp) < 0 {
+		return nil, fmt.Errorf("timestamp %d is in the future", timestamp)
+	}
+
+	lowerBound, err := s.ethClient.HeaderByNumber(context.Background(), head.Number.Sub(head.Number, mul(div(headTimestamp.Sub(headTimestamp, timestamp), SECONDS_PER_BLOCK_ESTIMATE), big.NewInt(2))))
+	if err != nil {
+		return nil, err
+	}
+
+	// decrease the lower bound until it is less than the timestamp
+	for lowerBound.Time > timestamp.Uint64() {
+		lowerBound, err = s.ethClient.HeaderByNumber(context.Background(), lowerBound.Number.Sub(lowerBound.Number, big.NewInt(10)))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var lo, hi = lowerBound.Number, head.Number
 	for lo.Cmp(hi) < 0 {
 		mid := new(big.Int).Add(lo, hi)
 		mid.Div(mid, big.NewInt(2))
