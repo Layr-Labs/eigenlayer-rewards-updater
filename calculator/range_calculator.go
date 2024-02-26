@@ -181,30 +181,21 @@ func CalculateDistributionToOperatorForInterval(
 
 	// increment token balance according to the operator's commission
 	operatorAmt := diffDistribution.Get(operator.Claimer, token)
+	// operatorIncrement = totalPaymentToOperatorAndStakers * operatorCommissions / 10000
+	totalPaymentToOperator := div(mul(totalPaymentToOperatorAndStakers, operator.Commission), big.NewInt(10000))
+	// operatorAmt += operatorIncrement
+	operatorAmt.Add(operatorAmt, totalPaymentToOperator)
+	diffDistribution.Set(operator.Claimer, token, operatorAmt)
 
-	// operatorBalance += totalPaymentToOperatorAndStakers * operatorCommissions / 10000
-	diffDistribution.Set(
-		operator.Claimer,
-		token,
-		operatorAmt.Add(operatorAmt, div(mul(totalPaymentToOperatorAndStakers, operator.Commission), BIPS_DENOMINATOR)),
-	)
-
-	totalPaymentToStakers := new(big.Int).Sub(totalPaymentToOperatorAndStakers, operatorAmt)
+	totalPaymentToStakers := new(big.Int).Sub(totalPaymentToOperatorAndStakers, totalPaymentToOperator)
 
 	// loop through all stakers
 	for _, staker := range operator.Stakers {
 		// increment token balance according to the staker's proportion of the strategy shares
 		stakerAmt := diffDistribution.Get(staker.Claimer, token)
-
-		// stakerBalance += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
-		diffDistribution.Set(
-			staker.Claimer,
-			token,
-			stakerAmt.Add(
-				stakerAmt,
-				div(mul(totalPaymentToStakers, staker.StrategyShares), operator.TotalDelegatedStrategyShares),
-			),
-		)
+		// stakerAmt += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
+		stakerAmt.Add(stakerAmt, div(mul(totalPaymentToStakers, staker.StrategyShares), operator.TotalDelegatedStrategyShares))
+		diffDistribution.Set(staker.Claimer, token, stakerAmt)
 	}
 
 	return diffDistribution
