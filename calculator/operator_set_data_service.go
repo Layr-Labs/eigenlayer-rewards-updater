@@ -82,7 +82,7 @@ func NewOperatorSetDataServiceImpl(
 func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
 	log.Info().Msgf("getting operator set for avs %s for strategy %s at timestamp %d", avs.Hex(), strategy.Hex(), timestamp)
 
-	operatorSet := common.OperatorSet{}
+	operatorSet := &common.OperatorSet{}
 	operatorSet.TotalStakedStrategyShares = big.NewInt(0)
 
 	start := time.Now()
@@ -117,6 +117,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 
 	// loop thru each operator and get their staker sets
 	for i, operatorAddress := range operatorAddresses {
+		operatorSet.Operators[i] = &common.Operator{}
 		operatorSet.Operators[i].Address = operatorAddress
 		operatorSet.Operators[i].Commission = globalCommission
 		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
@@ -131,8 +132,6 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 
 		log.Info().Msgf("found %d stakers for operator %s in %s", len(stakers), operatorAddress.Hex(), time.Since(start))
 		start = time.Now()
-
-		operatorSet.Operators[i].Stakers = make([]*common.Staker, len(stakers))
 
 		// get the claimers of each staker and the operator
 		claimers, err := s.GetClaimersAtTimestamp(timestamp, append(stakers, operatorAddress))
@@ -151,8 +150,11 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 
 		log.Info().Msgf("got shares of %d stakers in %s", len(stakers), time.Since(start))
 
+		operatorSet.Operators[i].Stakers = make([]*common.Staker, len(stakers))
+
 		// loop thru each staker and get their shares
 		for j, stakerAddress := range stakers {
+			operatorSet.Operators[i].Stakers[j] = &common.Staker{}
 			operatorSet.Operators[i].Stakers[j].Address = stakerAddress
 			operatorSet.Operators[i].Stakers[j].Claimer = claimers[stakerAddress]
 			operatorSet.Operators[i].Stakers[j].StrategyShares = strategyShareMap[stakerAddress]
@@ -166,7 +168,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 		operatorSet.TotalStakedStrategyShares = operatorSet.TotalStakedStrategyShares.Add(operatorSet.TotalStakedStrategyShares, operatorSet.Operators[i].TotalDelegatedStrategyShares)
 	}
 
-	return &operatorSet, nil
+	return operatorSet, nil
 }
 
 func (s *OperatorSetDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {

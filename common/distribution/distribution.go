@@ -1,7 +1,6 @@
 package distribution
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -9,16 +8,37 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/wealdtech/go-merkletree/v2"
 	"github.com/wealdtech/go-merkletree/v2/keccak256"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
-var ZERO_LEAF [32]byte
+// Used for marshalling and unmarshalling big integers.
+type BigInt struct {
+	*big.Int
+}
+
+func (b BigInt) MarshalJSON() ([]byte, error) {
+	return []byte(b.String()), nil
+}
+
+func (b *BigInt) UnmarshalJSON(p []byte) error {
+	if string(p) == "null" {
+		return nil
+	}
+	var z big.Int
+	_, ok := z.SetString(string(p), 10)
+	if !ok {
+		return fmt.Errorf("not a valid big integer: %s", p)
+	}
+	b.Int = &z
+	return nil
+}
 
 type Distribution struct {
-	data map[gethcommon.Address]map[gethcommon.Address]*big.Int
+	data *orderedmap.OrderedMap[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]
 }
 
 func NewDistribution() *Distribution {
-	data := make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
+	data := orderedmap.New[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]()
 	return &Distribution{
 		data: data,
 	}
@@ -26,96 +46,61 @@ func NewDistribution() *Distribution {
 
 // Set sets the value for a given address.
 func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) {
-	// TODO: fix this
-	if len(d.data) == 0 {
-		d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
+	allocatedTokens, found := d.data.Get(address)
+	if !found {
+		allocatedTokens = orderedmap.New[gethcommon.Address, *BigInt]()
+		d.data.Set(address, allocatedTokens)
 	}
-	if len(d.data[address]) == 0 {
-		d.data[address] = make(map[gethcommon.Address]*big.Int)
-	}
-	d.data[address][token] = amount
+	allocatedTokens.Set(token, &BigInt{Int: amount})
 }
 
 // Get gets the value for a given address.
 func (d *Distribution) Get(address, token gethcommon.Address) *big.Int {
-	if len(d.data) == 0 {
+	allocatedTokens, found := d.data.Get(address)
+	if !found {
 		return big.NewInt(0)
 	}
-	if len(d.data[address]) == 0 {
+	amount, found := allocatedTokens.Get(token)
+	if !found {
 		return big.NewInt(0)
 	}
-	amount := d.data[address][token]
-	if amount == nil {
-		return big.NewInt(0)
-	}
-	return amount
+	return amount.Int
 }
 
 // Add adds the other distribution to this distribution.
+// assumes other is non nil
 func (d *Distribution) Add(other *Distribution) {
-	// TODO: fix this
-	if len(d.data) == 0 {
-		d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
-	}
-	if len(other.data) == 0 {
-		other.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
-	}
-
-	for address, tokenAmts := range other.data {
-		for token, amount := range tokenAmts {
-			if d.data[address][token] == nil {
-				// TODO: fix this
-				if len(d.data[address]) == 0 {
-					d.data[address] = make(map[gethcommon.Address]*big.Int)
-				}
-				d.data[address][token] = big.NewInt(0)
-			}
-			d.data[address][token].Add(d.data[address][token], amount)
+	for accountPair := other.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
+		address := accountPair.Key
+		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
+			token := tokenPair.Key
+			amount := tokenPair.Value
+			currentAmount := d.Get(address, token)
+			d.Set(address, token, currentAmount.Add(currentAmount, amount.Int))
 		}
 	}
-}
-
-func (d *Distribution) MarshalJSON() ([]byte, error) {
-	// dereference the big.Ints
-	data := make(map[gethcommon.Address]map[gethcommon.Address]string)
-	for address, tokenAmts := range d.data {
-		data[address] = make(map[gethcommon.Address]string)
-		for token, amt := range tokenAmts {
-			data[address][token] = amt.String()
-		}
-
-	}
-	return json.Marshal(data)
-}
-
-func (d *Distribution) UnmarshalJSON(data []byte) error {
-	// dereference the big.Ints
-	var ok bool
-	var dataMap map[gethcommon.Address]map[gethcommon.Address]string
-	if err := json.Unmarshal(data, &dataMap); err != nil {
-		return err
-	}
-	d.data = make(map[gethcommon.Address]map[gethcommon.Address]*big.Int)
-	for address, tokenAmts := range dataMap {
-		for token, amt := range tokenAmts {
-			if d.data[address] == nil {
-				d.data[address] = make(map[gethcommon.Address]*big.Int)
-			}
-			d.data[address][token], ok = new(big.Int).SetString(amt, 10)
-			if !ok {
-				return fmt.Errorf("failed to parse big.Int from string: %s", amt)
-			}
-		}
-	}
-	return nil
 }
 
 func (d *Distribution) GetNumLeaves() int {
 	numLeaves := 0
-	for _, tokenAmts := range d.data {
-		numLeaves += len(tokenAmts)
+	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
+		numLeaves += accountPair.Value.Len()
 	}
 	return numLeaves
+}
+
+func (d *Distribution) MarshalJSON() ([]byte, error) {
+	return d.data.MarshalJSON()
+}
+
+func (d *Distribution) UnmarshalJSON(p []byte) error {
+	data := orderedmap.New[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]()
+	err := data.UnmarshalJSON(p)
+	if err != nil {
+		return err
+	}
+	d.data = data
+	return nil
 }
 
 // Merklizes the distribution and returns the account tree and the token trees.
@@ -123,11 +108,16 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, []*merkletree.MerkleT
 	tokenTrees := make([]*merkletree.MerkleTree, 0)
 
 	// todo: parallelize this
-	accountLeafs := make([][]byte, len(d.data))
-	for address, tokenAmts := range d.data {
-		tokenLeafs := make([][]byte, len(tokenAmts))
-		for token, amount := range tokenAmts {
-			tokenLeafs = append(tokenLeafs, encodeTokenLeaf(token, amount))
+	accountLeafs := make([][]byte, d.data.Len())
+
+	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
+		address := accountPair.Key
+		// fetch the leafs for the tokens for this account
+		tokenLeafs := make([][]byte, accountPair.Value.Len())
+		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
+			token := tokenPair.Key
+			amount := tokenPair.Value
+			tokenLeafs = append(tokenLeafs, encodeTokenLeaf(token, amount.Int))
 		}
 
 		// create a merkle tree for the tokens for this account

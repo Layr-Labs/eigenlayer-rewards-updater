@@ -55,7 +55,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	}
 
 	// todo remove
-	// clamp the end timestamp to 2 intervals ahead of the start timestamp
+	// clamp the end timestamp to 1 intervals ahead of the start timestamp
 	if endTimestamp.Cmp(new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.calculationIntervalSeconds, big.NewInt(1)))) >= 0 {
 		endTimestamp = new(big.Int).Add(startTimestamp, new(big.Int).Mul(c.calculationIntervalSeconds, big.NewInt(1)))
 	}
@@ -95,9 +95,9 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 	// and the end timestamp
 
 	startTimestampNewRangePayments := new(big.Int).Set(startTimestamp)
-	for _, rangePayment := range newRangePayments {
-		startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartRangeTimestamp)
-	}
+	// for _, rangePayment := range newRangePayments {
+	// 	startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartRangeTimestamp)
+	// }
 
 	// calculate the distribution over the range
 	err = c.CalculateDistributionFromRangePayments(ctx, diffDistribution, startTimestampNewRangePayments, endTimestamp, newRangePayments)
@@ -118,6 +118,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
 ) error {
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.calculationIntervalSeconds).Int64()
+	log.Info().Msgf("num intervals: %d", numIntervals)
 
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
