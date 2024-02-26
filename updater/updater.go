@@ -17,7 +17,7 @@ import (
 type Updater struct {
 	UpdateInterval          time.Duration
 	paymentsDataService     services.PaymentsDataService
-	distributionDataService DistributionDataService
+	distributionDataService distribution.DistributionDataService
 	calculator              calculator.PaymentCalculator
 	transactor              Transactor
 }
@@ -25,7 +25,7 @@ type Updater struct {
 func NewUpdater(
 	updateIntervalSeconds int,
 	paymentsDataService services.PaymentsDataService,
-	distributionDataService DistributionDataService,
+	distributionDataService distribution.DistributionDataService,
 	calculator calculator.PaymentCalculator,
 	chainClient *common.ChainClient,
 	claimingManagerAddress gethcommon.Address,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -63,7 +64,7 @@ func main() {
 
 	elpc := calculator.NewRangePaymentCalculator(calculationIntervalSeconds, pds, osds)
 
-	dds := updater.NewDistributionDataServiceImpl()
+	dds := distribution.NewDistributionDataServiceImpl()
 
 	updateIntervalSeconds := 100
 

@@ -46,9 +46,7 @@ var CLAIMING_MANAGER_ADDRESS = gethcommon.HexToAddress("0xBF81C737bc6871f1Dfa143
 
 type OperatorSetDataService interface {
 	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
-	GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
-
-	GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error)
+	GetOperatorSetForStrategyAtTimestamp(ctx context.Context, timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
 }
 
 type OperatorSetDataServiceImpl struct {
@@ -81,7 +79,7 @@ func NewOperatorSetDataServiceImpl(
 	}
 }
 
-func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
+func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx context.Context, timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
 	log.Info().Msgf("getting operator set for avs %s for strategy %s at timestamp %d", avs.Hex(), strategy.Hex(), timestamp)
 
 	operatorSet := &common.OperatorSet{}
@@ -90,7 +88,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(timest
 	start := time.Now()
 
 	// get the blocknumber of the block at the given timestamp
-	blockNumber, err := s.GetBlockNumberAtTimestamp(timestamp)
+	blockNumber, err := s.GetBlockNumberAtTimestamp(ctx, timestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -289,8 +287,8 @@ func (s *OperatorSetDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(ti
 	return stakers, nil
 }
 
-func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
-	head, err := s.ethClient.HeaderByNumber(context.Background(), nil)
+func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(ctx context.Context, timestamp *big.Int) (*big.Int, error) {
+	head, err := s.ethClient.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -300,14 +298,14 @@ func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.In
 		return nil, fmt.Errorf("timestamp %d is in the future", timestamp)
 	}
 
-	lowerBound, err := s.ethClient.HeaderByNumber(context.Background(), head.Number.Sub(head.Number, mul(div(headTimestamp.Sub(headTimestamp, timestamp), SECONDS_PER_BLOCK_ESTIMATE), big.NewInt(2))))
+	lowerBound, err := s.ethClient.HeaderByNumber(ctx, new(big.Int).Sub(head.Number, mul(div(headTimestamp.Sub(headTimestamp, timestamp), SECONDS_PER_BLOCK_ESTIMATE), big.NewInt(2))))
 	if err != nil {
 		return nil, err
 	}
 
 	// decrease the lower bound until it is less than the timestamp
 	for lowerBound.Time > timestamp.Uint64() {
-		lowerBound, err = s.ethClient.HeaderByNumber(context.Background(), lowerBound.Number.Sub(lowerBound.Number, big.NewInt(10)))
+		lowerBound, err = s.ethClient.HeaderByNumber(ctx, lowerBound.Number.Sub(lowerBound.Number, big.NewInt(10)))
 		if err != nil {
 			return nil, err
 		}
@@ -318,7 +316,7 @@ func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(timestamp *big.In
 		mid := new(big.Int).Add(lo, hi)
 		mid.Div(mid, big.NewInt(2))
 
-		header, err := s.ethClient.HeaderByNumber(context.Background(), mid)
+		header, err := s.ethClient.HeaderByNumber(ctx, mid)
 		if err != nil {
 			return nil, err
 		}

@@ -136,7 +136,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			}
 
 			// get the operator set at the interval start
-			operatorSet, err := c.operatorSetDataService.GetOperatorSetForStrategyAtTimestamp(intervalStart, rangePayment.Avs, rangePayment.Strategy)
+			operatorSet, err := c.operatorSetDataService.GetOperatorSetForStrategyAtTimestamp(ctx, intervalStart, rangePayment.Avs, rangePayment.Strategy)
 			if err != nil {
 				return err
 			}

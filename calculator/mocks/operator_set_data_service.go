@@ -7,6 +7,8 @@ import (
 
 	common "github.com/ethereum/go-ethereum/common"
 
+	context "context"
+
 	eigenlayer_payment_updatercommon "github.com/Layr-Labs/eigenlayer-payment-updater/common"
 
 	mock "github.com/stretchr/testify/mock"
@@ -17,39 +19,9 @@ type OperatorSetDataService struct {
 	mock.Mock
 }
 
-// GetBlockNumberAtTimestamp provides a mock function with given fields: timestamp
-func (_m *OperatorSetDataService) GetBlockNumberAtTimestamp(timestamp *big.Int) (*big.Int, error) {
-	ret := _m.Called(timestamp)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetBlockNumberAtTimestamp")
-	}
-
-	var r0 *big.Int
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*big.Int) (*big.Int, error)); ok {
-		return rf(timestamp)
-	}
-	if rf, ok := ret.Get(0).(func(*big.Int) *big.Int); ok {
-		r0 = rf(timestamp)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*big.Int)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(*big.Int) error); ok {
-		r1 = rf(timestamp)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetOperatorSetForStrategyAtTimestamp provides a mock function with given fields: timestamp, avs, strategy
-func (_m *OperatorSetDataService) GetOperatorSetForStrategyAtTimestamp(timestamp *big.Int, avs common.Address, strategy common.Address) (*eigenlayer_payment_updatercommon.OperatorSet, error) {
-	ret := _m.Called(timestamp, avs, strategy)
+// GetOperatorSetForStrategyAtTimestamp provides a mock function with given fields: ctx, timestamp, avs, strategy
+func (_m *OperatorSetDataService) GetOperatorSetForStrategyAtTimestamp(ctx context.Context, timestamp *big.Int, avs common.Address, strategy common.Address) (*eigenlayer_payment_updatercommon.OperatorSet, error) {
+	ret := _m.Called(ctx, timestamp, avs, strategy)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetOperatorSetForStrategyAtTimestamp")
@@ -57,19 +29,19 @@ func (_m *OperatorSetDataService) GetOperatorSetForStrategyAtTimestamp(timestamp
 
 	var r0 *eigenlayer_payment_updatercommon.OperatorSet
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*big.Int, common.Address, common.Address) (*eigenlayer_payment_updatercommon.OperatorSet, error)); ok {
-		return rf(timestamp, avs, strategy)
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, common.Address, common.Address) (*eigenlayer_payment_updatercommon.OperatorSet, error)); ok {
+		return rf(ctx, timestamp, avs, strategy)
 	}
-	if rf, ok := ret.Get(0).(func(*big.Int, common.Address, common.Address) *eigenlayer_payment_updatercommon.OperatorSet); ok {
-		r0 = rf(timestamp, avs, strategy)
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, common.Address, common.Address) *eigenlayer_payment_updatercommon.OperatorSet); ok {
+		r0 = rf(ctx, timestamp, avs, strategy)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*eigenlayer_payment_updatercommon.OperatorSet)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*big.Int, common.Address, common.Address) error); ok {
-		r1 = rf(timestamp, avs, strategy)
+	if rf, ok := ret.Get(1).(func(context.Context, *big.Int, common.Address, common.Address) error); ok {
+		r1 = rf(ctx, timestamp, avs, strategy)
 	} else {
 		r1 = ret.Error(1)
 	}
