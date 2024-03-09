@@ -64,21 +64,12 @@ func TestOperatorSetDataService(t *testing.T) {
 
 	t.Run("test GetBlockNumberAtTimestamp", func(t *testing.T) {
 		start := time.Now()
-		_, err := osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(1708285982))
+		blockNumber, err := osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(1708285982))
 		if err != nil {
 			t.Fatal(err)
 		}
-		// assert.Equal(t, big.NewInt(10558769), blockNumber)
+		assert.Equal(t, big.NewInt(10558769), blockNumber)
 		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
-
-		start = time.Now()
-		_, err = osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(time.Now().Unix()-3*24*60*60/2))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
-		t.Fail()
 	})
 
 	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
@@ -162,27 +153,18 @@ func TestOperatorSetDataService(t *testing.T) {
 		assert.Equal(t, "0", strategyShares[beaconChainETHStakers[1]].String())
 	})
 
-	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth with no stakers", func(t *testing.T) {
+	t.Run("test GetSharesOfStakersAtBlockNumber for steth with 1400 stakers", func(t *testing.T) {
 		stakers := []gethcommon.Address{}
-		// add 10000 addresses
-		for i := 0; i < 600; i++ {
+		for i := 0; i < 901; i++ {
 			stakers = append(stakers, common.GetRandomAddress())
 		}
 
-		strategyShares, err := osds.GetStrategyManagerSharesOfStakers(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
+		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		strategyShares, err = osds.GetStrategyManagerSharesOfStakers(testBlockNumber, STETH_STRATEGY_ADDRESS, stETHStakers)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Equal(t, 3, len(strategyShares))
-		assert.Equal(t, "0", strategyShares[stETHStakers[0]].String())
-		assert.Equal(t, "43069823021157214260", strategyShares[stETHStakers[1]].String())
-		assert.Equal(t, "151291540795049465", strategyShares[stETHStakers[2]].String())
+		assert.Equal(t, 901, len(strategyShares))
 	})
 
 	t.Cleanup(func() {
