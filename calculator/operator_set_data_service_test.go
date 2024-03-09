@@ -3,17 +3,25 @@ package calculator
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOperatorSetDataService(t *testing.T) {
+	err := godotenv.Load("../.env") // Replace with your file path
+	if err != nil {
+		t.Fatal("Error loading .env file", err)
+	}
+
 	testBlockNumber := big.NewInt(10102668)
 
 	STETH_STRATEGY_ADDRESS := gethcommon.HexToAddress("0xB613E78E2068d7489bb66419fB1cfa11275d14da")
@@ -41,7 +49,7 @@ func TestOperatorSetDataService(t *testing.T) {
 		gethcommon.HexToAddress("0xe82Bcae45bC947620274a576f3A5F96Cf425e01c"),
 	}
 
-	rpcClient, err := rpc.Dial("https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161")
+	rpcClient, err := rpc.Dial(os.Getenv("RPC_URL"))
 	if err != nil {
 		panic(err)
 	}
@@ -56,21 +64,12 @@ func TestOperatorSetDataService(t *testing.T) {
 
 	t.Run("test GetBlockNumberAtTimestamp", func(t *testing.T) {
 		start := time.Now()
-		_, err := osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(1708285982))
+		blockNumber, err := osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(1708285982))
 		if err != nil {
 			t.Fatal(err)
 		}
-		// assert.Equal(t, big.NewInt(10558769), blockNumber)
+		assert.Equal(t, big.NewInt(10558769), blockNumber)
 		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
-
-		start = time.Now()
-		_, err = osds.GetBlockNumberAtTimestamp(context.Background(), big.NewInt(time.Now().Unix()-3*24*60*60/2))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
-		t.Fail()
 	})
 
 	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
@@ -152,6 +151,20 @@ func TestOperatorSetDataService(t *testing.T) {
 		assert.Equal(t, 2, len(strategyShares))
 		assert.Equal(t, "32000000000000000000", strategyShares[beaconChainETHStakers[0]].String())
 		assert.Equal(t, "0", strategyShares[beaconChainETHStakers[1]].String())
+	})
+
+	t.Run("test GetSharesOfStakersAtBlockNumber for steth with 1400 stakers", func(t *testing.T) {
+		stakers := []gethcommon.Address{}
+		for i := 0; i < 901; i++ {
+			stakers = append(stakers, common.GetRandomAddress())
+		}
+
+		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, 901, len(strategyShares))
 	})
 
 	t.Cleanup(func() {
