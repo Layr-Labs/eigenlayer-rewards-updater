@@ -13,7 +13,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.4
-	github.com/wealdtech/go-merkletree/v2 v2.5.1
+	github.com/wealdtech/go-merkletree/v2 v2.5.2-0.20240302222400-69219c450662
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
 

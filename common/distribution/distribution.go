@@ -34,7 +34,9 @@ func (b *BigInt) UnmarshalJSON(p []byte) error {
 }
 
 type Distribution struct {
-	data *orderedmap.OrderedMap[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]
+	accountIndices map[gethcommon.Address]uint64                        // used for optimizing proving
+	tokenIndices   map[gethcommon.Address]map[gethcommon.Address]uint64 // used for optimizing proving
+	data           *orderedmap.OrderedMap[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]
 }
 
 func NewDistribution() *Distribution {
@@ -65,6 +67,25 @@ func (d *Distribution) Get(address, token gethcommon.Address) (*big.Int, bool) {
 		return big.NewInt(0), false
 	}
 	return amount.Int, true
+}
+
+// Get's the index of the account in the distribution
+// Note that the indices must be set before calling this function
+func (d *Distribution) GetAccountIndex(address gethcommon.Address) (uint64, bool) {
+	index, found := d.accountIndices[address]
+	return index, found
+}
+
+// Get's the index of the token for a certain account in the distribution
+// Note that the indices must be set before calling this function
+func (d *Distribution) GetTokenIndex(address, token gethcommon.Address) (uint64, bool) {
+	indices, found := d.tokenIndices[address]
+	if !found {
+		return 0, false
+	}
+
+	index, found := indices[token]
+	return index, found
 }
 
 // Add adds the other distribution to this distribution.
@@ -109,16 +130,20 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 	tokenTrees := make(map[gethcommon.Address]*merkletree.MerkleTree, d.data.Len())
 
 	// todo: parallelize this
+	accountIndex := uint64(0)
 	accountLeafs := make([][]byte, d.data.Len())
-
 	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
 		address := accountPair.Key
+		d.accountIndices[address] = uint64(accountIndex)
 		// fetch the leafs for the tokens for this account
+		tokenIndex := uint64(0)
 		tokenLeafs := make([][]byte, accountPair.Value.Len())
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
 			token := tokenPair.Key
 			amount := tokenPair.Value
+			d.tokenIndices[address][token] = uint64(tokenIndex)
 			tokenLeafs = append(tokenLeafs, EncodeTokenLeaf(token, amount.Int))
+			tokenIndex++
 		}
 
 		// create a merkle tree for the tokens for this account
@@ -134,6 +159,7 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 		// append the root to the list of account leafs
 		accountRoot := tokenTree.Root()
 		accountLeafs = append(accountLeafs, EncodeAccountLeaf(address, accountRoot))
+		accountIndex++
 	}
 
 	accountTree, err := merkletree.NewTree(

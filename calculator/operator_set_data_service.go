@@ -112,6 +112,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 
 	operatorSet.Operators = make([]*common.Operator, len(operatorAddresses))
 
+	// todo: parallelize this
 	// loop thru each operator and get their staker sets
 	for i, operatorAddress := range operatorAddresses {
 		operatorSet.Operators[i] = &common.Operator{}

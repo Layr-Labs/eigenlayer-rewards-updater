@@ -104,22 +104,20 @@ func (cp *ClaimProver) GetProof(recipient gethcommon.Address, tokens []gethcommo
 	// aquire read lock
 	cp.mu.RLock()
 
-	// get the account root
-	tokenTree, found := cp.tokenTrees[recipient]
+	accountIndex, found := cp.distribution.GetAccountIndex(recipient)
 	if !found {
-		return nil, fmt.Errorf("recipient not found %s", recipient.Hex())
+		return nil, fmt.Errorf("account index not found for recipient %s", recipient.Hex())
 	}
-	accountRoot := tokenTree.Root()
 
 	// get the token proofs
 	tokenProofs := make([]*merkletree.Proof, len(tokens))
 	for i, token := range tokens {
-		amount, found := cp.distribution.Get(recipient, token)
+		tokenIndex, found := cp.distribution.GetTokenIndex(recipient, token)
 		if !found {
-			return nil, fmt.Errorf("token %s for recipient %s", token.Hex(), recipient.Hex())
+			return nil, fmt.Errorf("token index not found for token %s and recipient %s", token.Hex(), recipient.Hex())
 		}
 
-		tokenProof, err := cp.tokenTrees[token].GenerateProof(distribution.EncodeTokenLeaf(token, amount), 0)
+		tokenProof, err := cp.tokenTrees[recipient].GenerateProofWithIndex(tokenIndex, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +125,7 @@ func (cp *ClaimProver) GetProof(recipient gethcommon.Address, tokens []gethcommo
 	}
 
 	// get the account proof
-	accountProof, err := cp.accountTree.GenerateProof(distribution.EncodeAccountLeaf(recipient, accountRoot), 0)
+	accountProof, err := cp.accountTree.GenerateProofWithIndex(accountIndex, 0)
 	if err != nil {
 		log.Error().Msgf("failed to generate account proof: %s", err)
 	}
