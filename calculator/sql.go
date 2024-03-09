@@ -1,6 +1,7 @@
 package calculator
 
-var claimersAtTimestampQuery string = `
+// todo: rename claimer to recipient
+var recipientsAtTimestampQuery string = `
 	SELECT DISTINCT ON (account) account, claimer
 	FROM %s.claimer_set
 	WHERE block_timestamp <= $1 AND encode(account, 'hex') in (%s)

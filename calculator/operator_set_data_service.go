@@ -130,13 +130,13 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 		log.Info().Msgf("found %d stakers for operator %s in %s", len(stakers), operatorAddress.Hex(), time.Since(start))
 		start = time.Now()
 
-		// get the claimers of each staker and the operator
-		claimers, err := s.GetClaimersAtTimestamp(timestamp, append(stakers, operatorAddress))
+		// get the recipients of each staker and the operator
+		recipients, err := s.GetRecipientsAtTimestamp(timestamp, append(stakers, operatorAddress))
 		if err != nil {
 			return nil, err
 		}
 
-		log.Info().Msgf("got claimers of %d stakers in %s", len(stakers), time.Since(start))
+		log.Info().Msgf("got recipients of %d stakers in %s", len(stakers), time.Since(start))
 		start = time.Now()
 
 		// get the shares of each staker
@@ -153,10 +153,10 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 		for j, stakerAddress := range stakers {
 			operatorSet.Operators[i].Stakers[j] = &common.Staker{}
 			operatorSet.Operators[i].Stakers[j].Address = stakerAddress
-			operatorSet.Operators[i].Stakers[j].Claimer = claimers[stakerAddress]
+			operatorSet.Operators[i].Stakers[j].Recipient = recipients[stakerAddress]
 			operatorSet.Operators[i].Stakers[j].StrategyShares = strategyShareMap[stakerAddress]
 
-			operatorSet.Operators[i].Claimer = claimers[operatorAddress]
+			operatorSet.Operators[i].Recipient = recipients[operatorAddress]
 			// add the staker's shares to the operator's total delegated strategy shares
 			operatorSet.Operators[i].TotalDelegatedStrategyShares = operatorSet.Operators[i].TotalDelegatedStrategyShares.Add(operatorSet.Operators[i].TotalDelegatedStrategyShares, strategyShareMap[stakerAddress])
 		}
@@ -196,7 +196,7 @@ func (s *OperatorSetDataServiceImpl) GetGlobalCommissionAtBlockNumber(blockNumbe
 	return big.NewInt(int64(globalCommission)), nil
 }
 
-func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
+func (s *OperatorSetDataServiceImpl) GetRecipientsAtTimestamp(timestamp *big.Int, accounts []gethcommon.Address) (map[gethcommon.Address]gethcommon.Address, error) {
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_CLAIMING_MANAGER)
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, 
 	}
 
 	// format the query
-	formattedQuery := fmt.Sprintf(claimersAtTimestampQuery, schemaID, toSQLAddreses(accounts))
+	formattedQuery := fmt.Sprintf(recipientsAtTimestampQuery, schemaID, toSQLAddreses(accounts))
 
 	// query the database
 	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp)
@@ -213,36 +213,36 @@ func (s *OperatorSetDataServiceImpl) GetClaimersAtTimestamp(timestamp *big.Int, 
 	}
 	defer rows.Close()
 
-	// create a map of account to claimer
-	claimers := make(map[gethcommon.Address]gethcommon.Address)
+	// create a map of account to recipient
+	recipients := make(map[gethcommon.Address]gethcommon.Address)
 	for rows.Next() {
 		var (
-			accountBytes []byte
-			claimerBytes []byte
+			accountBytes   []byte
+			recipientBytes []byte
 		)
 
 		err := rows.Scan(
 			&accountBytes,
-			&claimerBytes,
+			&recipientBytes,
 		)
 		if err != nil {
 			return nil, err
 		}
 
 		account := gethcommon.HexToAddress(hex.EncodeToString(accountBytes))
-		claimer := gethcommon.HexToAddress(hex.EncodeToString(claimerBytes))
+		recipient := gethcommon.HexToAddress(hex.EncodeToString(recipientBytes))
 
-		claimers[account] = claimer
+		recipients[account] = recipient
 	}
 
-	// set the claimer of any account that doesn't have one to the account itself
+	// set the recipient of any account that doesn't have one to the account itself
 	for _, account := range accounts {
-		if _, ok := claimers[account]; !ok {
-			claimers[account] = account
+		if _, ok := recipients[account]; !ok {
+			recipients[account] = account
 		}
 	}
 
-	return claimers, nil
+	return recipients, nil
 }
 
 func (s *OperatorSetDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {

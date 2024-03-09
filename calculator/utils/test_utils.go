@@ -20,7 +20,7 @@ var (
 	// a self delegated operator with no other stakers
 	SelfDelegatedOperator = &common.Operator{
 		Earner: common.Earner{
-			Claimer: TEST_OPERATOR_ADDRESS_1,
+			Recipient: TEST_OPERATOR_ADDRESS_1,
 		},
 		Address:                      TEST_OPERATOR_ADDRESS_1,
 		Commission:                   big.NewInt(1000),
@@ -28,7 +28,7 @@ var (
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
-					Claimer: TEST_OPERATOR_ADDRESS_1,
+					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
 				Address:        TEST_OPERATOR_ADDRESS_1,
 				StrategyShares: big.NewInt(1e18),
@@ -39,7 +39,7 @@ var (
 	// an operator with 2 stakers
 	OperatorWith2OutsideStakers = &common.Operator{
 		Earner: common.Earner{
-			Claimer: TEST_OPERATOR_ADDRESS_2,
+			Recipient: TEST_OPERATOR_ADDRESS_2,
 		},
 		Address:                      TEST_OPERATOR_ADDRESS_2,
 		Commission:                   big.NewInt(1000),
@@ -47,21 +47,21 @@ var (
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
-					Claimer: TEST_OPERATOR_ADDRESS_1,
+					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
 				Address:        TEST_OPERATOR_ADDRESS_1,
 				StrategyShares: big.NewInt(0),
 			},
 			{
 				Earner: common.Earner{
-					Claimer: TEST_STAKER_ADDRESS_1,
+					Recipient: TEST_STAKER_ADDRESS_1,
 				},
 				Address:        TEST_STAKER_ADDRESS_1,
 				StrategyShares: big.NewInt(5e17),
 			},
 			{
 				Earner: common.Earner{
-					Claimer: TEST_STAKER_ADDRESS_2,
+					Recipient: TEST_STAKER_ADDRESS_2,
 				},
 				Address:        TEST_STAKER_ADDRESS_2,
 				StrategyShares: big.NewInt(5e17),
@@ -71,7 +71,7 @@ var (
 
 	OperatorWith1OutsideStaker = &common.Operator{
 		Earner: common.Earner{
-			Claimer: TEST_OPERATOR_ADDRESS_3,
+			Recipient: TEST_OPERATOR_ADDRESS_3,
 		},
 		Address:                      TEST_OPERATOR_ADDRESS_3,
 		Commission:                   big.NewInt(1000),
@@ -79,14 +79,14 @@ var (
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
-					Claimer: TEST_OPERATOR_ADDRESS_3,
+					Recipient: TEST_OPERATOR_ADDRESS_3,
 				},
 				Address:        TEST_OPERATOR_ADDRESS_3,
 				StrategyShares: big.NewInt(5e17),
 			},
 			{
 				Earner: common.Earner{
-					Claimer: TEST_STAKER_ADDRESS_3,
+					Recipient: TEST_STAKER_ADDRESS_3,
 				},
 				Address:        TEST_STAKER_ADDRESS_3,
 				StrategyShares: big.NewInt(5e17),

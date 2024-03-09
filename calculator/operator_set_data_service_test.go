@@ -26,9 +26,9 @@ func TestOperatorSetDataService(t *testing.T) {
 
 	STETH_STRATEGY_ADDRESS := gethcommon.HexToAddress("0xB613E78E2068d7489bb66419fB1cfa11275d14da")
 
-	firstClaimerSetTimestamp := big.NewInt(1706728896)
-	secondClaimerSetTimestamp := big.NewInt(1706728956)
-	thirdClaimerSetTimestamp := big.NewInt(1706732424)
+	firstRecipientSetTimestamp := big.NewInt(1706728896)
+	secondRecipientSetTimestamp := big.NewInt(1706728956)
+	thirdRecipientSetTimestamp := big.NewInt(1706732424)
 
 	testingAccounts := []gethcommon.Address{
 		gethcommon.HexToAddress("0x27977e6E4426A525d055A587d2a0537b4cb376eA"),
@@ -72,50 +72,50 @@ func TestOperatorSetDataService(t *testing.T) {
 		log.Info().Msgf("GetBlockNumberAtTimestamp took %s", time.Since(start))
 	})
 
-	t.Run("test GetClaimersAtTimestamp", func(t *testing.T) {
-		createClaimerSetTable()
+	t.Run("test GetRecipientsAtTimestamp", func(t *testing.T) {
+		createRecipientSetTable()
 
-		claimers, err := osds.GetClaimersAtTimestamp(firstClaimerSetTimestamp, testingAccounts)
+		recipients, err := osds.GetRecipientsAtTimestamp(firstRecipientSetTimestamp, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// only the first test account has a claimer that is different from itself
+		// only the first test account has a recipient that is different from itself
 		for _, account := range testingAccounts {
 			if account == testingAccounts[0] {
-				assert.Equal(t, testingAccounts[1], claimers[account])
+				assert.Equal(t, testingAccounts[1], recipients[account])
 			} else {
-				assert.Equal(t, account, claimers[account])
+				assert.Equal(t, account, recipients[account])
 			}
 		}
 
-		claimers, err = osds.GetClaimersAtTimestamp(secondClaimerSetTimestamp, testingAccounts)
+		recipients, err = osds.GetRecipientsAtTimestamp(secondRecipientSetTimestamp, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// the first test account has a different claimer from the first set
+		// the first test account has a different recipient from the first set
 		for _, account := range testingAccounts {
 			if account == testingAccounts[0] {
-				assert.Equal(t, testingAccounts[2], claimers[account])
+				assert.Equal(t, testingAccounts[2], recipients[account])
 			} else {
-				assert.Equal(t, account, claimers[account])
+				assert.Equal(t, account, recipients[account])
 			}
 		}
 
-		claimers, err = osds.GetClaimersAtTimestamp(thirdClaimerSetTimestamp, testingAccounts)
+		recipients, err = osds.GetRecipientsAtTimestamp(thirdRecipientSetTimestamp, testingAccounts)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// the first and fourth test accounts have different claimers from the first set
+		// the first and fourth test accounts have different recipients from the first set
 		for _, account := range testingAccounts {
 			if account == testingAccounts[0] {
-				assert.Equal(t, testingAccounts[2], claimers[account])
+				assert.Equal(t, testingAccounts[2], recipients[account])
 			} else if account == testingAccounts[3] {
-				assert.Equal(t, testingAccounts[4], claimers[account])
+				assert.Equal(t, testingAccounts[4], recipients[account])
 			} else {
-				assert.Equal(t, account, claimers[account])
+				assert.Equal(t, account, recipients[account])
 			}
 		}
 	})
@@ -169,18 +169,18 @@ func TestOperatorSetDataService(t *testing.T) {
 
 	t.Cleanup(func() {
 		conn.ExecSQL(`
-			DROP TABLE IF EXISTS sgd34.claimer_set;
+			DROP TABLE IF EXISTS sgd34.recipient_set;
 		`)
 	})
 
 }
 
-func createClaimerSetTable() {
+func createRecipientSetTable() {
 	conn.ExecSQL(`
-		CREATE TABLE IF NOT EXISTS sgd34.claimer_set (
+		CREATE TABLE IF NOT EXISTS sgd34.recipient_set (
 			id bytea PRIMARY KEY,
 			account bytea NOT NULL,
-			claimer bytea NOT NULL,
+			recipient bytea NOT NULL,
 			block_number numeric NOT NULL,
 			block_timestamp numeric NOT NULL,
 			transaction_hash bytea NOT NULL
@@ -189,7 +189,7 @@ func createClaimerSetTable() {
 
 	// insert a couple rows
 	conn.ExecSQL(`
-		INSERT INTO sgd34.claimer_set VALUES (
+		INSERT INTO sgd34.recipient_set VALUES (
 			decode('1234', 'hex'),
 			decode('27977e6E4426A525d055A587d2a0537b4cb376eA', 'hex'),
 			decode('20392d0d40Bdb3Bb2727aA9e34b3A631c8C7bE8F', 'hex'),
@@ -200,7 +200,7 @@ func createClaimerSetTable() {
 	`)
 
 	conn.ExecSQL(`
-		INSERT INTO sgd34.claimer_set VALUES (
+		INSERT INTO sgd34.recipient_set VALUES (
 			decode('5678', 'hex'),
 			decode('27977e6E4426A525d055A587d2a0537b4cb376eA', 'hex'),
 			decode('6dF1eB642bF863E3A0547Bf347844BE1725cB678', 'hex'),
@@ -211,7 +211,7 @@ func createClaimerSetTable() {
 	`)
 
 	conn.ExecSQL(`
-		INSERT INTO sgd34.claimer_set VALUES (
+		INSERT INTO sgd34.recipient_set VALUES (
 			decode('9101', 'hex'),
 			decode('bCAc81D98ad3b9cAA48db35d20eDe91D2C59a0e1', 'hex'),
 			decode('81dB2Cf17E7E6E3f4AA66D450E647a69E8CB2487', 'hex'),

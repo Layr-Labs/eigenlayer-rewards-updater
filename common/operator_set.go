@@ -9,7 +9,7 @@ import (
 )
 
 type Earner struct {
-	Claimer gethcommon.Address
+	Recipient gethcommon.Address
 }
 
 type Staker struct {
@@ -57,14 +57,14 @@ func (os *OperatorSet) ModifyStrategyShares(operatorAddress, stakerAddress gethc
 	os.FillTotals()
 }
 
-func (os *OperatorSet) RandomizeClaimers() {
+func (os *OperatorSet) RandomizeRecipients() {
 	for _, operator := range os.Operators {
-		operator.Claimer = GetRandomAddress()
+		operator.Recipient = GetRandomAddress()
 		for _, staker := range operator.Stakers {
 			if staker.Address == operator.Address {
-				staker.Claimer = operator.Claimer
+				staker.Recipient = operator.Recipient
 			} else {
-				staker.Claimer = GetRandomAddress()
+				staker.Recipient = GetRandomAddress()
 			}
 		}
 	}
