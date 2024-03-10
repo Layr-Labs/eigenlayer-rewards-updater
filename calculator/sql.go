@@ -10,12 +10,12 @@ var recipientsAtTimestampQuery string = `
 // get all stakers that have an entry in the staker_delegated table with the given operator with a block timestamp higher than the entry in the staker_undelegated table for the same staker
 var stakerSetSharesAtTimestampQuery string = `
 WITH staker_set_shares AS (
-    SELECT DISTINCT ON (staker) staker, operator, shares
+    SELECT DISTINCT ON (staker, strategy) staker, operator, strategy, shares
     FROM %s.staker_delegation_share
-    WHERE update_block_timestamp <= $1
-    AND encode(strategy, 'hex') = $2
-    ORDER BY staker, update_block_timestamp DESC
+    WHERE update_block_timestamp <= %s
+    AND encode(strategy, 'hex') in (%s)
+    ORDER BY staker, strategy, update_block_timestamp DESC
 )
-SELECT staker, shares
+SELECT staker, strategy, shares
 FROM staker_set_shares
-WHERE encode(operator, 'hex') = $3;`
+WHERE encode(operator, 'hex') = '%s';`

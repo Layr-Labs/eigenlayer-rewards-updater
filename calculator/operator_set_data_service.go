@@ -40,8 +40,8 @@ var DELEGATION_MANAGER_ADDRESS = gethcommon.HexToAddress("0x1b7b8F6b258f95Cf9596
 var CLAIMING_MANAGER_ADDRESS = gethcommon.HexToAddress("0xBF81C737bc6871f1Dfa143f0eb416C34Cb22f47d")
 
 type OperatorSetDataService interface {
-	// GetOperatorSetForStrategyAtTimestamp returns the operator set for a given strategy at a given timestamps
-	GetOperatorSetForStrategyAtTimestamp(ctx context.Context, timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error)
+	// GetWeightedOperatorSetAtTimestamp returns the operator set and their weights according to strategy and multipliers at the given timestamp
+	GetWeightedOperatorSetAtTimestamp(ctx context.Context, timestamp *big.Int, avs gethcommon.Address, strategies []gethcommon.Address, multipliers []*big.Int) (*common.OperatorSet, error)
 }
 
 type OperatorSetDataServiceImpl struct {
@@ -74,11 +74,11 @@ func NewOperatorSetDataServiceImpl(
 	}
 }
 
-func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx context.Context, timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) (*common.OperatorSet, error) {
-	log.Info().Msgf("getting operator set for avs %s for strategy %s at timestamp %d", avs.Hex(), strategy.Hex(), timestamp)
+func (s *OperatorSetDataServiceImpl) GetWeightedOperatorSetAtTimestamp(ctx context.Context, timestamp *big.Int, avs gethcommon.Address, strategies []gethcommon.Address, multipliers []*big.Int) (*common.OperatorSet, error) {
+	log.Info().Msgf("getting operator set for avs %s for strategies %s and multipliers %s at timestamp %d", avs.Hex(), strategies[:], multipliers[:], timestamp)
 
 	operatorSet := &common.OperatorSet{}
-	operatorSet.TotalStakedStrategyShares = big.NewInt(0)
+	operatorSet.TotalStakedWeight = big.NewInt(0)
 
 	start := time.Now()
 
@@ -101,7 +101,7 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 	start = time.Now()
 
 	// get all operators for the given strategy at the given timestamp
-	operatorAddresses, err := s.GetOperatorAddressesForAVSAtTimestamp(timestamp, avs, strategy)
+	operatorAddresses, err := s.GetOperatorAddressesForAVSAtTimestamp(timestamp, avs)
 	if err != nil {
 		return nil, err
 	}
@@ -116,12 +116,12 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 		operator := &common.Operator{}
 		operator.Address = operatorAddress
 		operator.Commission = globalCommission
-		operator.TotalDelegatedStrategyShares = big.NewInt(0)
+		operator.DelegatedWeight = big.NewInt(0)
 
 		start = time.Now()
 
 		// get the stakers of the operator
-		err := s.GetStakerSetSharesAtTimestamp(operator, timestamp, strategy)
+		err := s.GetStakeWeightsAtTimestamp(operator, timestamp, strategies, multipliers)
 		if err != nil {
 			return nil, err
 		}
@@ -153,13 +153,13 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 		operatorSet.Operators[i] = operator
 
 		// add the operator's total delegated strategy shares to the operator set's total staked strategy shares
-		operatorSet.TotalStakedStrategyShares = operatorSet.TotalStakedStrategyShares.Add(operatorSet.TotalStakedStrategyShares, operator.TotalDelegatedStrategyShares)
+		operatorSet.TotalStakedWeight = operatorSet.TotalStakedWeight.Add(operatorSet.TotalStakedWeight, operator.DelegatedWeight)
 	}
 
 	return operatorSet, nil
 }
 
-func (s *OperatorSetDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address, strategy gethcommon.Address) ([]gethcommon.Address, error) {
+func (s *OperatorSetDataServiceImpl) GetOperatorAddressesForAVSAtTimestamp(timestamp *big.Int, avs gethcommon.Address) ([]gethcommon.Address, error) {
 	// TODO: actually query the database
 
 	operatorAddresses := []gethcommon.Address{
@@ -236,7 +236,12 @@ func (s *OperatorSetDataServiceImpl) GetRecipientsAtTimestamp(timestamp *big.Int
 	return recipients, nil
 }
 
-func (s *OperatorSetDataServiceImpl) GetStakerSetSharesAtTimestamp(operator *common.Operator, timestamp *big.Int, strategy gethcommon.Address) error {
+func (s *OperatorSetDataServiceImpl) GetStakeWeightsAtTimestamp(operator *common.Operator, timestamp *big.Int, strategies []gethcommon.Address, multipliers []*big.Int) error {
+	strategyToMultiplier := make(map[gethcommon.Address]*big.Int)
+	for i, strategy := range strategies {
+		strategyToMultiplier[strategy] = multipliers[i]
+	}
+
 	// get the schema id for the claiming manager subgraph
 	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_DELEGATION_SHARE_TRACKER)
 	if err != nil {
@@ -244,40 +249,61 @@ func (s *OperatorSetDataServiceImpl) GetStakerSetSharesAtTimestamp(operator *com
 	}
 
 	// format the query
-	formattedQuery := fmt.Sprintf(stakerSetSharesAtTimestampQuery, schemaID)
+	formattedQuery := fmt.Sprintf(stakerSetSharesAtTimestampQuery, schemaID, timestamp, toSQLAddreses(strategies), toSQLAddress(operator.Address))
+
+	log.Info().Msgf("executing query: %s", formattedQuery)
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, toSQLAddress(strategy), toSQLAddress(operator.Address))
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
+	prevStaker := &common.Staker{}
+
 	// create a list of stakers
 	for rows.Next() {
 		var (
 			stakerBytes   []byte
+			strategyBytes []byte
 			sharesDecimal decimal.Decimal
 		)
 
 		err := rows.Scan(
 			&stakerBytes,
+			&strategyBytes,
 			&sharesDecimal,
 		)
 		if err != nil {
 			return err
 		}
 
-		staker := gethcommon.HexToAddress(hex.EncodeToString(stakerBytes))
+		stakerAddress := gethcommon.HexToAddress(hex.EncodeToString(stakerBytes))
+		strategyAddress := gethcommon.HexToAddress(hex.EncodeToString(strategyBytes))
 		shares := sharesDecimal.BigInt()
+		weight := new(big.Int).Mul(shares, strategyToMultiplier[strategyAddress])
 
-		operator.Stakers = append(operator.Stakers, &common.Staker{
-			Address:        staker,
-			StrategyShares: shares,
-		})
+		log.Info().Msgf("staker %s has %d shares of strategy %s with weight %d", stakerAddress.Hex(), shares, strategyAddress.Hex(), weight)
+
+		if stakerAddress.Cmp(prevStaker.Address) == 0 {
+			prevStaker.Weight.Add(prevStaker.Weight, weight)
+		} else {
+			if prevStaker.Address.Cmp(gethcommon.Address{}) != 0 {
+				operator.Stakers = append(operator.Stakers, prevStaker)
+			}
+			prevStaker = &common.Staker{
+				Address: stakerAddress,
+				Weight:  weight,
+			}
+		}
 
 		// add the staker's shares to the operator's total delegated strategy shares
-		operator.TotalDelegatedStrategyShares = operator.TotalDelegatedStrategyShares.Add(operator.TotalDelegatedStrategyShares, shares)
+		operator.DelegatedWeight = operator.DelegatedWeight.Add(operator.DelegatedWeight, shares)
+	}
+
+	if prevStaker.Address.Cmp(gethcommon.Address{}) != 0 {
+		operator.Stakers = append(operator.Stakers, prevStaker)
 	}
 
 	return nil

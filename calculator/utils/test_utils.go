@@ -22,16 +22,16 @@ var (
 		Earner: common.Earner{
 			Recipient: TEST_OPERATOR_ADDRESS_1,
 		},
-		Address:                      TEST_OPERATOR_ADDRESS_1,
-		Commission:                   big.NewInt(1000),
-		TotalDelegatedStrategyShares: big.NewInt(1e18),
+		Address:         TEST_OPERATOR_ADDRESS_1,
+		Commission:      big.NewInt(1000),
+		DelegatedWeight: big.NewInt(1e18),
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
 					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
-				Address:        TEST_OPERATOR_ADDRESS_1,
-				StrategyShares: big.NewInt(1e18),
+				Address: TEST_OPERATOR_ADDRESS_1,
+				Weight:  big.NewInt(1e18),
 			},
 		},
 	}
@@ -41,30 +41,30 @@ var (
 		Earner: common.Earner{
 			Recipient: TEST_OPERATOR_ADDRESS_2,
 		},
-		Address:                      TEST_OPERATOR_ADDRESS_2,
-		Commission:                   big.NewInt(1000),
-		TotalDelegatedStrategyShares: big.NewInt(1e18),
+		Address:         TEST_OPERATOR_ADDRESS_2,
+		Commission:      big.NewInt(1000),
+		DelegatedWeight: big.NewInt(1e18),
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
 					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
-				Address:        TEST_OPERATOR_ADDRESS_1,
-				StrategyShares: big.NewInt(0),
+				Address: TEST_OPERATOR_ADDRESS_1,
+				Weight:  big.NewInt(0),
 			},
 			{
 				Earner: common.Earner{
 					Recipient: TEST_STAKER_ADDRESS_1,
 				},
-				Address:        TEST_STAKER_ADDRESS_1,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_STAKER_ADDRESS_1,
+				Weight:  big.NewInt(5e17),
 			},
 			{
 				Earner: common.Earner{
 					Recipient: TEST_STAKER_ADDRESS_2,
 				},
-				Address:        TEST_STAKER_ADDRESS_2,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_STAKER_ADDRESS_2,
+				Weight:  big.NewInt(5e17),
 			},
 		},
 	}
@@ -73,23 +73,23 @@ var (
 		Earner: common.Earner{
 			Recipient: TEST_OPERATOR_ADDRESS_3,
 		},
-		Address:                      TEST_OPERATOR_ADDRESS_3,
-		Commission:                   big.NewInt(1000),
-		TotalDelegatedStrategyShares: big.NewInt(1e18),
+		Address:         TEST_OPERATOR_ADDRESS_3,
+		Commission:      big.NewInt(1000),
+		DelegatedWeight: big.NewInt(1e18),
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
 					Recipient: TEST_OPERATOR_ADDRESS_3,
 				},
-				Address:        TEST_OPERATOR_ADDRESS_3,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_OPERATOR_ADDRESS_3,
+				Weight:  big.NewInt(5e17),
 			},
 			{
 				Earner: common.Earner{
 					Recipient: TEST_STAKER_ADDRESS_3,
 				},
-				Address:        TEST_STAKER_ADDRESS_3,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_STAKER_ADDRESS_3,
+				Weight:  big.NewInt(5e17),
 			},
 		},
 	}

@@ -175,8 +175,7 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		operatorSet := &common.OperatorSet{
 			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers()},
 		}
-		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
-		operatorSet.FillTotals()
+		operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
 
 		diffDistribution := distribution.NewDistribution()
 
@@ -197,9 +196,8 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		operatorSet := &common.OperatorSet{
 			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers()},
 		}
-		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
-		operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
-		operatorSet.FillTotals()
+		operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
+		operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
 
 		diffDistribution := distribution.NewDistribution()
 
@@ -274,14 +272,13 @@ func get3Opereator136Split() *common.OperatorSet {
 	operatorSet := &common.OperatorSet{
 		Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers(), utils.GetOperatorWith1OutsideStaker()},
 	}
-	operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_1, utils.TEST_OPERATOR_ADDRESS_1, big.NewInt(1e17))
+	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_1, utils.TEST_OPERATOR_ADDRESS_1, big.NewInt(1e17))
 
-	operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(2e17))
-	operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
+	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(2e17))
+	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
 
-	operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_OPERATOR_ADDRESS_3, big.NewInt(4e17))
-	operatorSet.ModifyStrategyShares(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_STAKER_ADDRESS_3, big.NewInt(2e17))
+	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_OPERATOR_ADDRESS_3, big.NewInt(4e17))
+	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_STAKER_ADDRESS_3, big.NewInt(2e17))
 
-	operatorSet.FillTotals()
 	return operatorSet
 }

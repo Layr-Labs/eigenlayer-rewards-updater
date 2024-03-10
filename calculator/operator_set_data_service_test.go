@@ -109,39 +109,39 @@ func TestOperatorSetDataService(t *testing.T) {
 		createDelegationStrategySharesTable()
 
 		operator := &common.Operator{
-			Address:                      gethcommon.HexToAddress("0xb613e78e2068d7489bb66419fb1cfa11275d14da"),
-			TotalDelegatedStrategyShares: big.NewInt(0),
+			Address:         gethcommon.HexToAddress("0xb613e78e2068d7489bb66419fb1cfa11275d14da"),
+			DelegatedWeight: big.NewInt(0),
 		}
-		err := osds.GetStakerSetSharesAtTimestamp(operator, big.NewInt(1000000), gethcommon.HexToAddress("0x1234567890987654321234567890987654321234"))
+		err := osds.GetStakeWeightsAtTimestamp(operator, big.NewInt(1000000), []gethcommon.Address{gethcommon.HexToAddress("0x1234567890987654321234567890987654321234")}, []*big.Int{big.NewInt(1)})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.Equal(t, "43221114561952263726", operator.TotalDelegatedStrategyShares.String())
+		assert.Equal(t, "43221114561952263726", operator.DelegatedWeight.String())
 		assert.Equal(t, 3, len(operator.Stakers))
 		assert.Equal(t, "0x5152bee7840E3A6261034e7FeCAf8FfBFf5cB6eE", operator.Stakers[0].Address.String())
-		assert.Equal(t, "43069823021157214260", operator.Stakers[0].StrategyShares.String())
+		assert.Equal(t, "43069823021157214260", operator.Stakers[0].Weight.String())
 		assert.Equal(t, "0x67185a8067DC178dAFF0571b4835d52bCFE0dE4C", operator.Stakers[1].Address.String())
-		assert.Equal(t, "1", operator.Stakers[1].StrategyShares.String())
+		assert.Equal(t, "1", operator.Stakers[1].Weight.String())
 		assert.Equal(t, "0xbfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2", operator.Stakers[2].Address.String())
-		assert.Equal(t, "151291540795049465", operator.Stakers[2].StrategyShares.String())
+		assert.Equal(t, "151291540795049465", operator.Stakers[2].Weight.String())
 
 		operator = &common.Operator{
-			Address:                      gethcommon.HexToAddress("0xb613e78e2068d7489bb66419fb1cfa11275d14da"),
-			TotalDelegatedStrategyShares: big.NewInt(0),
+			Address:         gethcommon.HexToAddress("0xb613e78e2068d7489bb66419fb1cfa11275d14da"),
+			DelegatedWeight: big.NewInt(0),
 		}
 
-		err = osds.GetStakerSetSharesAtTimestamp(operator, big.NewInt(2000000), gethcommon.HexToAddress("0x1234567890987654321234567890987654321234"))
+		err = osds.GetStakeWeightsAtTimestamp(operator, big.NewInt(2000000), []gethcommon.Address{gethcommon.HexToAddress("0x1234567890987654321234567890987654321234")}, []*big.Int{big.NewInt(1)})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.Equal(t, "151291540795049467", operator.TotalDelegatedStrategyShares.String())
+		assert.Equal(t, "151291540795049467", operator.DelegatedWeight.String())
 		assert.Equal(t, 2, len(operator.Stakers))
 		assert.Equal(t, "0x67185a8067DC178dAFF0571b4835d52bCFE0dE4C", operator.Stakers[0].Address.String())
-		assert.Equal(t, "2", operator.Stakers[0].StrategyShares.String())
+		assert.Equal(t, "2", operator.Stakers[0].Weight.String())
 		assert.Equal(t, "0xbfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2", operator.Stakers[1].Address.String())
-		assert.Equal(t, "151291540795049465", operator.Stakers[1].StrategyShares.String())
+		assert.Equal(t, "151291540795049465", operator.Stakers[1].Weight.String())
 	})
 
 	t.Cleanup(func() {

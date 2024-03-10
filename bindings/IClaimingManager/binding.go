@@ -33,6 +33,7 @@ var (
 type IClaimingManagerPaymentMerkleClaim struct {
 	Token     common.Address
 	Amount    *big.Int
+	Recipient common.Address
 	RootIndex uint32
 	LeafIndex uint32
 	Proof     []byte
@@ -40,7 +41,7 @@ type IClaimingManagerPaymentMerkleClaim struct {
 
 // ContractIClaimingManagerMetaData contains all meta data concerning the ContractIClaimingManager contract.
 var ContractIClaimingManagerMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"activationDelay\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimers\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"cumulativeClaimed\",\"inputs\":[{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"globalCommissionBips\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"initialOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paymentUpdater\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"processClaims\",\"inputs\":[{\"name\":\"claims\",\"type\":\"tuple[]\",\"internalType\":\"structIClaimingManager.PaymentMerkleClaim[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"rootIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"leafIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setActivationDelay\",\"inputs\":[{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setClaimer\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setGlobalCommission\",\"inputs\":[{\"name\":\"_globalCommissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPaymentUpdater\",\"inputs\":[{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRoot\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"ActivationDelaySet\",\"inputs\":[{\"name\":\"oldActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"newActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ClaimerSet\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"GlobalCommissionBipsSet\",\"inputs\":[{\"name\":\"oldGlobalCommissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"newGlobalCommissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentClaimed\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"claimer\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentUpdaterSet\",\"inputs\":[{\"name\":\"oldPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RootSubmitted\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"activatedAfter\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"activationDelay\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"cumulativeClaimed\",\"inputs\":[{\"name\":\"recipient\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"globalCommissionBips\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"initialOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"_globalCommissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paymentUpdater\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"processClaims\",\"inputs\":[{\"name\":\"claims\",\"type\":\"tuple[]\",\"internalType\":\"structIClaimingManager.PaymentMerkleClaim[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"recipient\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"rootIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"leafIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"recipients\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setActivationDelay\",\"inputs\":[{\"name\":\"_activationDelay\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setGlobalCommission\",\"inputs\":[{\"name\":\"_globalCommissionBips\",\"type\":\"uint16\",\"internalType\":\"uint16\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPaymentUpdater\",\"inputs\":[{\"name\":\"_paymentUpdater\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setRecipient\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"recipient\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRoot\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"ActivationDelaySet\",\"inputs\":[{\"name\":\"oldActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"newActivationDelay\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"GlobalCommissionBipsSet\",\"inputs\":[{\"name\":\"oldGlobalCommissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"newGlobalCommissionBips\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentClaimed\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"contractIERC20\"},{\"name\":\"recipient\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PaymentUpdaterSet\",\"inputs\":[{\"name\":\"oldPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"newPaymentUpdater\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RecipientSet\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"recipient\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RootSubmitted\",\"inputs\":[{\"name\":\"root\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"paymentsCalculatedUntilTimestamp\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"activatedAfter\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
 }
 
 // ContractIClaimingManagerABI is the input ABI used to generate the binding from.
@@ -220,43 +221,12 @@ func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) Activati
 	return _ContractIClaimingManager.Contract.ActivationDelay(&_ContractIClaimingManager.CallOpts)
 }
 
-// Claimers is a free data retrieval call binding the contract method 0xda62fba9.
-//
-// Solidity: function claimers(address account) view returns(address)
-func (_ContractIClaimingManager *ContractIClaimingManagerCaller) Claimers(opts *bind.CallOpts, account common.Address) (common.Address, error) {
-	var out []interface{}
-	err := _ContractIClaimingManager.contract.Call(opts, &out, "claimers", account)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Claimers is a free data retrieval call binding the contract method 0xda62fba9.
-//
-// Solidity: function claimers(address account) view returns(address)
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) Claimers(account common.Address) (common.Address, error) {
-	return _ContractIClaimingManager.Contract.Claimers(&_ContractIClaimingManager.CallOpts, account)
-}
-
-// Claimers is a free data retrieval call binding the contract method 0xda62fba9.
-//
-// Solidity: function claimers(address account) view returns(address)
-func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) Claimers(account common.Address) (common.Address, error) {
-	return _ContractIClaimingManager.Contract.Claimers(&_ContractIClaimingManager.CallOpts, account)
-}
-
 // CumulativeClaimed is a free data retrieval call binding the contract method 0x865c6953.
 //
-// Solidity: function cumulativeClaimed(address claimer, address token) view returns(uint256)
-func (_ContractIClaimingManager *ContractIClaimingManagerCaller) CumulativeClaimed(opts *bind.CallOpts, claimer common.Address, token common.Address) (*big.Int, error) {
+// Solidity: function cumulativeClaimed(address recipient, address token) view returns(uint256)
+func (_ContractIClaimingManager *ContractIClaimingManagerCaller) CumulativeClaimed(opts *bind.CallOpts, recipient common.Address, token common.Address) (*big.Int, error) {
 	var out []interface{}
-	err := _ContractIClaimingManager.contract.Call(opts, &out, "cumulativeClaimed", claimer, token)
+	err := _ContractIClaimingManager.contract.Call(opts, &out, "cumulativeClaimed", recipient, token)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -270,16 +240,16 @@ func (_ContractIClaimingManager *ContractIClaimingManagerCaller) CumulativeClaim
 
 // CumulativeClaimed is a free data retrieval call binding the contract method 0x865c6953.
 //
-// Solidity: function cumulativeClaimed(address claimer, address token) view returns(uint256)
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) CumulativeClaimed(claimer common.Address, token common.Address) (*big.Int, error) {
-	return _ContractIClaimingManager.Contract.CumulativeClaimed(&_ContractIClaimingManager.CallOpts, claimer, token)
+// Solidity: function cumulativeClaimed(address recipient, address token) view returns(uint256)
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) CumulativeClaimed(recipient common.Address, token common.Address) (*big.Int, error) {
+	return _ContractIClaimingManager.Contract.CumulativeClaimed(&_ContractIClaimingManager.CallOpts, recipient, token)
 }
 
 // CumulativeClaimed is a free data retrieval call binding the contract method 0x865c6953.
 //
-// Solidity: function cumulativeClaimed(address claimer, address token) view returns(uint256)
-func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) CumulativeClaimed(claimer common.Address, token common.Address) (*big.Int, error) {
-	return _ContractIClaimingManager.Contract.CumulativeClaimed(&_ContractIClaimingManager.CallOpts, claimer, token)
+// Solidity: function cumulativeClaimed(address recipient, address token) view returns(uint256)
+func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) CumulativeClaimed(recipient common.Address, token common.Address) (*big.Int, error) {
+	return _ContractIClaimingManager.Contract.CumulativeClaimed(&_ContractIClaimingManager.CallOpts, recipient, token)
 }
 
 // GlobalCommissionBips is a free data retrieval call binding the contract method 0x2c088f0d.
@@ -344,44 +314,75 @@ func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) PaymentU
 	return _ContractIClaimingManager.Contract.PaymentUpdater(&_ContractIClaimingManager.CallOpts)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x6ecf2b22.
+// Recipients is a free data retrieval call binding the contract method 0xeb820312.
 //
-// Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) Initialize(opts *bind.TransactOpts, initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32) (*types.Transaction, error) {
-	return _ContractIClaimingManager.contract.Transact(opts, "initialize", initialOwner, _paymentUpdater, _activationDelay)
+// Solidity: function recipients(address account) view returns(address)
+func (_ContractIClaimingManager *ContractIClaimingManagerCaller) Recipients(opts *bind.CallOpts, account common.Address) (common.Address, error) {
+	var out []interface{}
+	err := _ContractIClaimingManager.contract.Call(opts, &out, "recipients", account)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x6ecf2b22.
+// Recipients is a free data retrieval call binding the contract method 0xeb820312.
 //
-// Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) Initialize(initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.Initialize(&_ContractIClaimingManager.TransactOpts, initialOwner, _paymentUpdater, _activationDelay)
+// Solidity: function recipients(address account) view returns(address)
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) Recipients(account common.Address) (common.Address, error) {
+	return _ContractIClaimingManager.Contract.Recipients(&_ContractIClaimingManager.CallOpts, account)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x6ecf2b22.
+// Recipients is a free data retrieval call binding the contract method 0xeb820312.
 //
-// Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) Initialize(initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.Initialize(&_ContractIClaimingManager.TransactOpts, initialOwner, _paymentUpdater, _activationDelay)
+// Solidity: function recipients(address account) view returns(address)
+func (_ContractIClaimingManager *ContractIClaimingManagerCallerSession) Recipients(account common.Address) (common.Address, error) {
+	return _ContractIClaimingManager.Contract.Recipients(&_ContractIClaimingManager.CallOpts, account)
 }
 
-// ProcessClaims is a paid mutator transaction binding the contract method 0x1441f788.
+// Initialize is a paid mutator transaction binding the contract method 0x5fd3a5d9.
 //
-// Solidity: function processClaims((address,uint256,uint32,uint32,bytes)[] claims) returns()
+// Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay, uint16 _globalCommissionBips) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) Initialize(opts *bind.TransactOpts, initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32, _globalCommissionBips uint16) (*types.Transaction, error) {
+	return _ContractIClaimingManager.contract.Transact(opts, "initialize", initialOwner, _paymentUpdater, _activationDelay, _globalCommissionBips)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x5fd3a5d9.
+//
+// Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay, uint16 _globalCommissionBips) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) Initialize(initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32, _globalCommissionBips uint16) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.Initialize(&_ContractIClaimingManager.TransactOpts, initialOwner, _paymentUpdater, _activationDelay, _globalCommissionBips)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x5fd3a5d9.
+//
+// Solidity: function initialize(address initialOwner, address _paymentUpdater, uint32 _activationDelay, uint16 _globalCommissionBips) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) Initialize(initialOwner common.Address, _paymentUpdater common.Address, _activationDelay uint32, _globalCommissionBips uint16) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.Initialize(&_ContractIClaimingManager.TransactOpts, initialOwner, _paymentUpdater, _activationDelay, _globalCommissionBips)
+}
+
+// ProcessClaims is a paid mutator transaction binding the contract method 0x6ce0143b.
+//
+// Solidity: function processClaims((address,uint256,address,uint32,uint32,bytes)[] claims) returns()
 func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) ProcessClaims(opts *bind.TransactOpts, claims []IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
 	return _ContractIClaimingManager.contract.Transact(opts, "processClaims", claims)
 }
 
-// ProcessClaims is a paid mutator transaction binding the contract method 0x1441f788.
+// ProcessClaims is a paid mutator transaction binding the contract method 0x6ce0143b.
 //
-// Solidity: function processClaims((address,uint256,uint32,uint32,bytes)[] claims) returns()
+// Solidity: function processClaims((address,uint256,address,uint32,uint32,bytes)[] claims) returns()
 func (_ContractIClaimingManager *ContractIClaimingManagerSession) ProcessClaims(claims []IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
 	return _ContractIClaimingManager.Contract.ProcessClaims(&_ContractIClaimingManager.TransactOpts, claims)
 }
 
-// ProcessClaims is a paid mutator transaction binding the contract method 0x1441f788.
+// ProcessClaims is a paid mutator transaction binding the contract method 0x6ce0143b.
 //
-// Solidity: function processClaims((address,uint256,uint32,uint32,bytes)[] claims) returns()
+// Solidity: function processClaims((address,uint256,address,uint32,uint32,bytes)[] claims) returns()
 func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) ProcessClaims(claims []IClaimingManagerPaymentMerkleClaim) (*types.Transaction, error) {
 	return _ContractIClaimingManager.Contract.ProcessClaims(&_ContractIClaimingManager.TransactOpts, claims)
 }
@@ -405,27 +406,6 @@ func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetActivationD
 // Solidity: function setActivationDelay(uint32 _activationDelay) returns()
 func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetActivationDelay(_activationDelay uint32) (*types.Transaction, error) {
 	return _ContractIClaimingManager.Contract.SetActivationDelay(&_ContractIClaimingManager.TransactOpts, _activationDelay)
-}
-
-// SetClaimer is a paid mutator transaction binding the contract method 0xf5cf673b.
-//
-// Solidity: function setClaimer(address account, address claimer) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SetClaimer(opts *bind.TransactOpts, account common.Address, claimer common.Address) (*types.Transaction, error) {
-	return _ContractIClaimingManager.contract.Transact(opts, "setClaimer", account, claimer)
-}
-
-// SetClaimer is a paid mutator transaction binding the contract method 0xf5cf673b.
-//
-// Solidity: function setClaimer(address account, address claimer) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetClaimer(account common.Address, claimer common.Address) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SetClaimer(&_ContractIClaimingManager.TransactOpts, account, claimer)
-}
-
-// SetClaimer is a paid mutator transaction binding the contract method 0xf5cf673b.
-//
-// Solidity: function setClaimer(address account, address claimer) returns()
-func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetClaimer(account common.Address, claimer common.Address) (*types.Transaction, error) {
-	return _ContractIClaimingManager.Contract.SetClaimer(&_ContractIClaimingManager.TransactOpts, account, claimer)
 }
 
 // SetGlobalCommission is a paid mutator transaction binding the contract method 0x9d284a8a.
@@ -468,6 +448,27 @@ func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetPaymentUpda
 // Solidity: function setPaymentUpdater(address _paymentUpdater) returns()
 func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetPaymentUpdater(_paymentUpdater common.Address) (*types.Transaction, error) {
 	return _ContractIClaimingManager.Contract.SetPaymentUpdater(&_ContractIClaimingManager.TransactOpts, _paymentUpdater)
+}
+
+// SetRecipient is a paid mutator transaction binding the contract method 0x8bc8407a.
+//
+// Solidity: function setRecipient(address account, address recipient) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactor) SetRecipient(opts *bind.TransactOpts, account common.Address, recipient common.Address) (*types.Transaction, error) {
+	return _ContractIClaimingManager.contract.Transact(opts, "setRecipient", account, recipient)
+}
+
+// SetRecipient is a paid mutator transaction binding the contract method 0x8bc8407a.
+//
+// Solidity: function setRecipient(address account, address recipient) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerSession) SetRecipient(account common.Address, recipient common.Address) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.SetRecipient(&_ContractIClaimingManager.TransactOpts, account, recipient)
+}
+
+// SetRecipient is a paid mutator transaction binding the contract method 0x8bc8407a.
+//
+// Solidity: function setRecipient(address account, address recipient) returns()
+func (_ContractIClaimingManager *ContractIClaimingManagerTransactorSession) SetRecipient(account common.Address, recipient common.Address) (*types.Transaction, error) {
+	return _ContractIClaimingManager.Contract.SetRecipient(&_ContractIClaimingManager.TransactOpts, account, recipient)
 }
 
 // SubmitRoot is a paid mutator transaction binding the contract method 0x3efe1db6.
@@ -620,141 +621,6 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchActivati
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseActivationDelaySet(log types.Log) (*ContractIClaimingManagerActivationDelaySet, error) {
 	event := new(ContractIClaimingManagerActivationDelaySet)
 	if err := _ContractIClaimingManager.contract.UnpackLog(event, "ActivationDelaySet", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// ContractIClaimingManagerClaimerSetIterator is returned from FilterClaimerSet and is used to iterate over the raw logs and unpacked data for ClaimerSet events raised by the ContractIClaimingManager contract.
-type ContractIClaimingManagerClaimerSetIterator struct {
-	Event *ContractIClaimingManagerClaimerSet // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *ContractIClaimingManagerClaimerSetIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(ContractIClaimingManagerClaimerSet)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(ContractIClaimingManagerClaimerSet)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *ContractIClaimingManagerClaimerSetIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *ContractIClaimingManagerClaimerSetIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// ContractIClaimingManagerClaimerSet represents a ClaimerSet event raised by the ContractIClaimingManager contract.
-type ContractIClaimingManagerClaimerSet struct {
-	Account common.Address
-	Claimer common.Address
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterClaimerSet is a free log retrieval operation binding the contract event 0x4925eafc82d0c4d67889898eeed64b18488ab19811e61620f387026dec126a28.
-//
-// Solidity: event ClaimerSet(address account, address claimer)
-func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterClaimerSet(opts *bind.FilterOpts) (*ContractIClaimingManagerClaimerSetIterator, error) {
-
-	logs, sub, err := _ContractIClaimingManager.contract.FilterLogs(opts, "ClaimerSet")
-	if err != nil {
-		return nil, err
-	}
-	return &ContractIClaimingManagerClaimerSetIterator{contract: _ContractIClaimingManager.contract, event: "ClaimerSet", logs: logs, sub: sub}, nil
-}
-
-// WatchClaimerSet is a free log subscription operation binding the contract event 0x4925eafc82d0c4d67889898eeed64b18488ab19811e61620f387026dec126a28.
-//
-// Solidity: event ClaimerSet(address account, address claimer)
-func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchClaimerSet(opts *bind.WatchOpts, sink chan<- *ContractIClaimingManagerClaimerSet) (event.Subscription, error) {
-
-	logs, sub, err := _ContractIClaimingManager.contract.WatchLogs(opts, "ClaimerSet")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(ContractIClaimingManagerClaimerSet)
-				if err := _ContractIClaimingManager.contract.UnpackLog(event, "ClaimerSet", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseClaimerSet is a log parse operation binding the contract event 0x4925eafc82d0c4d67889898eeed64b18488ab19811e61620f387026dec126a28.
-//
-// Solidity: event ClaimerSet(address account, address claimer)
-func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseClaimerSet(log types.Log) (*ContractIClaimingManagerClaimerSet, error) {
-	event := new(ContractIClaimingManagerClaimerSet)
-	if err := _ContractIClaimingManager.contract.UnpackLog(event, "ClaimerSet", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -965,15 +831,15 @@ func (it *ContractIClaimingManagerPaymentClaimedIterator) Close() error {
 
 // ContractIClaimingManagerPaymentClaimed represents a PaymentClaimed event raised by the ContractIClaimingManager contract.
 type ContractIClaimingManagerPaymentClaimed struct {
-	Token   common.Address
-	Claimer common.Address
-	Amount  *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
+	Token     common.Address
+	Recipient common.Address
+	Amount    *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
 }
 
 // FilterPaymentClaimed is a free log retrieval operation binding the contract event 0x6906788f9c6d5b8d1f449ea40ce9f59b59a825c15753633c28e35595b0a57659.
 //
-// Solidity: event PaymentClaimed(address token, address claimer, uint256 amount)
+// Solidity: event PaymentClaimed(address token, address recipient, uint256 amount)
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterPaymentClaimed(opts *bind.FilterOpts) (*ContractIClaimingManagerPaymentClaimedIterator, error) {
 
 	logs, sub, err := _ContractIClaimingManager.contract.FilterLogs(opts, "PaymentClaimed")
@@ -985,7 +851,7 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterPayment
 
 // WatchPaymentClaimed is a free log subscription operation binding the contract event 0x6906788f9c6d5b8d1f449ea40ce9f59b59a825c15753633c28e35595b0a57659.
 //
-// Solidity: event PaymentClaimed(address token, address claimer, uint256 amount)
+// Solidity: event PaymentClaimed(address token, address recipient, uint256 amount)
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchPaymentClaimed(opts *bind.WatchOpts, sink chan<- *ContractIClaimingManagerPaymentClaimed) (event.Subscription, error) {
 
 	logs, sub, err := _ContractIClaimingManager.contract.WatchLogs(opts, "PaymentClaimed")
@@ -1022,7 +888,7 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchPaymentC
 
 // ParsePaymentClaimed is a log parse operation binding the contract event 0x6906788f9c6d5b8d1f449ea40ce9f59b59a825c15753633c28e35595b0a57659.
 //
-// Solidity: event PaymentClaimed(address token, address claimer, uint256 amount)
+// Solidity: event PaymentClaimed(address token, address recipient, uint256 amount)
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParsePaymentClaimed(log types.Log) (*ContractIClaimingManagerPaymentClaimed, error) {
 	event := new(ContractIClaimingManagerPaymentClaimed)
 	if err := _ContractIClaimingManager.contract.UnpackLog(event, "PaymentClaimed", log); err != nil {
@@ -1161,6 +1027,141 @@ func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchPaymentU
 func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParsePaymentUpdaterSet(log types.Log) (*ContractIClaimingManagerPaymentUpdaterSet, error) {
 	event := new(ContractIClaimingManagerPaymentUpdaterSet)
 	if err := _ContractIClaimingManager.contract.UnpackLog(event, "PaymentUpdaterSet", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// ContractIClaimingManagerRecipientSetIterator is returned from FilterRecipientSet and is used to iterate over the raw logs and unpacked data for RecipientSet events raised by the ContractIClaimingManager contract.
+type ContractIClaimingManagerRecipientSetIterator struct {
+	Event *ContractIClaimingManagerRecipientSet // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *ContractIClaimingManagerRecipientSetIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(ContractIClaimingManagerRecipientSet)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(ContractIClaimingManagerRecipientSet)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *ContractIClaimingManagerRecipientSetIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *ContractIClaimingManagerRecipientSetIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// ContractIClaimingManagerRecipientSet represents a RecipientSet event raised by the ContractIClaimingManager contract.
+type ContractIClaimingManagerRecipientSet struct {
+	Account   common.Address
+	Recipient common.Address
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterRecipientSet is a free log retrieval operation binding the contract event 0xc1416b5cdab50a9fbc872236e1aa54566c6deb40024e63a4b1737ecacf09d6f9.
+//
+// Solidity: event RecipientSet(address account, address recipient)
+func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) FilterRecipientSet(opts *bind.FilterOpts) (*ContractIClaimingManagerRecipientSetIterator, error) {
+
+	logs, sub, err := _ContractIClaimingManager.contract.FilterLogs(opts, "RecipientSet")
+	if err != nil {
+		return nil, err
+	}
+	return &ContractIClaimingManagerRecipientSetIterator{contract: _ContractIClaimingManager.contract, event: "RecipientSet", logs: logs, sub: sub}, nil
+}
+
+// WatchRecipientSet is a free log subscription operation binding the contract event 0xc1416b5cdab50a9fbc872236e1aa54566c6deb40024e63a4b1737ecacf09d6f9.
+//
+// Solidity: event RecipientSet(address account, address recipient)
+func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) WatchRecipientSet(opts *bind.WatchOpts, sink chan<- *ContractIClaimingManagerRecipientSet) (event.Subscription, error) {
+
+	logs, sub, err := _ContractIClaimingManager.contract.WatchLogs(opts, "RecipientSet")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(ContractIClaimingManagerRecipientSet)
+				if err := _ContractIClaimingManager.contract.UnpackLog(event, "RecipientSet", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRecipientSet is a log parse operation binding the contract event 0xc1416b5cdab50a9fbc872236e1aa54566c6deb40024e63a4b1737ecacf09d6f9.
+//
+// Solidity: event RecipientSet(address account, address recipient)
+func (_ContractIClaimingManager *ContractIClaimingManagerFilterer) ParseRecipientSet(log types.Log) (*ContractIClaimingManagerRecipientSet, error) {
+	event := new(ContractIClaimingManagerRecipientSet)
+	if err := _ContractIClaimingManager.contract.UnpackLog(event, "RecipientSet", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

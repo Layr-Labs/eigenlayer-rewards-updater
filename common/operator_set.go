@@ -14,40 +14,40 @@ type Earner struct {
 
 type Staker struct {
 	Earner
-	Address        gethcommon.Address
-	StrategyShares *big.Int
+	Address gethcommon.Address
+	Weight  *big.Int
 }
 
 type Operator struct {
 	Earner
-	Address                      gethcommon.Address
-	Commission                   *big.Int
-	TotalDelegatedStrategyShares *big.Int
-	Stakers                      []*Staker
+	Address         gethcommon.Address
+	Commission      *big.Int
+	DelegatedWeight *big.Int
+	Stakers         []*Staker
 }
 
 type OperatorSet struct {
-	TotalStakedStrategyShares *big.Int
-	Operators                 []*Operator
+	TotalStakedWeight *big.Int
+	Operators         []*Operator
 }
 
 func (os *OperatorSet) FillTotals() {
-	os.TotalStakedStrategyShares = big.NewInt(0)
+	os.TotalStakedWeight = big.NewInt(0)
 	for _, operator := range os.Operators {
-		operator.TotalDelegatedStrategyShares = big.NewInt(0)
+		operator.DelegatedWeight = big.NewInt(0)
 		for _, staker := range operator.Stakers {
-			operator.TotalDelegatedStrategyShares = new(big.Int).Add(operator.TotalDelegatedStrategyShares, staker.StrategyShares)
+			operator.DelegatedWeight.Add(operator.DelegatedWeight, staker.Weight)
 		}
-		os.TotalStakedStrategyShares = new(big.Int).Add(os.TotalStakedStrategyShares, operator.TotalDelegatedStrategyShares)
+		os.TotalStakedWeight.Add(os.TotalStakedWeight, operator.DelegatedWeight)
 	}
 }
 
-func (os *OperatorSet) ModifyStrategyShares(operatorAddress, stakerAddress gethcommon.Address, newStrategyShares *big.Int) {
+func (os *OperatorSet) ModifyWeight(operatorAddress, stakerAddress gethcommon.Address, newWeight *big.Int) {
 	for _, operator := range os.Operators {
 		if operator.Address == operatorAddress {
 			for _, staker := range operator.Stakers {
 				if staker.Address == stakerAddress {
-					staker.StrategyShares = newStrategyShares
+					staker.Weight = newWeight
 					break
 				}
 			}
