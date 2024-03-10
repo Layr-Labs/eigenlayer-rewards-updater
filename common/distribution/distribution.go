@@ -69,14 +69,38 @@ func (d *Distribution) Get(address, token gethcommon.Address) (*big.Int, bool) {
 	return amount.Int, true
 }
 
-// Get's the index of the account in the distribution
+// Sets the index of the account in the distribution
+func (d *Distribution) SetAccountIndex(address gethcommon.Address, index uint64) {
+	if d.accountIndices == nil {
+		d.accountIndices = make(map[gethcommon.Address]uint64)
+	}
+
+	d.accountIndices[address] = index
+}
+
+// Gets the index of the account in the distribution
 // Note that the indices must be set before calling this function
 func (d *Distribution) GetAccountIndex(address gethcommon.Address) (uint64, bool) {
 	index, found := d.accountIndices[address]
 	return index, found
 }
 
-// Get's the index of the token for a certain account in the distribution
+// Sets the index of the token for a certain account in the distribution
+func (d *Distribution) SetTokenIndex(address, token gethcommon.Address, index uint64) {
+	if d.tokenIndices == nil {
+		d.tokenIndices = make(map[gethcommon.Address]map[gethcommon.Address]uint64)
+	}
+
+	indices, found := d.tokenIndices[address]
+	if !found {
+		indices = make(map[gethcommon.Address]uint64)
+		d.tokenIndices[address] = indices
+	}
+
+	indices[token] = index
+}
+
+// Gets the index of the token for a certain account in the distribution
 // Note that the indices must be set before calling this function
 func (d *Distribution) GetTokenIndex(address, token gethcommon.Address) (uint64, bool) {
 	indices, found := d.tokenIndices[address]
@@ -134,14 +158,14 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 	accountLeafs := make([][]byte, d.data.Len())
 	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
 		address := accountPair.Key
-		d.accountIndices[address] = uint64(accountIndex)
+		d.SetAccountIndex(address, accountIndex)
 		// fetch the leafs for the tokens for this account
 		tokenIndex := uint64(0)
 		tokenLeafs := make([][]byte, accountPair.Value.Len())
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
 			token := tokenPair.Key
 			amount := tokenPair.Value
-			d.tokenIndices[address][token] = uint64(tokenIndex)
+			d.SetTokenIndex(address, token, tokenIndex)
 			tokenLeafs = append(tokenLeafs, EncodeTokenLeaf(token, amount.Int))
 			tokenIndex++
 		}

@@ -48,6 +48,7 @@ func (conn *TestPGConnection) CreateSubgraphDeployments() {
 	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_CLAIMING_MANAGER, "sgd34")
 	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_PAYMENT_COORDINATOR, "sgd34")
 	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_DELEGATION_MANAGER, "sgd34")
+	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_DELEGATION_SHARE_TRACKER, "sgd34")
 
 	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS sgd34`)
 }

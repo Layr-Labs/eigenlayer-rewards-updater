@@ -9,9 +9,6 @@ import (
 	"time"
 
 	contractIClaimingManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IClaimingManager"
-	contractIEigenPodManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IEigenPodManager"
-	contractIStrategyManager "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IStrategyManager"
-	contractMulticall3 "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/Multicall3"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -19,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
+	"github.com/shopspring/decimal"
 )
 
 var SECONDS_PER_BLOCK_ESTIMATE = big.NewInt(12)
@@ -115,55 +113,47 @@ func (s *OperatorSetDataServiceImpl) GetOperatorSetForStrategyAtTimestamp(ctx co
 	// todo: parallelize this
 	// loop thru each operator and get their staker sets
 	for i, operatorAddress := range operatorAddresses {
-		operatorSet.Operators[i] = &common.Operator{}
-		operatorSet.Operators[i].Address = operatorAddress
-		operatorSet.Operators[i].Commission = globalCommission
-		operatorSet.Operators[i].TotalDelegatedStrategyShares = big.NewInt(0)
+		operator := &common.Operator{}
+		operator.Address = operatorAddress
+		operator.Commission = globalCommission
+		operator.TotalDelegatedStrategyShares = big.NewInt(0)
 
 		start = time.Now()
 
 		// get the stakers of the operator
-		stakers, err := s.GetStakersDelegatedToOperatorAtTimestamp(timestamp, operatorAddress)
+		err := s.GetStakerSetSharesAtTimestamp(operator, timestamp, strategy)
 		if err != nil {
 			return nil, err
 		}
 
-		log.Info().Msgf("found %d stakers for operator %s in %s", len(stakers), operatorAddress.Hex(), time.Since(start))
+		log.Info().Msgf("found %d stakers for operator %s in %s", len(operator.Stakers), operatorAddress.Hex(), time.Since(start))
 		start = time.Now()
+
+		addresses := make([]gethcommon.Address, len(operator.Stakers)+1)
+		for i, staker := range operator.Stakers {
+			addresses[i] = staker.Address
+		}
+		addresses[len(addresses)-1] = operatorAddress
 
 		// get the recipients of each staker and the operator
-		recipients, err := s.GetRecipientsAtTimestamp(timestamp, append(stakers, operatorAddress))
+		recipients, err := s.GetRecipientsAtTimestamp(timestamp, addresses)
 		if err != nil {
 			return nil, err
 		}
 
-		log.Info().Msgf("got recipients of %d stakers in %s", len(stakers), time.Since(start))
-		start = time.Now()
+		log.Info().Msgf("got recipients of %d stakers in %s", len(addresses), time.Since(start))
 
-		// get the shares of each staker
-		strategyShareMap, err := s.GetSharesOfStakersAtBlockNumber(blockNumber, strategy, stakers)
-		if err != nil {
-			return nil, err
+		// loop thru each staker and set their recipient
+		for j, staker := range operator.Stakers {
+			operator.Stakers[j].Recipient = recipients[staker.Address]
 		}
+		operator.Recipient = recipients[operatorAddress]
 
-		log.Info().Msgf("got shares of %d stakers in %s", len(stakers), time.Since(start))
-
-		operatorSet.Operators[i].Stakers = make([]*common.Staker, len(stakers))
-
-		// loop thru each staker and get their shares
-		for j, stakerAddress := range stakers {
-			operatorSet.Operators[i].Stakers[j] = &common.Staker{}
-			operatorSet.Operators[i].Stakers[j].Address = stakerAddress
-			operatorSet.Operators[i].Stakers[j].Recipient = recipients[stakerAddress]
-			operatorSet.Operators[i].Stakers[j].StrategyShares = strategyShareMap[stakerAddress]
-
-			operatorSet.Operators[i].Recipient = recipients[operatorAddress]
-			// add the staker's shares to the operator's total delegated strategy shares
-			operatorSet.Operators[i].TotalDelegatedStrategyShares = operatorSet.Operators[i].TotalDelegatedStrategyShares.Add(operatorSet.Operators[i].TotalDelegatedStrategyShares, strategyShareMap[stakerAddress])
-		}
+		// add the operator to the operator set
+		operatorSet.Operators[i] = operator
 
 		// add the operator's total delegated strategy shares to the operator set's total staked strategy shares
-		operatorSet.TotalStakedStrategyShares = operatorSet.TotalStakedStrategyShares.Add(operatorSet.TotalStakedStrategyShares, operatorSet.Operators[i].TotalDelegatedStrategyShares)
+		operatorSet.TotalStakedStrategyShares = operatorSet.TotalStakedStrategyShares.Add(operatorSet.TotalStakedStrategyShares, operator.TotalDelegatedStrategyShares)
 	}
 
 	return operatorSet, nil
@@ -246,43 +236,51 @@ func (s *OperatorSetDataServiceImpl) GetRecipientsAtTimestamp(timestamp *big.Int
 	return recipients, nil
 }
 
-func (s *OperatorSetDataServiceImpl) GetStakersDelegatedToOperatorAtTimestamp(timestamp *big.Int, operator gethcommon.Address) ([]gethcommon.Address, error) {
+func (s *OperatorSetDataServiceImpl) GetStakerSetSharesAtTimestamp(operator *common.Operator, timestamp *big.Int, strategy gethcommon.Address) error {
 	// get the schema id for the claiming manager subgraph
-	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_DELEGATION_MANAGER)
+	schemaID, err := s.schemaService.GetSubgraphSchema(context.Background(), utils.SUBGRAPH_DELEGATION_SHARE_TRACKER)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// format the query
-	formattedQuery := fmt.Sprintf(stakerSetAtTimestampQuery, schemaID, schemaID)
+	formattedQuery := fmt.Sprintf(stakerSetSharesAtTimestampQuery, schemaID)
 
 	// query the database
-	rows, err := s.dbpool.Query(context.Background(), formattedQuery, toSQLAddress(operator), timestamp)
+	rows, err := s.dbpool.Query(context.Background(), formattedQuery, timestamp, toSQLAddress(strategy), toSQLAddress(operator.Address))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
 	// create a list of stakers
-	stakers := make([]gethcommon.Address, 0)
 	for rows.Next() {
 		var (
-			stakerBytes []byte
+			stakerBytes   []byte
+			sharesDecimal decimal.Decimal
 		)
 
 		err := rows.Scan(
 			&stakerBytes,
+			&sharesDecimal,
 		)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		staker := gethcommon.HexToAddress(hex.EncodeToString(stakerBytes))
+		shares := sharesDecimal.BigInt()
 
-		stakers = append(stakers, staker)
+		operator.Stakers = append(operator.Stakers, &common.Staker{
+			Address:        staker,
+			StrategyShares: shares,
+		})
+
+		// add the staker's shares to the operator's total delegated strategy shares
+		operator.TotalDelegatedStrategyShares = operator.TotalDelegatedStrategyShares.Add(operator.TotalDelegatedStrategyShares, shares)
 	}
 
-	return stakers, nil
+	return nil
 }
 
 func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(ctx context.Context, timestamp *big.Int) (*big.Int, error) {
@@ -326,104 +324,6 @@ func (s *OperatorSetDataServiceImpl) GetBlockNumberAtTimestamp(ctx context.Conte
 	}
 
 	return lo.Sub(lo, big.NewInt(1)), nil
-}
-
-func (s *OperatorSetDataServiceImpl) GetSharesOfStakersAtBlockNumber(blockNumber *big.Int, strategy gethcommon.Address, stakers []gethcommon.Address) (map[gethcommon.Address]*big.Int, error) {
-	stakerToStrategyShares := make(map[gethcommon.Address]*big.Int)
-
-	// get the mutlicalls for shares
-	var getShareCall func(staker, strategy gethcommon.Address) (contractMulticall3.Multicall3Call, error)
-	if strategy == BEACON_CHAIN_ETH_STRATEGY_ADDRESS {
-		eigenPodManagerAbi, _ := contractIEigenPodManager.ContractIEigenPodManagerMetaData.GetAbi()
-		getShareCall = func(staker, strategy gethcommon.Address) (contractMulticall3.Multicall3Call, error) {
-			sharesCall, err := eigenPodManagerAbi.Pack("podOwnerShares", staker)
-			if err != nil {
-				return contractMulticall3.Multicall3Call{}, err
-			}
-
-			return contractMulticall3.Multicall3Call{
-				Target:   EIGEN_POD_MANAGER_ADDRESS,
-				CallData: sharesCall,
-			}, nil
-		}
-	} else {
-		strategyManagerAbi, _ := contractIStrategyManager.ContractIStrategyManagerMetaData.GetAbi()
-		getShareCall = func(staker, strategy gethcommon.Address) (contractMulticall3.Multicall3Call, error) {
-			sharesCall, err := strategyManagerAbi.Pack("stakerStrategyShares", staker, strategy)
-			if err != nil {
-				return contractMulticall3.Multicall3Call{}, err
-			}
-
-			return contractMulticall3.Multicall3Call{
-				Target:   STRATEGY_MANAGER_ADDRESS,
-				CallData: sharesCall,
-			}, nil
-		}
-	}
-
-	// get the shares of the stakers in batches
-	var batchSize = 300
-	for i := 0; i < len(stakers); i += batchSize {
-		end := i + batchSize
-		if end > len(stakers) {
-			end = len(stakers)
-		}
-
-		// todo: parallelize this
-		err := s.GetStrategySharesForStakerBatchAtABlockNumber(stakerToStrategyShares, getShareCall, blockNumber, strategy, stakers[i:end])
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return stakerToStrategyShares, nil
-}
-
-func (s *OperatorSetDataServiceImpl) GetStrategySharesForStakerBatchAtABlockNumber(
-	stakerToStrategyShares map[gethcommon.Address]*big.Int,
-	getShareCall func(staker, strategy gethcommon.Address) (contractMulticall3.Multicall3Call, error),
-	blockNumber *big.Int,
-	strategy gethcommon.Address,
-	stakers []gethcommon.Address,
-) error {
-	calls := make([]contractMulticall3.Multicall3Call, 0)
-	for _, staker := range stakers {
-		shareCall, err := getShareCall(staker, strategy)
-		if err != nil {
-			return err
-		}
-
-		calls = append(calls, shareCall)
-	}
-
-	results, err := s.aggregateMulticall(blockNumber, calls)
-	if err != nil {
-		return err
-	}
-
-	for i, shareBytes := range results {
-		staker := stakers[i]
-		stakerToStrategyShares[staker] = new(big.Int).SetBytes(shareBytes)
-	}
-
-	return nil
-}
-
-func (s *OperatorSetDataServiceImpl) aggregateMulticall(blockNumber *big.Int, calls []contractMulticall3.Multicall3Call) ([][]byte, error) {
-	multicallAbi, err := contractMulticall3.ContractMulticall3MetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
-	multicallContract := bind.NewBoundContract(MULTICALL3_ADDRESS, *multicallAbi, s.ethClient, s.ethClient, s.ethClient)
-
-	var res []interface{}
-	err = multicallContract.Call(&bind.CallOpts{BlockNumber: blockNumber}, &res, "aggregate", calls)
-	if err != nil {
-		return nil, err
-	}
-
-	return res[1].([][]byte), nil
 }
 
 func toSQLAddreses(addresses []gethcommon.Address) string {

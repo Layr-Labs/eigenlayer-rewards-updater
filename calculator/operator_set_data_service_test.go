@@ -22,10 +22,6 @@ func TestOperatorSetDataService(t *testing.T) {
 		t.Fatal("Error loading .env file", err)
 	}
 
-	testBlockNumber := big.NewInt(10102668)
-
-	STETH_STRATEGY_ADDRESS := gethcommon.HexToAddress("0xB613E78E2068d7489bb66419fB1cfa11275d14da")
-
 	firstRecipientSetTimestamp := big.NewInt(1706728896)
 	secondRecipientSetTimestamp := big.NewInt(1706728956)
 	thirdRecipientSetTimestamp := big.NewInt(1706732424)
@@ -36,17 +32,6 @@ func TestOperatorSetDataService(t *testing.T) {
 		gethcommon.HexToAddress("0x6dF1eB642bF863E3A0547Bf347844BE1725cB678"),
 		gethcommon.HexToAddress("0xbCAc81D98ad3b9cAA48db35d20eDe91D2C59a0e1"),
 		gethcommon.HexToAddress("0x81dB2Cf17E7E6E3f4AA66D450E647a69E8CB2487"),
-	}
-
-	stETHStakers := []gethcommon.Address{
-		gethcommon.HexToAddress("0x5152bee7840E3A6261034e7FeCAf8FfBFf5cB6eE"),
-		gethcommon.HexToAddress("0x67185a8067DC178dAFF0571b4835d52bCFE0dE4C"),
-		gethcommon.HexToAddress("0xbfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2"),
-	}
-
-	beaconChainETHStakers := []gethcommon.Address{
-		gethcommon.HexToAddress("0x687b2dF0a4fFFD019CD02F8a1c873f848d4A1c54"),
-		gethcommon.HexToAddress("0xe82Bcae45bC947620274a576f3A5F96Cf425e01c"),
 	}
 
 	rpcClient, err := rpc.Dial(os.Getenv("RPC_URL"))
@@ -120,56 +105,52 @@ func TestOperatorSetDataService(t *testing.T) {
 		}
 	})
 
-	// add back when someone gets mad
-	// t.Run("test GetStakersDelegatedToOperatorAtTimestamp", func(t *testing.T) {
-	// 	stakersDelegatedToOperator, err := osds.GetStakersDelegatedToOperatorAtTimestamp(testTimestamp, P2P_OPERATOR_ADDRESS)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+	t.Run("test GetStakerSetSharesAtTimestamp for beacon chain eth", func(t *testing.T) {
+		createDelegationStrategySharesTable()
 
-	// 	assert.Equal(t, 5671, len(stakersDelegatedToOperator))
-	// })
-
-	t.Run("test GetSharesOfStakersAtBlockNumber for steth", func(t *testing.T) {
-		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stETHStakers)
+		operator := &common.Operator{
+			Address:                      gethcommon.HexToAddress("0xb613e78e2068d7489bb66419fb1cfa11275d14da"),
+			TotalDelegatedStrategyShares: big.NewInt(0),
+		}
+		err := osds.GetStakerSetSharesAtTimestamp(operator, big.NewInt(1000000), gethcommon.HexToAddress("0x1234567890987654321234567890987654321234"))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.Equal(t, 3, len(strategyShares))
-		assert.Equal(t, "0", strategyShares[stETHStakers[0]].String())
-		assert.Equal(t, "43069823021157214260", strategyShares[stETHStakers[1]].String())
-		assert.Equal(t, "151291540795049465", strategyShares[stETHStakers[2]].String())
-	})
+		assert.Equal(t, "43221114561952263726", operator.TotalDelegatedStrategyShares.String())
+		assert.Equal(t, 3, len(operator.Stakers))
+		assert.Equal(t, "0x5152bee7840E3A6261034e7FeCAf8FfBFf5cB6eE", operator.Stakers[0].Address.String())
+		assert.Equal(t, "43069823021157214260", operator.Stakers[0].StrategyShares.String())
+		assert.Equal(t, "0x67185a8067DC178dAFF0571b4835d52bCFE0dE4C", operator.Stakers[1].Address.String())
+		assert.Equal(t, "1", operator.Stakers[1].StrategyShares.String())
+		assert.Equal(t, "0xbfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2", operator.Stakers[2].Address.String())
+		assert.Equal(t, "151291540795049465", operator.Stakers[2].StrategyShares.String())
 
-	t.Run("test GetSharesOfStakersAtBlockNumber for beacon chain eth", func(t *testing.T) {
-		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, BEACON_CHAIN_ETH_STRATEGY_ADDRESS, beaconChainETHStakers)
+		operator = &common.Operator{
+			Address:                      gethcommon.HexToAddress("0xb613e78e2068d7489bb66419fb1cfa11275d14da"),
+			TotalDelegatedStrategyShares: big.NewInt(0),
+		}
+
+		err = osds.GetStakerSetSharesAtTimestamp(operator, big.NewInt(2000000), gethcommon.HexToAddress("0x1234567890987654321234567890987654321234"))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		assert.Equal(t, 2, len(strategyShares))
-		assert.Equal(t, "32000000000000000000", strategyShares[beaconChainETHStakers[0]].String())
-		assert.Equal(t, "0", strategyShares[beaconChainETHStakers[1]].String())
-	})
-
-	t.Run("test GetSharesOfStakersAtBlockNumber for steth with 1400 stakers", func(t *testing.T) {
-		stakers := []gethcommon.Address{}
-		for i := 0; i < 901; i++ {
-			stakers = append(stakers, common.GetRandomAddress())
-		}
-
-		strategyShares, err := osds.GetSharesOfStakersAtBlockNumber(testBlockNumber, STETH_STRATEGY_ADDRESS, stakers)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Equal(t, 901, len(strategyShares))
+		assert.Equal(t, "151291540795049467", operator.TotalDelegatedStrategyShares.String())
+		assert.Equal(t, 2, len(operator.Stakers))
+		assert.Equal(t, "0x67185a8067DC178dAFF0571b4835d52bCFE0dE4C", operator.Stakers[0].Address.String())
+		assert.Equal(t, "2", operator.Stakers[0].StrategyShares.String())
+		assert.Equal(t, "0xbfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2", operator.Stakers[1].Address.String())
+		assert.Equal(t, "151291540795049465", operator.Stakers[1].StrategyShares.String())
 	})
 
 	t.Cleanup(func() {
 		conn.ExecSQL(`
-			DROP TABLE IF EXISTS sgd34.recipient_set;
+			DROP TABLE IF EXISTS sgd34.claimer_set;
+		`)
+
+		conn.ExecSQL(`
+			DROP TABLE IF EXISTS sgd34.staker_delegation_share;
 		`)
 	})
 
@@ -177,10 +158,10 @@ func TestOperatorSetDataService(t *testing.T) {
 
 func createRecipientSetTable() {
 	conn.ExecSQL(`
-		CREATE TABLE IF NOT EXISTS sgd34.recipient_set (
+		CREATE TABLE IF NOT EXISTS sgd34.claimer_set (
 			id bytea PRIMARY KEY,
 			account bytea NOT NULL,
-			recipient bytea NOT NULL,
+			claimer bytea NOT NULL,
 			block_number numeric NOT NULL,
 			block_timestamp numeric NOT NULL,
 			transaction_hash bytea NOT NULL
@@ -189,7 +170,7 @@ func createRecipientSetTable() {
 
 	// insert a couple rows
 	conn.ExecSQL(`
-		INSERT INTO sgd34.recipient_set VALUES (
+		INSERT INTO sgd34.claimer_set VALUES (
 			decode('1234', 'hex'),
 			decode('27977e6E4426A525d055A587d2a0537b4cb376eA', 'hex'),
 			decode('20392d0d40Bdb3Bb2727aA9e34b3A631c8C7bE8F', 'hex'),
@@ -200,7 +181,7 @@ func createRecipientSetTable() {
 	`)
 
 	conn.ExecSQL(`
-		INSERT INTO sgd34.recipient_set VALUES (
+		INSERT INTO sgd34.claimer_set VALUES (
 			decode('5678', 'hex'),
 			decode('27977e6E4426A525d055A587d2a0537b4cb376eA', 'hex'),
 			decode('6dF1eB642bF863E3A0547Bf347844BE1725cB678', 'hex'),
@@ -211,7 +192,7 @@ func createRecipientSetTable() {
 	`)
 
 	conn.ExecSQL(`
-		INSERT INTO sgd34.recipient_set VALUES (
+		INSERT INTO sgd34.claimer_set VALUES (
 			decode('9101', 'hex'),
 			decode('bCAc81D98ad3b9cAA48db35d20eDe91D2C59a0e1', 'hex'),
 			decode('81dB2Cf17E7E6E3f4AA66D450E647a69E8CB2487', 'hex'),
@@ -220,4 +201,85 @@ func createRecipientSetTable() {
 			decode('6678901234567890123456789012345678901234567890123456789012345678', 'hex')
 		);
 	`)
+}
+
+func createDelegationStrategySharesTable() {
+	conn.ExecSQL(`
+		CREATE TABLE IF NOT EXISTS sgd34.staker_delegation_share (
+			id bytea PRIMARY KEY,
+			staker bytea NOT NULL,
+			operator bytea NOT NULL,
+			strategy bytea NOT NULL,
+			shares numeric NOT NULL,
+			update_block_timestamp numeric NOT NULL
+		);
+	`)
+
+	// insert a couple rows
+	conn.ExecSQL(`
+		INSERT INTO sgd34.staker_delegation_share VALUES (
+			decode('1234', 'hex'),
+			decode('5152bee7840E3A6261034e7FeCAf8FfBFf5cB6eE', 'hex'),
+			decode('b613e78e2068d7489bb66419fb1cfa11275d14da', 'hex'),
+			decode('1234567890987654321234567890987654321234', 'hex'),
+			43069823021157214260,
+			1000000
+		);
+	`)
+
+	conn.ExecSQL(`
+		INSERT INTO sgd34.staker_delegation_share VALUES (
+			decode('5678', 'hex'),
+			decode('67185a8067DC178dAFF0571b4835d52bCFE0dE4C', 'hex'),
+			decode('b613e78e2068d7489bb66419fb1cfa11275d14da', 'hex'),
+			decode('1234567890987654321234567890987654321234', 'hex'),
+			1,
+			1000000
+		);
+	`)
+
+	conn.ExecSQL(`
+		INSERT INTO sgd34.staker_delegation_share VALUES (
+			decode('9101', 'hex'),
+			decode('bfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2', 'hex'),
+			decode('b613e78e2068d7489bb66419fb1cfa11275d14da', 'hex'),
+			decode('1234567890987654321234567890987654321234', 'hex'),
+			151291540795049465,
+			1000000
+		);
+	`)
+
+	conn.ExecSQL(`
+		INSERT INTO sgd34.staker_delegation_share VALUES (
+			decode('9102', 'hex'),
+			decode('bfc9ca1c434ab19E5F75ACd2d603dc0621ef64E2', 'hex'),
+			decode('b613e78e2068d7489bb66419fb1cfa11275d14da', 'hex'),
+			decode('0987654321234567890987654321234567890987', 'hex'),
+			12344321,
+			1000000
+		);
+	`)
+
+	conn.ExecSQL(`
+		INSERT INTO sgd34.staker_delegation_share VALUES (
+			decode('1235', 'hex'),
+			decode('5152bee7840E3A6261034e7FeCAf8FfBFf5cB6eE', 'hex'),
+			decode('0000000000000000000000000000000000000000', 'hex'),
+			decode('1234567890987654321234567890987654321234', 'hex'),
+			123,
+			2000000
+		);
+	`)
+
+	conn.ExecSQL(`
+		INSERT INTO sgd34.staker_delegation_share VALUES (
+			decode('5679', 'hex'),
+			decode('67185a8067DC178dAFF0571b4835d52bCFE0dE4C', 'hex'),
+			decode('b613e78e2068d7489bb66419fb1cfa11275d14da', 'hex'),
+			decode('1234567890987654321234567890987654321234', 'hex'),
+			2,
+			2000000
+		);
+	`)
+
 }
