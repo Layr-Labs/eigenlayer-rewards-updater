@@ -144,6 +144,8 @@ func TestOperatorSetDataService(t *testing.T) {
 		assert.Equal(t, "151291540795049465", operator.Stakers[1].Weight.String())
 	})
 
+	//todo test for different multipliers
+
 	t.Cleanup(func() {
 		conn.ExecSQL(`
 			DROP TABLE IF EXISTS sgd34.claimer_set;
