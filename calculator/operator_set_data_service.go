@@ -299,7 +299,7 @@ func (s *OperatorSetDataServiceImpl) GetStakeWeightsAtTimestamp(operator *common
 		}
 
 		// add the staker's shares to the operator's total delegated strategy shares
-		operator.DelegatedWeight = operator.DelegatedWeight.Add(operator.DelegatedWeight, shares)
+		operator.DelegatedWeight = operator.DelegatedWeight.Add(operator.DelegatedWeight, weight)
 	}
 
 	if prevStaker.Address.Cmp(gethcommon.Address{}) != 0 {
