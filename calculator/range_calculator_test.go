@@ -75,14 +75,19 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 	tinyPaymentToDistributePerInterval := big.NewInt(50)
 	normalPaymentToDistributePerInterval := big.NewInt(1000000000000)
 
+	testStrategies1 := []gethcommon.Address{utils.TEST_STRATEGY_ADDRESS_1}
+	testMultipliers1 := []*big.Int{big.NewInt(1)}
+
 	t.Run("test CalculateDistributionToOperatorForInterval for single operator operatorSet", func(t *testing.T) {
 		operatorSet := &common.OperatorSet{
 			Operators: []*common.Operator{utils.GetSelfDelegatedOperator()},
 		}
 		operatorSet.FillTotals()
 
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
+
 		diffDistribution := distribution.NewDistribution()
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, normalPaymentToDistributePerInterval, amount)
@@ -94,9 +99,11 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		}
 		operatorSet.FillTotals()
 
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
+
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(100000000000), amount)
@@ -112,9 +119,11 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		}
 		operatorSet.FillTotals()
 
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
+
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(550000000000), amount)
@@ -128,11 +137,13 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		}
 		operatorSet.FillTotals()
 
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
+
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(333333333333), amount)
@@ -150,12 +161,13 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 
 	t.Run("test CalculateDistributionToOperatorForInterval for three operators 1/10 3/10 6/10", func(t *testing.T) {
 		operatorSet := get3Opereator136Split()
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
 
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(100000000000), amount)
@@ -175,12 +187,13 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		operatorSet := &common.OperatorSet{
 			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers()},
 		}
-		operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
+		operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(1e17))
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
 
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(31), amount)
@@ -196,13 +209,14 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		operatorSet := &common.OperatorSet{
 			Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers()},
 		}
-		operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(1e17))
-		operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
+		operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(1e17))
+		operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(1e17))
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
 
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, tinyPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(41), amount)
@@ -217,12 +231,13 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 	t.Run("test CalculateDistributionToOperatorForInterval for three operators 1/10 3/10 6/10 with randomized Recipients", func(t *testing.T) {
 		operatorSet := get3Opereator136Split()
 		operatorSet.RandomizeRecipients()
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies1, testMultipliers1)
 
 		diffDistribution := distribution.NewDistribution()
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(100000000000), amount)
@@ -240,6 +255,7 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 
 	t.Run("test CalculateDistributionToOperatorForInterval for three operators 1/10 3/10 6/10 with nonzero initial amounts", func(t *testing.T) {
 		operatorSet := get3Opereator136Split()
+		totalStakeWeight := operatorSet.TotalStakedWeight([]gethcommon.Address{utils.TEST_STRATEGY_ADDRESS_1}, []*big.Int{big.NewInt(1)})
 
 		diffDistribution := distribution.NewDistribution()
 		diffDistribution.Set(operatorSet.Operators[0].Recipient, STETH_ADDRESS, big.NewInt(1))
@@ -249,9 +265,9 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		diffDistribution.Set(operatorSet.Operators[2].Recipient, STETH_ADDRESS, big.NewInt(5))
 		diffDistribution.Set(operatorSet.Operators[2].Stakers[1].Recipient, STETH_ADDRESS, big.NewInt(6))
 
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
-		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, totalStakeWeight, testStrategies1, testMultipliers1, STETH_ADDRESS, normalPaymentToDistributePerInterval)
 
 		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(100000000001), amount)
@@ -272,13 +288,13 @@ func get3Opereator136Split() *common.OperatorSet {
 	operatorSet := &common.OperatorSet{
 		Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers(), utils.GetOperatorWith1OutsideStaker()},
 	}
-	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_1, utils.TEST_OPERATOR_ADDRESS_1, big.NewInt(1e17))
+	operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_1, utils.TEST_OPERATOR_ADDRESS_1, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(1e17))
 
-	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, big.NewInt(2e17))
-	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, big.NewInt(1e17))
+	operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_1, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(2e17))
+	operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_2, utils.TEST_STAKER_ADDRESS_2, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(1e17))
 
-	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_OPERATOR_ADDRESS_3, big.NewInt(4e17))
-	operatorSet.ModifyWeight(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_STAKER_ADDRESS_3, big.NewInt(2e17))
+	operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(4e17))
+	operatorSet.ModifyShares(utils.TEST_OPERATOR_ADDRESS_3, utils.TEST_STAKER_ADDRESS_3, utils.TEST_STRATEGY_ADDRESS_1, big.NewInt(2e17))
 
 	return operatorSet
 }

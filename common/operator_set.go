@@ -15,39 +15,74 @@ type Earner struct {
 type Staker struct {
 	Earner
 	Address gethcommon.Address
-	Weight  *big.Int
+	Shares  map[gethcommon.Address]*big.Int
 }
 
 type Operator struct {
 	Earner
 	Address         gethcommon.Address
 	Commission      *big.Int
-	DelegatedWeight *big.Int
+	DelegatedShares map[gethcommon.Address]*big.Int
 	Stakers         []*Staker
 }
 
 type OperatorSet struct {
-	TotalStakedWeight *big.Int
+	TotalStakedShares map[gethcommon.Address]*big.Int
 	Operators         []*Operator
 }
 
-func (os *OperatorSet) FillTotals() {
-	os.TotalStakedWeight = big.NewInt(0)
-	for _, operator := range os.Operators {
-		operator.DelegatedWeight = big.NewInt(0)
-		for _, staker := range operator.Stakers {
-			operator.DelegatedWeight.Add(operator.DelegatedWeight, staker.Weight)
+func Weight(strategyToShares map[gethcommon.Address]*big.Int, strategies []gethcommon.Address, multipliers []*big.Int) *big.Int {
+	weight := big.NewInt(0)
+	for i, strategy := range strategies {
+		shares, found := strategyToShares[strategy]
+		if !found {
+			continue
 		}
-		os.TotalStakedWeight.Add(os.TotalStakedWeight, operator.DelegatedWeight)
+
+		weight.Add(weight, new(big.Int).Mul(shares, multipliers[i]))
+	}
+
+	return weight
+}
+
+func (s *Staker) Weight(strategies []gethcommon.Address, multipliers []*big.Int) *big.Int {
+	return Weight(s.Shares, strategies, multipliers)
+}
+
+func (op *Operator) Weight(strategies []gethcommon.Address, multipliers []*big.Int) *big.Int {
+	return Weight(op.DelegatedShares, strategies, multipliers)
+}
+
+func (os *OperatorSet) TotalStakedWeight(strategies []gethcommon.Address, multipliers []*big.Int) *big.Int {
+	return Weight(os.TotalStakedShares, strategies, multipliers)
+}
+
+func (os *OperatorSet) FillTotals() {
+	os.TotalStakedShares = make(map[gethcommon.Address]*big.Int)
+	for _, operator := range os.Operators {
+		operator.DelegatedShares = make(map[gethcommon.Address]*big.Int)
+		for _, staker := range operator.Stakers {
+			for strategy, shares := range staker.Shares {
+				if _, found := operator.DelegatedShares[strategy]; !found {
+					operator.DelegatedShares[strategy] = big.NewInt(0)
+				}
+				if _, found := os.TotalStakedShares[strategy]; !found {
+					os.TotalStakedShares[strategy] = big.NewInt(0)
+				}
+
+				operator.DelegatedShares[strategy].Add(operator.DelegatedShares[strategy], shares)
+				os.TotalStakedShares[strategy].Add(os.TotalStakedShares[strategy], shares)
+			}
+		}
 	}
 }
 
-func (os *OperatorSet) ModifyWeight(operatorAddress, stakerAddress gethcommon.Address, newWeight *big.Int) {
+func (os *OperatorSet) ModifyShares(operatorAddress, stakerAddress, strategyAddress gethcommon.Address, newShares *big.Int) {
 	for _, operator := range os.Operators {
 		if operator.Address == operatorAddress {
 			for _, staker := range operator.Stakers {
 				if staker.Address == stakerAddress {
-					staker.Weight = newWeight
+					staker.Shares[strategyAddress] = newShares
 					break
 				}
 			}

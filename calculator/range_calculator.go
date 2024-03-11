@@ -135,20 +135,23 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 			}
 
 			// get the operator set at the interval start
-			operatorSet, err := c.operatorSetDataService.GetWeightedOperatorSetAtTimestamp(ctx, intervalStart, rangePayment.Avs, rangePayment.Strategies, rangePayment.Weights)
+			operatorSet, err := c.operatorSetDataService.GetWeightedOperatorSetAtTimestamp(ctx, intervalStart, rangePayment.Avs, rangePayment.Strategies)
 			if err != nil {
 				return err
 			}
 
+			totalStakeWeight := operatorSet.TotalStakedWeight(rangePayment.Strategies, rangePayment.Weights)
+			log.Info().Msgf("total staked weight: %s", totalStakeWeight)
+
 			// if the operator set has no staked strategy shares, skip
-			if operatorSet.TotalStakedWeight.Cmp(big.NewInt(0)) == 0 {
+			if totalStakeWeight.Cmp(big.NewInt(0)) == 0 {
 				continue
 			}
 
 			// loop through all operators
 			for i := range operatorSet.Operators {
 				// calculate the distribution to the operator and stakers for the interval
-				diffDistribution = CalculateDistributionToOperatorForInterval(ctx, diffDistribution, i, operatorSet, rangePayment.Token, paymentToDistributePerInterval)
+				diffDistribution = CalculateDistributionToOperatorForInterval(ctx, diffDistribution, i, operatorSet, totalStakeWeight, rangePayment.Strategies, rangePayment.Weights, rangePayment.Token, paymentToDistributePerInterval)
 			}
 
 			// increment the interval start/end
@@ -165,17 +168,23 @@ func CalculateDistributionToOperatorForInterval(
 	diffDistribution *distribution.Distribution,
 	index int,
 	operatorSet *common.OperatorSet,
+	totalStakedWeight *big.Int,
+	strategies []gethcommon.Address,
+	weights []*big.Int,
 	token gethcommon.Address,
 	paymentToDistributePerInterval *big.Int,
 ) *distribution.Distribution {
 	operator := operatorSet.Operators[index]
 
+	// get the operator's delegated weight
+	delegatedWeight := operator.Weight(strategies, weights)
+
 	// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedWeight / totalStakedWeight
-	totalPaymentToOperatorAndStakers := div(mul(paymentToDistributePerInterval, operator.DelegatedWeight), operatorSet.TotalStakedWeight)
+	totalPaymentToOperatorAndStakers := div(mul(paymentToDistributePerInterval, delegatedWeight), totalStakedWeight)
 	log.Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
 
 	// if the operator has no delegated strategy shares, skip
-	if operator.DelegatedWeight.Cmp(big.NewInt(0)) == 0 {
+	if delegatedWeight.Cmp(big.NewInt(0)) == 0 {
 		return diffDistribution
 	}
 
@@ -193,8 +202,10 @@ func CalculateDistributionToOperatorForInterval(
 	for _, staker := range operator.Stakers {
 		// increment token balance according to the staker's proportion of the staked weight
 		stakerAmt, _ := diffDistribution.Get(staker.Recipient, token)
+		// get the staker's weight
+		stakerWeight := staker.Weight(strategies, weights)
 		// stakerAmt += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerWeight / 10000 / operatorDelegatedWeight
-		stakerAmt.Add(stakerAmt, div(mul(totalPaymentToStakers, staker.Weight), operator.DelegatedWeight))
+		stakerAmt.Add(stakerAmt, div(mul(totalPaymentToStakers, stakerWeight), delegatedWeight))
 		diffDistribution.Set(staker.Recipient, token, stakerAmt)
 	}
 
