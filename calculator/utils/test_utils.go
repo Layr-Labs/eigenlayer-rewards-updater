@@ -29,6 +29,7 @@ var (
 		Commission: big.NewInt(1000),
 		DelegatedShares: map[gethcommon.Address]*big.Int{
 			TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+			TEST_OPERATOR_ADDRESS_2: big.NewInt(1e18),
 		},
 		Stakers: []*common.Staker{
 			{
@@ -38,6 +39,7 @@ var (
 				Address: TEST_OPERATOR_ADDRESS_1,
 				Shares: map[gethcommon.Address]*big.Int{
 					TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(1e18),
 				},
 			},
 		},
@@ -52,6 +54,7 @@ var (
 		Commission: big.NewInt(1000),
 		DelegatedShares: map[gethcommon.Address]*big.Int{
 			TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+			TEST_STRATEGY_ADDRESS_2: big.NewInt(1e18),
 		},
 		Stakers: []*common.Staker{
 			{
@@ -59,9 +62,7 @@ var (
 					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
 				Address: TEST_OPERATOR_ADDRESS_1,
-				Shares: map[gethcommon.Address]*big.Int{
-					TEST_STRATEGY_ADDRESS_1: big.NewInt(0),
-				},
+				Shares:  map[gethcommon.Address]*big.Int{},
 			},
 			{
 				Earner: common.Earner{
@@ -70,6 +71,7 @@ var (
 				Address: TEST_STAKER_ADDRESS_1,
 				Shares: map[gethcommon.Address]*big.Int{
 					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(2e17),
 				},
 			},
 			{
@@ -79,6 +81,7 @@ var (
 				Address: TEST_STAKER_ADDRESS_2,
 				Shares: map[gethcommon.Address]*big.Int{
 					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(8e17),
 				},
 			},
 		},
@@ -92,6 +95,7 @@ var (
 		Commission: big.NewInt(1000),
 		DelegatedShares: map[gethcommon.Address]*big.Int{
 			TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+			TEST_STRATEGY_ADDRESS_2: big.NewInt(2e17),
 		},
 		Stakers: []*common.Staker{
 			{
@@ -101,6 +105,7 @@ var (
 				Address: TEST_OPERATOR_ADDRESS_3,
 				Shares: map[gethcommon.Address]*big.Int{
 					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(2e17),
 				},
 			},
 			{

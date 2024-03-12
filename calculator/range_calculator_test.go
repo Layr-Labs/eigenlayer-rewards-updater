@@ -78,6 +78,9 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 	testStrategies1 := []gethcommon.Address{utils.TEST_STRATEGY_ADDRESS_1}
 	testMultipliers1 := []*big.Int{big.NewInt(1)}
 
+	testStrategies2 := []gethcommon.Address{utils.TEST_STRATEGY_ADDRESS_1, utils.TEST_STRATEGY_ADDRESS_2}
+	testMultipliers2 := []*big.Int{big.NewInt(1), big.NewInt(2)}
+
 	t.Run("test CalculateDistributionToOperatorForInterval for single operator operatorSet", func(t *testing.T) {
 		operatorSet := &common.OperatorSet{
 			Operators: []*common.Operator{utils.GetSelfDelegatedOperator()},
@@ -281,6 +284,31 @@ func TestCalculateDistributionToOperatorForInterval(t *testing.T) {
 		assert.Equal(t, big.NewInt(420000000005), amount)
 		amount, _ = diffDistribution.Get(operatorSet.Operators[2].Stakers[1].Recipient, STETH_ADDRESS)
 		assert.Equal(t, big.NewInt(180000000006), amount)
+	})
+
+	t.Run("test CalculateDistributionToOperatorForInterval for three operator for two strategies and multipliers", func(t *testing.T) {
+		operatorSet := &common.OperatorSet{Operators: []*common.Operator{utils.GetSelfDelegatedOperator(), utils.GetOperatorWith2OutsideStakers(), utils.GetOperatorWith1OutsideStaker()}}
+		operatorSet.FillTotals()
+
+		totalStakeWeight := operatorSet.TotalStakedWeight(testStrategies2, testMultipliers2)
+
+		diffDistribution := distribution.NewDistribution()
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 0, operatorSet, totalStakeWeight, testStrategies2, testMultipliers2, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 1, operatorSet, totalStakeWeight, testStrategies2, testMultipliers2, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+		diffDistribution = CalculateDistributionToOperatorForInterval(context.Background(), diffDistribution, 2, operatorSet, totalStakeWeight, testStrategies2, testMultipliers2, STETH_ADDRESS, normalPaymentToDistributePerInterval)
+
+		amount, _ := diffDistribution.Get(operatorSet.Operators[0].Recipient, STETH_ADDRESS)
+		assert.Equal(t, big.NewInt(405405405405), amount)
+		amount, _ = diffDistribution.Get(operatorSet.Operators[1].Recipient, STETH_ADDRESS)
+		assert.Equal(t, big.NewInt(40540540540), amount)
+		amount, _ = diffDistribution.Get(operatorSet.Operators[1].Stakers[1].Recipient, STETH_ADDRESS)
+		assert.Equal(t, big.NewInt(109459459459), amount)
+		amount, _ = diffDistribution.Get(operatorSet.Operators[1].Stakers[2].Recipient, STETH_ADDRESS)
+		assert.Equal(t, big.NewInt(255405405405), amount)
+		amount, _ = diffDistribution.Get(operatorSet.Operators[2].Recipient, STETH_ADDRESS)
+		assert.Equal(t, big.NewInt(128378378377), amount)
+		amount, _ = diffDistribution.Get(operatorSet.Operators[2].Stakers[1].Recipient, STETH_ADDRESS)
+		assert.Equal(t, big.NewInt(60810810811), amount)
 	})
 }
 
