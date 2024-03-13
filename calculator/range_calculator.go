@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	contractIPaymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
@@ -96,7 +95,7 @@ func (c *RangePaymentCalculator) CalculateDistributionUntilTimestamp(ctx context
 
 	startTimestampNewRangePayments := new(big.Int).Set(startTimestamp)
 	for _, rangePayment := range newRangePayments {
-		startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartRangeTimestamp)
+		startTimestampNewRangePayments = min(startTimestampNewRangePayments, rangePayment.StartTimestamp)
 	}
 
 	// calculate the distribution over the range
@@ -115,7 +114,7 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	ctx context.Context,
 	diffDistribution *distribution.Distribution,
 	startTimestamp, endTimestamp *big.Int,
-	rangePayments []*contractIPaymentCoordinator.IPaymentCoordinatorRangePayment,
+	rangePayments []*services.RangePayment,
 ) error {
 	numIntervals := new(big.Int).Div(new(big.Int).Sub(endTimestamp, startTimestamp), c.calculationIntervalSeconds).Int64()
 	log.Info().Msgf("num intervals: %d", numIntervals)
@@ -123,33 +122,36 @@ func (c *RangePaymentCalculator) CalculateDistributionFromRangePayments(
 	// loop through all range payments
 	for _, rangePayment := range rangePayments {
 		// calculate the payment to distribute over each interval
-		paymentToDistributePerInterval := div(mul(rangePayment.Amount, c.calculationIntervalSeconds), new(big.Int).Sub(rangePayment.EndRangeTimestamp, rangePayment.StartRangeTimestamp))
+		paymentToDistributePerInterval := div(mul(rangePayment.Amount, c.calculationIntervalSeconds), rangePayment.Duration)
 
-		intervalStart := new(big.Int).Set(rangePayment.StartRangeTimestamp)
+		intervalStart := new(big.Int).Set(rangePayment.StartTimestamp)
 		intervalEnd := new(big.Int).Add(intervalStart, c.calculationIntervalSeconds)
 
 		// loop through all intervals
 		for i := int64(0); i < numIntervals; i++ {
 			// if the interval start is at or after the end of the range payment's range, move to the next range payment
-			if intervalStart.Cmp(rangePayment.EndRangeTimestamp) >= 0 {
+			if intervalStart.Cmp(new(big.Int).Add(rangePayment.StartTimestamp, rangePayment.Duration)) >= 0 {
 				break
 			}
 
 			// get the operator set at the interval start
-			operatorSet, err := c.operatorSetDataService.GetOperatorSetForStrategyAtTimestamp(ctx, intervalStart, rangePayment.Avs, rangePayment.Strategy)
+			operatorSet, err := c.operatorSetDataService.GetWeightedOperatorSetAtTimestamp(ctx, intervalStart, rangePayment.Avs, rangePayment.Strategies)
 			if err != nil {
 				return err
 			}
 
+			totalStakeWeight := operatorSet.TotalStakedWeight(rangePayment.Strategies, rangePayment.Weights)
+			log.Info().Msgf("total staked weight: %s", totalStakeWeight)
+
 			// if the operator set has no staked strategy shares, skip
-			if operatorSet.TotalStakedStrategyShares.Cmp(big.NewInt(0)) == 0 {
+			if totalStakeWeight.Cmp(big.NewInt(0)) == 0 {
 				continue
 			}
 
 			// loop through all operators
 			for i := range operatorSet.Operators {
 				// calculate the distribution to the operator and stakers for the interval
-				diffDistribution = CalculateDistributionToOperatorForInterval(ctx, diffDistribution, i, operatorSet, rangePayment.Token, paymentToDistributePerInterval)
+				diffDistribution = CalculateDistributionToOperatorForInterval(ctx, diffDistribution, i, operatorSet, totalStakeWeight, rangePayment.Strategies, rangePayment.Weights, rangePayment.Token, paymentToDistributePerInterval)
 			}
 
 			// increment the interval start/end
@@ -166,17 +168,23 @@ func CalculateDistributionToOperatorForInterval(
 	diffDistribution *distribution.Distribution,
 	index int,
 	operatorSet *common.OperatorSet,
+	totalStakedWeight *big.Int,
+	strategies []gethcommon.Address,
+	weights []*big.Int,
 	token gethcommon.Address,
 	paymentToDistributePerInterval *big.Int,
 ) *distribution.Distribution {
 	operator := operatorSet.Operators[index]
 
-	// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedStrategyShares / totalStrategyShares
-	totalPaymentToOperatorAndStakers := div(mul(paymentToDistributePerInterval, operator.TotalDelegatedStrategyShares), operatorSet.TotalStakedStrategyShares)
+	// get the operator's delegated weight
+	delegatedWeight := operator.Weight(strategies, weights)
+
+	// totalPaymentToOperatorAndStakers = paymentToDistribute * operatorDelegatedWeight / totalStakedWeight
+	totalPaymentToOperatorAndStakers := div(mul(paymentToDistributePerInterval, delegatedWeight), totalStakedWeight)
 	log.Info().Msgf("total payment to operator and stakers: %s", totalPaymentToOperatorAndStakers)
 
 	// if the operator has no delegated strategy shares, skip
-	if operator.TotalDelegatedStrategyShares.Cmp(big.NewInt(0)) == 0 {
+	if delegatedWeight.Cmp(big.NewInt(0)) == 0 {
 		return diffDistribution
 	}
 
@@ -192,10 +200,12 @@ func CalculateDistributionToOperatorForInterval(
 
 	// loop through all stakers
 	for _, staker := range operator.Stakers {
-		// increment token balance according to the staker's proportion of the strategy shares
+		// increment token balance according to the staker's proportion of the staked weight
 		stakerAmt, _ := diffDistribution.Get(staker.Recipient, token)
-		// stakerAmt += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerShares / 10000 / operatorDelegatedStrategyShares
-		stakerAmt.Add(stakerAmt, div(mul(totalPaymentToStakers, staker.StrategyShares), operator.TotalDelegatedStrategyShares))
+		// get the staker's weight
+		stakerWeight := staker.Weight(strategies, weights)
+		// stakerAmt += totalPaymentToOperatorAndStakers * (10000 - operatorCommissions) * stakerWeight / 10000 / operatorDelegatedWeight
+		stakerAmt.Add(stakerAmt, div(mul(totalPaymentToStakers, stakerWeight), delegatedWeight))
 		diffDistribution.Set(staker.Recipient, token, stakerAmt)
 	}
 

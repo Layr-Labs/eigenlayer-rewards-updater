@@ -17,21 +17,30 @@ var (
 	TEST_STAKER_ADDRESS_2 = gethcommon.HexToAddress("0x1111222222222222222222222222222222222222")
 	TEST_STAKER_ADDRESS_3 = gethcommon.HexToAddress("0x1111333333333333333333333333333333333333")
 
+	TEST_STRATEGY_ADDRESS_1 = gethcommon.HexToAddress("0x1234567890987654321234567890987654321234")
+	TEST_STRATEGY_ADDRESS_2 = gethcommon.HexToAddress("0x0987654321234567890987654321234567890987")
+
 	// a self delegated operator with no other stakers
 	SelfDelegatedOperator = &common.Operator{
 		Earner: common.Earner{
 			Recipient: TEST_OPERATOR_ADDRESS_1,
 		},
-		Address:                      TEST_OPERATOR_ADDRESS_1,
-		Commission:                   big.NewInt(1000),
-		TotalDelegatedStrategyShares: big.NewInt(1e18),
+		Address:    TEST_OPERATOR_ADDRESS_1,
+		Commission: big.NewInt(1000),
+		DelegatedShares: map[gethcommon.Address]*big.Int{
+			TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+			TEST_OPERATOR_ADDRESS_2: big.NewInt(1e18),
+		},
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
 					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
-				Address:        TEST_OPERATOR_ADDRESS_1,
-				StrategyShares: big.NewInt(1e18),
+				Address: TEST_OPERATOR_ADDRESS_1,
+				Shares: map[gethcommon.Address]*big.Int{
+					TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(1e18),
+				},
 			},
 		},
 	}
@@ -41,30 +50,39 @@ var (
 		Earner: common.Earner{
 			Recipient: TEST_OPERATOR_ADDRESS_2,
 		},
-		Address:                      TEST_OPERATOR_ADDRESS_2,
-		Commission:                   big.NewInt(1000),
-		TotalDelegatedStrategyShares: big.NewInt(1e18),
+		Address:    TEST_OPERATOR_ADDRESS_2,
+		Commission: big.NewInt(1000),
+		DelegatedShares: map[gethcommon.Address]*big.Int{
+			TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+			TEST_STRATEGY_ADDRESS_2: big.NewInt(1e18),
+		},
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
 					Recipient: TEST_OPERATOR_ADDRESS_1,
 				},
-				Address:        TEST_OPERATOR_ADDRESS_1,
-				StrategyShares: big.NewInt(0),
+				Address: TEST_OPERATOR_ADDRESS_1,
+				Shares:  map[gethcommon.Address]*big.Int{},
 			},
 			{
 				Earner: common.Earner{
 					Recipient: TEST_STAKER_ADDRESS_1,
 				},
-				Address:        TEST_STAKER_ADDRESS_1,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_STAKER_ADDRESS_1,
+				Shares: map[gethcommon.Address]*big.Int{
+					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(2e17),
+				},
 			},
 			{
 				Earner: common.Earner{
 					Recipient: TEST_STAKER_ADDRESS_2,
 				},
-				Address:        TEST_STAKER_ADDRESS_2,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_STAKER_ADDRESS_2,
+				Shares: map[gethcommon.Address]*big.Int{
+					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(8e17),
+				},
 			},
 		},
 	}
@@ -73,23 +91,31 @@ var (
 		Earner: common.Earner{
 			Recipient: TEST_OPERATOR_ADDRESS_3,
 		},
-		Address:                      TEST_OPERATOR_ADDRESS_3,
-		Commission:                   big.NewInt(1000),
-		TotalDelegatedStrategyShares: big.NewInt(1e18),
+		Address:    TEST_OPERATOR_ADDRESS_3,
+		Commission: big.NewInt(1000),
+		DelegatedShares: map[gethcommon.Address]*big.Int{
+			TEST_STRATEGY_ADDRESS_1: big.NewInt(1e18),
+			TEST_STRATEGY_ADDRESS_2: big.NewInt(2e17),
+		},
 		Stakers: []*common.Staker{
 			{
 				Earner: common.Earner{
 					Recipient: TEST_OPERATOR_ADDRESS_3,
 				},
-				Address:        TEST_OPERATOR_ADDRESS_3,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_OPERATOR_ADDRESS_3,
+				Shares: map[gethcommon.Address]*big.Int{
+					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+					TEST_STRATEGY_ADDRESS_2: big.NewInt(2e17),
+				},
 			},
 			{
 				Earner: common.Earner{
 					Recipient: TEST_STAKER_ADDRESS_3,
 				},
-				Address:        TEST_STAKER_ADDRESS_3,
-				StrategyShares: big.NewInt(5e17),
+				Address: TEST_STAKER_ADDRESS_3,
+				Shares: map[gethcommon.Address]*big.Int{
+					TEST_STRATEGY_ADDRESS_1: big.NewInt(5e17),
+				},
 			},
 		},
 	}
