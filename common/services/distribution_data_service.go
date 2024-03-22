@@ -1,81 +1,97 @@
 package services
 
 import (
-	"encoding/hex"
-	"encoding/json"
+	"context"
 	"fmt"
-	"os"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/rs/zerolog/log"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
+
+	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 type DistributionDataService interface {
-	// GetDistribution returns the distribution of payments for the given root
-	GetDistribution(root [32]byte) (*distribution.Distribution, error)
-	// SetDistribution sets the distribution of payments for the given root
-	SetDistribution(root [32]byte, distribution *distribution.Distribution) error
+	// Gets the latest calculated distribution that has not been submitted to the chain and the timestamp it which it was calculated until
+	GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error)
+
+	// Gets the latest submitted distribution
+	GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error)
 }
 
-type DistributionDataServiceImpl struct{}
-
-func NewDistributionDataService() DistributionDataService {
-	return &DistributionDataServiceImpl{}
+type DistributionDataServiceImpl struct {
+	dbpool *pgxpool.Pool
 }
 
-func NewDistributionDataServiceImpl() *DistributionDataServiceImpl {
-	return &DistributionDataServiceImpl{}
+func NewDistributionDataService(dbpool *pgxpool.Pool) DistributionDataService {
+	return &DistributionDataServiceImpl{
+		dbpool: dbpool,
+	}
 }
 
-func (s *DistributionDataServiceImpl) GetDistribution(root [32]byte) (*distribution.Distribution, error) {
-	// if the data directory doesn't exist, create it and return empty map
-	_, err := os.Stat("./data")
-	if os.IsNotExist(err) {
-		err = os.Mkdir("./data", 0755)
+func NewDistributionDataServiceImpl(dbpool *pgxpool.Pool) *DistributionDataServiceImpl {
+	return &DistributionDataServiceImpl{
+		dbpool: dbpool,
+	}
+}
+
+func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
+	return dds.populateDistributionFromTable(ctx, PAYMENTS_TO_SUBMIT_TABLE)
+}
+
+func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
+	return dds.populateDistributionFromTable(ctx, LATEST_SUBMITTED_PAYMENTS_TABLE)
+}
+
+func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, table string) (*distribution.Distribution, int64, error) {
+	// create the db tx
+	tx, err := dds.dbpool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() {
 		if err != nil {
-			return nil, err
+			tx.Rollback(context.TODO())
+		} else {
+			tx.Commit(context.TODO())
 		}
-		return distribution.NewDistribution(), nil
-	}
+	}()
+
+	// lock the table
+	_, err = tx.Query(ctx, fmt.Sprintf(lockTableForReadsQuery, table))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	// read from data/distributions_{timestamp}.json
-	file, err := os.ReadFile(distributionFileName(root))
+	d := distribution.NewDistribution()
+	rows, err := tx.Query(ctx, fmt.Sprintf(getAllPaymentsBalancesQuery, table))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	// deserialize from json
-	distribution := &distribution.Distribution{}
-	err = json.Unmarshal(file, distribution)
+	// populate the distribution
+	for rows.Next() {
+		var earnerBytes []byte
+		var tokenBytes []byte
+		var cumulativePaymentDecimal decimal.Decimal
+		err := rows.Scan(&earnerBytes, &tokenBytes, &cumulativePaymentDecimal)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		earner := gethcommon.BytesToAddress(earnerBytes)
+		token := gethcommon.BytesToAddress(tokenBytes)
+
+		d.Set(earner, token, cumulativePaymentDecimal.BigInt())
+	}
+
+	// get the timestamp
+	var timestamp int64
+	err = tx.QueryRow(ctx, fmt.Sprintf(getTimestampQuery, table)).Scan(&timestamp)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return distribution, nil
-}
-
-func (s *DistributionDataServiceImpl) SetDistribution(root [32]byte, distribution *distribution.Distribution) error {
-
-	// seralize to json and write to data/distributions_{root}.json
-	marshalledDistribution, err := json.Marshal(distribution)
-	if err != nil {
-		return err
-	}
-
-	log.Info().Msgf("writing distribution to file %s", distributionFileName(root))
-
-	// write to file
-	err = os.WriteFile(distributionFileName(root), marshalledDistribution, 0644)
-	if err != nil {
-		return err
-	}
-
-	return err
-}
-
-func distributionFileName(root [32]byte) string {
-	return fmt.Sprintf("data/distribution_%s.json", hex.EncodeToString(root[:]))
+	return d, timestamp, nil
 }

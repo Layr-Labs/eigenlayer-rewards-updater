@@ -5,28 +5,21 @@ import (
 	"math/big"
 	"time"
 
-	calculator "github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
 type Updater struct {
 	updateInterval          time.Duration
-	paymentsDataService     services.PaymentsDataService
 	distributionDataService services.DistributionDataService
-	calculator              calculator.PaymentCalculator
 	transactor              Transactor
 }
 
 func NewUpdater(
 	updateIntervalSeconds int,
-	paymentsDataService services.PaymentsDataService,
 	distributionDataService services.DistributionDataService,
-	calculator calculator.PaymentCalculator,
 	chainClient *common.ChainClient,
 	claimingManagerAddress gethcommon.Address,
 ) (*Updater, error) {
@@ -38,8 +31,6 @@ func NewUpdater(
 	return &Updater{
 		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),
 		distributionDataService: distributionDataService,
-		paymentsDataService:     paymentsDataService,
-		calculator:              calculator,
 		transactor:              transactor,
 	}, nil
 }
@@ -65,52 +56,16 @@ func (u *Updater) Start() error {
 }
 
 func (u *Updater) update(ctx context.Context) error {
-	// get the interval of time that we need to update payments for
-	log.Info().Msg("getting latest finalized timestamp")
-	latestFinalizedTimestamp, err := u.transactor.GetLatestFinalizedTimestamp(ctx)
-	if err != nil {
-		return err
-	}
-
-	log.Info().Msgf("latest finalized timestamp: %d", latestFinalizedTimestamp)
-
-	// get the time until which payments have been calculated
-	log.Info().Msg("getting payments calculated until timestamp")
-	latestRoot, paymentsCalculatedUntilTimestamp, fetchRootSubmissionErr := u.paymentsDataService.GetLatestRootSubmission(ctx)
-	if fetchRootSubmissionErr == pgx.ErrNoRows {
-		// if there are no rows, then we haven't submitted any roots yet, so we should start from 0
-		paymentsCalculatedUntilTimestamp = big.NewInt(0)
-	} else if fetchRootSubmissionErr != nil {
-		return fetchRootSubmissionErr
-	}
-
-	log.Info().Msgf("payments calculated until timestamp: %d", paymentsCalculatedUntilTimestamp)
-
-	// give the interval to the distribution calculator, get the map from address => token => amount
-	log.Info().Msg("calculating distribution")
-	newPaymentsCalculatedUntilTimestamp, diffDistribution, err := u.calculator.CalculateDistributionUntilTimestamp(ctx, paymentsCalculatedUntilTimestamp, latestFinalizedTimestamp)
-	if err != nil {
-		return err
-	}
-
 	// get the current distribution
 	log.Info().Msg("getting current distribution")
-	currentDistribution := distribution.NewDistribution()
-	if paymentsCalculatedUntilTimestamp.Cmp(big.NewInt(0)) != 0 {
-		currentDistribution, err = u.distributionDataService.GetDistribution(latestRoot)
-		if err != nil {
-			return err
-		}
+	distribution, calculatedUntilTimestamp, err := u.distributionDataService.GetDistributionToSubmit(ctx)
+	if err != nil {
+		return err
 	}
-
-	// add the diff distribution to the current distribution
-	log.Info().Msg("adding diff distribution to current distribution")
-	newDistribution := currentDistribution
-	newDistribution.Add(diffDistribution)
 
 	// merklize the distribution roots
 	log.Info().Msg("merklizing distribution roots")
-	accountTree, _, err := newDistribution.Merklize()
+	accountTree, _, err := distribution.Merklize()
 	if err != nil {
 		return err
 	}
@@ -118,15 +73,9 @@ func (u *Updater) update(ctx context.Context) error {
 	var newRoot [32]byte
 	copy(newRoot[:], accountTree.Root())
 
-	// set the distribution at the timestamp
-	log.Info().Msg("setting distribution")
-	if err := u.distributionDataService.SetDistribution(newRoot, newDistribution); err != nil {
-		return err
-	}
-
 	// send the merkle root to the smart contract
 	log.Info().Msg("updating payments")
-	if err := u.transactor.SubmitRoot(ctx, newRoot, newPaymentsCalculatedUntilTimestamp); err != nil {
+	if err := u.transactor.SubmitRoot(ctx, newRoot, big.NewInt(calculatedUntilTimestamp)); err != nil {
 		return err
 	}
 

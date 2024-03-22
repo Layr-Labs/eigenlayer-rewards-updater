@@ -1,8 +1,0 @@
-type StakerDelegationShare @entity {
-  id: Bytes!
-  staker: Bytes!
-  operator: Bytes!
-  strategy: Bytes!
-  shares: BigInt!
-  updateBlockTimestamp: BigInt!
-}
