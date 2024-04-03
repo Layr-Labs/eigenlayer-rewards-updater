@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
+	"os"
 	"time"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ory/dockertest/v3"
@@ -16,6 +19,11 @@ import (
 // Utils for unit and integration tests
 
 var ()
+
+func SetTestEnv() {
+	os.Setenv("ENV", "localnet")
+	os.Setenv("NETWORK", "local")
+}
 
 type TestPGConnection struct {
 	dbpool *pgxpool.Pool
@@ -35,22 +43,12 @@ func (conn *TestPGConnection) ExecSQL(sql string, arguments ...any) {
 	}
 }
 
-func (conn *TestPGConnection) CleanSubgraphDeployment() {
-	conn.ExecSQL(`DROP TABLE satsuma.subgraph_schema`)
-	conn.ExecSQL(`DROP SCHEMA satsuma`)
+func (conn *TestPGConnection) CleanDB() {
+	conn.ExecSQL(`DROP SCHEMA localnet_local CASCADE`)
 }
 
-func (conn *TestPGConnection) CreateSubgraphDeployments() {
-	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS satsuma`)
-	// 	satsuma_subgraph_name | character varying |           | not null |
-	//  entity_schema         | character varying |           | not null |
-	conn.ExecSQL(`CREATE TABLE IF NOT EXISTS satsuma.subgraph_schema(satsuma_subgraph_name text, entity_schema text)`)
-	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_CLAIMING_MANAGER, "sgd34")
-	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_PAYMENT_COORDINATOR, "sgd34")
-	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_DELEGATION_MANAGER, "sgd34")
-	conn.ExecSQL(`INSERT INTO satsuma.subgraph_schema VALUES ($1, $2)`, TEST_SUBGRAPH_DELEGATION_SHARE_TRACKER, "sgd34")
-
-	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS sgd34`)
+func (conn *TestPGConnection) CreateDB() {
+	conn.ExecSQL(`CREATE SCHEMA IF NOT EXISTS localnet_local`)
 }
 
 func InitializePGDocker() (*dockertest.Pool, *dockertest.Resource, *pgxpool.Pool) {
@@ -101,4 +99,25 @@ func InitializePGDocker() (*dockertest.Pool, *dockertest.Resource, *pgxpool.Pool
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 	return pool, resource, dbPool
+}
+
+func GetTestDistribution() *distribution.Distribution {
+	d := distribution.NewDistribution()
+
+	// give some addresses many tokens
+	// addr1 => token_1 => 1
+	// addr1 => token_2 => 2
+	// ...
+	// addr1 => token_n => n
+	// addr2 => token_1 => 2
+	// addr2 => token_2 => 3
+	// ...
+	// addr2 => token_n-1 => n+1
+	for i := 0; i < len(TestAddresses); i++ {
+		for j := 0; j < len(TestTokens)-i; j++ {
+			d.Set(TestAddresses[i], TestTokens[j], big.NewInt(int64(j+i+1)))
+		}
+	}
+
+	return d
 }

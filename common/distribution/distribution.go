@@ -1,6 +1,7 @@
 package distribution
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -10,6 +11,9 @@ import (
 	"github.com/wealdtech/go-merkletree/v2/keccak256"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
+
+var ErrAddressNotInOrder = errors.New("addresses must be added in order")
+var ErrTokenNotInOrder = errors.New("tokens must be added in order")
 
 // Used for marshalling and unmarshalling big integers.
 type BigInt struct {
@@ -46,14 +50,46 @@ func NewDistribution() *Distribution {
 	}
 }
 
+func (d *Distribution) MarshalJSON() ([]byte, error) {
+	return d.data.MarshalJSON()
+}
+
+func (d *Distribution) UnmarshalJSON(p []byte) error {
+	data := orderedmap.New[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]()
+	err := data.UnmarshalJSON(p)
+	if err != nil {
+		return err
+	}
+	d.data = data
+	return nil
+}
+
 // Set sets the value for a given address.
-func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) {
+func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) error {
 	allocatedTokens, found := d.data.Get(address)
 	if !found {
 		allocatedTokens = orderedmap.New[gethcommon.Address, *BigInt]()
 		d.data.Set(address, allocatedTokens)
+
+		// check if the address is added in order
+		prev := d.data.GetPair(address).Prev()
+		if prev != nil && prev.Key.Cmp(address) >= 0 {
+			// remove the address
+			d.data.Delete(address)
+			return ErrAddressNotInOrder
+		}
 	}
 	allocatedTokens.Set(token, &BigInt{Int: amount})
+
+	// check if the token is added in order
+	prev := allocatedTokens.GetPair(token).Prev()
+	if prev != nil && prev.Key.Cmp(token) >= 0 {
+		// remove the token
+		allocatedTokens.Delete(token)
+		return ErrTokenNotInOrder
+	}
+
+	return nil
 }
 
 // Get gets the value for a given address and whether it was in the distribution
@@ -70,7 +106,7 @@ func (d *Distribution) Get(address, token gethcommon.Address) (*big.Int, bool) {
 }
 
 // Sets the index of the account in the distribution
-func (d *Distribution) SetAccountIndex(address gethcommon.Address, index uint64) {
+func (d *Distribution) setAccountIndex(address gethcommon.Address, index uint64) {
 	if d.accountIndices == nil {
 		d.accountIndices = make(map[gethcommon.Address]uint64)
 	}
@@ -86,7 +122,7 @@ func (d *Distribution) GetAccountIndex(address gethcommon.Address) (uint64, bool
 }
 
 // Sets the index of the token for a certain account in the distribution
-func (d *Distribution) SetTokenIndex(address, token gethcommon.Address, index uint64) {
+func (d *Distribution) setTokenIndex(address, token gethcommon.Address, index uint64) {
 	if d.tokenIndices == nil {
 		d.tokenIndices = make(map[gethcommon.Address]map[gethcommon.Address]uint64)
 	}
@@ -112,40 +148,10 @@ func (d *Distribution) GetTokenIndex(address, token gethcommon.Address) (uint64,
 	return index, found
 }
 
-// Add adds the other distribution to this distribution.
-// assumes other is non nil
-func (d *Distribution) Add(other *Distribution) {
-	for accountPair := other.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
-		address := accountPair.Key
-		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
-			token := tokenPair.Key
-			amount := tokenPair.Value
-			currentAmount, _ := d.Get(address, token)
-			d.Set(address, token, currentAmount.Add(currentAmount, amount.Int))
-		}
-	}
-}
-
-func (d *Distribution) GetNumLeaves() int {
-	numLeaves := 0
-	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
-		numLeaves += accountPair.Value.Len()
-	}
-	return numLeaves
-}
-
-func (d *Distribution) MarshalJSON() ([]byte, error) {
-	return d.data.MarshalJSON()
-}
-
-func (d *Distribution) UnmarshalJSON(p []byte) error {
-	data := orderedmap.New[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]]()
-	err := data.UnmarshalJSON(p)
-	if err != nil {
-		return err
-	}
-	d.data = data
-	return nil
+// GetStart returns the first pair in the distribution
+// used to iterate over the distribution
+func (d *Distribution) GetStart() *orderedmap.Pair[gethcommon.Address, *orderedmap.OrderedMap[gethcommon.Address, *BigInt]] {
+	return d.data.Oldest()
 }
 
 // Merklizes the distribution and returns the account tree and the token trees.
@@ -155,17 +161,17 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 
 	// todo: parallelize this
 	accountIndex := uint64(0)
-	accountLeafs := make([][]byte, d.data.Len())
+	accountLeafs := make([][]byte, 0)
 	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
 		address := accountPair.Key
-		d.SetAccountIndex(address, accountIndex)
+		d.setAccountIndex(address, accountIndex)
 		// fetch the leafs for the tokens for this account
 		tokenIndex := uint64(0)
-		tokenLeafs := make([][]byte, accountPair.Value.Len())
+		tokenLeafs := make([][]byte, 0)
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
 			token := tokenPair.Key
 			amount := tokenPair.Value
-			d.SetTokenIndex(address, token, tokenIndex)
+			d.setTokenIndex(address, token, tokenIndex)
 			tokenLeafs = append(tokenLeafs, EncodeTokenLeaf(token, amount.Int))
 			tokenIndex++
 		}
@@ -198,6 +204,7 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 }
 
 // encodeAccountLeaf encodes an account leaf for a token distribution.
+// precondition: accountRoot must be 32 bytes
 func EncodeAccountLeaf(account gethcommon.Address, accountRoot []byte) []byte {
 	// (account || accountRoot)
 	return append(account.Bytes(), accountRoot[:]...)

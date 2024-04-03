@@ -3,12 +3,13 @@ package main
 import (
 	"os"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/calculator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -21,6 +22,8 @@ const (
 
 	GOERLI_ENV = "testnet-goerli"
 )
+
+var claimingManagerAddress = gethcommon.HexToAddress("0x7b3f8f4b8e3b7f4f19e7e3f0b7b6e3f1f1b2f1b")
 
 func main() {
 	rpcClient, err := rpc.Dial(rpcUrl)
@@ -47,27 +50,11 @@ func main() {
 	dbpool := common.CreateConnectionOrDie(connString)
 	defer dbpool.Close()
 
-	schemaService := common.NewSubgraphSchemaService(GOERLI_ENV, dbpool)
-
-	pds := services.NewPaymentsDataService(
-		dbpool,
-		schemaService,
-	)
-	osds := calculator.NewOperatorSetDataService(
-		dbpool,
-		schemaService,
-		ethClient,
-	)
-
-	calculationIntervalSeconds := int64(10)
-
-	elpc := calculator.NewRangePaymentCalculator(calculationIntervalSeconds, pds, osds)
-
-	dds := services.NewDistributionDataServiceImpl()
+	dds := services.NewDistributionDataServiceImpl(dbpool)
 
 	updateIntervalSeconds := 100
 
-	elpu, err := updater.NewUpdater(updateIntervalSeconds, pds, dds, elpc, chainClient, calculator.CLAIMING_MANAGER_ADDRESS)
+	elpu, err := updater.NewUpdater(updateIntervalSeconds, dds, chainClient, claimingManagerAddress)
 	if err != nil {
 		panic(err)
 	}

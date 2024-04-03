@@ -1,8 +1,0 @@
-{
-  "goerli": {
-    "PaymentCoordinator": {
-      "address": "0xB55c0640E1FF7E1448aeAB58255Bb94F52069f19",
-      "startBlock": 10000000
-    }
-  }
-}

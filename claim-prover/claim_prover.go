@@ -21,10 +21,7 @@ type ClaimProofs struct {
 type ClaimProver struct {
 	updateInterval time.Duration
 
-	paymentsDataService services.PaymentsDataService
-
 	distributionDataService services.DistributionDataService
-	root                    [32]byte
 	distribution            *distribution.Distribution
 
 	accountTree *merkletree.MerkleTree
@@ -33,21 +30,17 @@ type ClaimProver struct {
 	mu sync.RWMutex
 }
 
-func NewClaimProver(updateIntervalSeconds int64, paymentsDataService services.PaymentsDataService, distributionDataService services.DistributionDataService) *ClaimProver {
+func NewClaimProver(updateIntervalSeconds int64, distributionDataService services.DistributionDataService) *ClaimProver {
 	claimProver := &ClaimProver{
 		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),
-		paymentsDataService:     paymentsDataService,
 		distributionDataService: distributionDataService,
 		mu:                      sync.RWMutex{},
 	}
 
-	// start the update
-	claimProver.start()
-
 	return claimProver
 }
 
-func (cp *ClaimProver) start() {
+func (cp *ClaimProver) Start() {
 	// run a loop unning once every u.UpdateInterval that calls u.update()
 	log.Info().Msg("service started")
 	ctx := context.Background()
@@ -67,33 +60,23 @@ func (cp *ClaimProver) start() {
 }
 
 func (cp *ClaimProver) update(ctx context.Context) error {
-	// get the latest root submission
-	root, _, err := cp.paymentsDataService.GetLatestRootSubmission(ctx)
+	// get latest submitted distribution
+	distribution, _, err := cp.distributionDataService.GetLatestSubmittedDistribution(ctx)
 	if err != nil {
 		return err
-	}
-
-	// if the root is the same as the current root, do nothing
-	if root == cp.root {
-		return nil
 	}
 
 	// aquire write lock
 	cp.mu.Lock()
 
 	// get the distribution for the root
-	cp.distribution, err = cp.distributionDataService.GetDistribution(root)
-	if err != nil {
-		return err
-	}
+	cp.distribution = distribution
 
 	// generate the trees
 	cp.accountTree, cp.tokenTrees, err = cp.distribution.Merklize()
 	if err != nil {
 		return err
 	}
-	// set the new root
-	cp.root = root
 
 	cp.mu.Unlock()
 
