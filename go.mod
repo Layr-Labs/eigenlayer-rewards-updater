@@ -11,6 +11,7 @@ require (
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/rs/zerolog v1.31.0
 	github.com/shopspring/decimal v1.3.1
+	github.com/stretchr/testify v1.8.4
 	github.com/wealdtech/go-merkletree/v2 v2.5.2-0.20240302222400-69219c450662
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
@@ -29,6 +30,7 @@ require (
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/docker/cli v20.10.17+incompatible // indirect
@@ -56,6 +58,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect

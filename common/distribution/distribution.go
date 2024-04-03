@@ -70,7 +70,7 @@ func (d *Distribution) Get(address, token gethcommon.Address) (*big.Int, bool) {
 }
 
 // Sets the index of the account in the distribution
-func (d *Distribution) SetAccountIndex(address gethcommon.Address, index uint64) {
+func (d *Distribution) setAccountIndex(address gethcommon.Address, index uint64) {
 	if d.accountIndices == nil {
 		d.accountIndices = make(map[gethcommon.Address]uint64)
 	}
@@ -86,7 +86,7 @@ func (d *Distribution) GetAccountIndex(address gethcommon.Address) (uint64, bool
 }
 
 // Sets the index of the token for a certain account in the distribution
-func (d *Distribution) SetTokenIndex(address, token gethcommon.Address, index uint64) {
+func (d *Distribution) setTokenIndex(address, token gethcommon.Address, index uint64) {
 	if d.tokenIndices == nil {
 		d.tokenIndices = make(map[gethcommon.Address]map[gethcommon.Address]uint64)
 	}
@@ -112,28 +112,6 @@ func (d *Distribution) GetTokenIndex(address, token gethcommon.Address) (uint64,
 	return index, found
 }
 
-// Add adds the other distribution to this distribution.
-// assumes other is non nil
-func (d *Distribution) Add(other *Distribution) {
-	for accountPair := other.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
-		address := accountPair.Key
-		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
-			token := tokenPair.Key
-			amount := tokenPair.Value
-			currentAmount, _ := d.Get(address, token)
-			d.Set(address, token, currentAmount.Add(currentAmount, amount.Int))
-		}
-	}
-}
-
-func (d *Distribution) GetNumLeaves() int {
-	numLeaves := 0
-	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
-		numLeaves += accountPair.Value.Len()
-	}
-	return numLeaves
-}
-
 func (d *Distribution) MarshalJSON() ([]byte, error) {
 	return d.data.MarshalJSON()
 }
@@ -155,17 +133,17 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 
 	// todo: parallelize this
 	accountIndex := uint64(0)
-	accountLeafs := make([][]byte, d.data.Len())
+	accountLeafs := make([][]byte, 0)
 	for accountPair := d.data.Oldest(); accountPair != nil; accountPair = accountPair.Next() {
 		address := accountPair.Key
-		d.SetAccountIndex(address, accountIndex)
+		d.setAccountIndex(address, accountIndex)
 		// fetch the leafs for the tokens for this account
 		tokenIndex := uint64(0)
-		tokenLeafs := make([][]byte, accountPair.Value.Len())
+		tokenLeafs := make([][]byte, 0)
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
 			token := tokenPair.Key
 			amount := tokenPair.Value
-			d.SetTokenIndex(address, token, tokenIndex)
+			d.setTokenIndex(address, token, tokenIndex)
 			tokenLeafs = append(tokenLeafs, EncodeTokenLeaf(token, amount.Int))
 			tokenIndex++
 		}
@@ -198,6 +176,7 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 }
 
 // encodeAccountLeaf encodes an account leaf for a token distribution.
+// precondition: accountRoot must be 32 bytes
 func EncodeAccountLeaf(account gethcommon.Address, accountRoot []byte) []byte {
 	// (account || accountRoot)
 	return append(account.Bytes(), accountRoot[:]...)

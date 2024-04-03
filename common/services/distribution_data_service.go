@@ -53,9 +53,9 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback(context.TODO())
+			tx.Rollback(ctx)
 		} else {
-			tx.Commit(context.TODO())
+			tx.Commit(ctx)
 		}
 	}()
 
