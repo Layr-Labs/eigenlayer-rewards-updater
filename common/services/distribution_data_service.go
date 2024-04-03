@@ -6,7 +6,6 @@ import (
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
@@ -38,35 +37,16 @@ func NewDistributionDataServiceImpl(dbpool *pgxpool.Pool) *DistributionDataServi
 }
 
 func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
-	return dds.populateDistributionFromTable(ctx, fmt.Sprintf(PAYMENTS_TO_SUBMIT_TABLE, utils.GetEnvNetwork()))
+	return dds.populateDistributionFromTable(ctx, PAYMENTS_TO_SUBMIT_TABLE)
 }
 
 func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
-	return dds.populateDistributionFromTable(ctx, fmt.Sprintf(LATEST_SUBMITTED_PAYMENTS_TABLE, utils.GetEnvNetwork()))
+	return dds.populateDistributionFromTable(ctx, LATEST_SUBMITTED_PAYMENTS_TABLE)
 }
 
 func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, table string) (*distribution.Distribution, int64, error) {
-	// create the db tx
-	tx, err := dds.dbpool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		} else {
-			tx.Commit(ctx)
-		}
-	}()
-
-	// lock the table
-	_, err = tx.Query(ctx, fmt.Sprintf(lockTableForReadsQuery, table))
-	if err != nil {
-		return nil, 0, err
-	}
-
 	d := distribution.NewDistribution()
-	rows, err := tx.Query(ctx, fmt.Sprintf(getAllPaymentsBalancesQuery, table))
+	rows, err := dds.dbpool.Query(ctx, fmt.Sprintf(getAllPaymentsBalancesQuery, utils.GetEnvNetwork(), table))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -89,7 +69,7 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 
 	// get the timestamp
 	var timestamp int64
-	err = tx.QueryRow(ctx, fmt.Sprintf(getTimestampQuery, table)).Scan(&timestamp)
+	err = dds.dbpool.QueryRow(ctx, fmt.Sprintf(getTimestampQuery, utils.GetEnvNetwork(), table)).Scan(&timestamp)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -18,17 +18,18 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	utils.SetTestEnv()
+
 	pool, resource, dbpool = utils.InitializePGDocker()
 
 	// Initialize setups
 	conn = utils.NewTestPGConnection(dbpool)
-	conn.CreateSubgraphDeployments()
+	conn.CreateDB()
 
 	//Run tests
 	code := m.Run()
 
-	// Clean up setups
-	conn.CleanSubgraphDeployment()
+	conn.CleanDB()
 
 	// You can't defer this because os.Exit doesn't care for defer
 	if err := pool.Purge(resource); err != nil {
