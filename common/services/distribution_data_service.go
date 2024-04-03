@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
@@ -37,11 +38,11 @@ func NewDistributionDataServiceImpl(dbpool *pgxpool.Pool) *DistributionDataServi
 }
 
 func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
-	return dds.populateDistributionFromTable(ctx, PAYMENTS_TO_SUBMIT_TABLE)
+	return dds.populateDistributionFromTable(ctx, fmt.Sprintf(PAYMENTS_TO_SUBMIT_TABLE, utils.GetEnvNetwork()))
 }
 
 func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
-	return dds.populateDistributionFromTable(ctx, LATEST_SUBMITTED_PAYMENTS_TABLE)
+	return dds.populateDistributionFromTable(ctx, fmt.Sprintf(LATEST_SUBMITTED_PAYMENTS_TABLE, utils.GetEnvNetwork()))
 }
 
 func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, table string) (*distribution.Distribution, int64, error) {

@@ -37,13 +37,10 @@ func NewClaimProver(updateIntervalSeconds int64, distributionDataService service
 		mu:                      sync.RWMutex{},
 	}
 
-	// start the update
-	claimProver.start()
-
 	return claimProver
 }
 
-func (cp *ClaimProver) start() {
+func (cp *ClaimProver) Start() {
 	// run a loop unning once every u.UpdateInterval that calls u.update()
 	log.Info().Msg("service started")
 	ctx := context.Background()
