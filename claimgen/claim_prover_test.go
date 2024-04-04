@@ -174,10 +174,10 @@ func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.Merkl
 	var root [32]byte
 	copy(root[:], rootBytes)
 
-	cp := claimprover.NewClaimProver(testUpdateIntervalSeconds, mockTransactor, mockDistributionDataService)
-
 	mockDistributionDataService.On("GetLatestSubmittedDistribution", mock.Anything).Return(d, testTimestamp, nil).Once()
 	mockTransactor.On("GetRootIndex", root).Return(testRootIndex, nil).Once()
+
+	cp := claimprover.NewClaimProver(testUpdateIntervalSeconds, mockTransactor, mockDistributionDataService)
 
 	return d, accountTree, tokenTrees, rootBytes, cp, mockTransactor, mockDistributionDataService
 }

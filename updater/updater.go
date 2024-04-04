@@ -33,21 +33,21 @@ func (u *Updater) Start() error {
 	ctx := context.Background()
 
 	// run the first update immediately
-	if err := u.update(ctx); err != nil {
+	if err := u.Update(ctx); err != nil {
 		log.Error().Msgf("failed to update: %s", err)
 	}
 
 	ticker := time.NewTicker(u.updateInterval)
 	for range ticker.C {
 		log.Info().Msg("running update")
-		if err := u.update(ctx); err != nil {
+		if err := u.Update(ctx); err != nil {
 			log.Error().Msgf("failed to update: %s", err)
 		}
 	}
 	return nil
 }
 
-func (u *Updater) update(ctx context.Context) error {
+func (u *Updater) Update(ctx context.Context) error {
 	// get the current distribution
 	log.Info().Msg("getting current distribution")
 	distribution, calculatedUntilTimestamp, err := u.distributionDataService.GetDistributionToSubmit(ctx)
