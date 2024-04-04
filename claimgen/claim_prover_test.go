@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	claimprover "github.com/Layr-Labs/eigenlayer-payment-updater/claimgen"
@@ -25,7 +24,7 @@ var testTimestamp int64 = 1712127631
 var testUpdateIntervalSeconds int64 = 100
 
 func TestClaimProverUpdate(t *testing.T) {
-	_, accountTree, tokenTrees, rootBytes, cp := createUpdatableClaimProver()
+	_, accountTree, tokenTrees, rootBytes, cp, _, _ := createUpdatableClaimProver()
 
 	cp.Update(context.Background())
 
@@ -48,7 +47,7 @@ func TestClaimProverUpdate(t *testing.T) {
 }
 
 func TestClaimProverGetProof(t *testing.T) {
-	d, _, tokenTrees, rootBytes, cp := createUpdatableClaimProver()
+	d, _, tokenTrees, rootBytes, cp, _, _ := createUpdatableClaimProver()
 
 	cp.Update(context.Background())
 
@@ -61,7 +60,7 @@ func TestClaimProverGetProof(t *testing.T) {
 }
 
 func TestClaimProverGetProofDecreasingTokenOrder(t *testing.T) {
-	d, _, tokenTrees, rootBytes, cp := createUpdatableClaimProver()
+	d, _, tokenTrees, rootBytes, cp, _, _ := createUpdatableClaimProver()
 
 	cp.Update(context.Background())
 
@@ -74,7 +73,7 @@ func TestClaimProverGetProofDecreasingTokenOrder(t *testing.T) {
 }
 
 func TestClaimProverGetProofForNonExistantEarner(t *testing.T) {
-	_, _, _, _, cp := createUpdatableClaimProver()
+	_, _, _, _, cp, _, _ := createUpdatableClaimProver()
 
 	cp.Update(context.Background())
 
@@ -83,7 +82,7 @@ func TestClaimProverGetProofForNonExistantEarner(t *testing.T) {
 }
 
 func TestClaimProverGetProofForNonExistantToken(t *testing.T) {
-	_, _, _, _, cp := createUpdatableClaimProver()
+	_, _, _, _, cp, _, _ := createUpdatableClaimProver()
 
 	cp.Update(context.Background())
 
@@ -95,14 +94,42 @@ func TestClaimProverGetProofForNonExistantToken(t *testing.T) {
 }
 
 func TestParallelProofGeneration(t *testing.T) {
-	rand.Seed(time.Now().UnixNano()) // Seed the random number generator
-
-	d, _, tokenTrees, rootBytes, cp := createUpdatableClaimProver()
+	preD, _, preTokenTrees, preRootBytes, cp, mockTransactor, mockDistributionDataService := createUpdatableClaimProver()
 
 	cp.Update(context.Background())
 
+	// prepare values for next update call
+	postD := utils.GetCompleteTestDistribution()
+	postAccountTree, postTokenTrees, _ := postD.Merklize()
+	postRootBytes := postAccountTree.Root()
+	var root [32]byte
+	copy(root[:], postRootBytes)
+
+	mockDistributionDataService.On("GetLatestSubmittedDistribution", mock.Anything).Return(postD, testTimestamp+1, nil).Once()
+	mockTransactor.On("GetRootIndex", root).Return(testRootIndex+1, nil).Once()
+
+	updates := map[uint32]struct {
+		rootBytes    []byte
+		distribution *distribution.Distribution
+		tokenTrees   map[gethcommon.Address]*merkletree.MerkleTree
+	}{
+		testRootIndex: {
+			rootBytes:    preRootBytes,
+			distribution: preD,
+			tokenTrees:   preTokenTrees,
+		},
+		testRootIndex + 1: {
+			rootBytes:    postRootBytes,
+			distribution: postD,
+			tokenTrees:   postTokenTrees,
+		},
+	}
+
+	// start parallel calls
 	var wg sync.WaitGroup
-	numCalls := 1000 // Number of parallel calls to make
+	numCalls := 10000 // Number of parallel calls to make
+
+	seenNewRootIndex := false
 
 	wg.Add(numCalls) // Set the number of goroutines to wait for
 
@@ -112,22 +139,32 @@ func TestParallelProofGeneration(t *testing.T) {
 
 			earnerIndex := rand.Intn(len(utils.TestAddresses))
 			earner := utils.TestAddresses[earnerIndex]
-			tokenIndex := rand.Intn(len(tokenTrees[earner].Data))
+
+			// even the cp.TokenTrees may be different than when GetProof is called, this is ok, because the tree is cumulative
+			tokenIndex := rand.Intn(len(cp.TokenTrees[earner].Data))
 			token := utils.TestTokens[tokenIndex]
 
 			claim, err := cp.GetProof(earner, []gethcommon.Address{token})
 			assert.Nil(t, err)
 
-			assert.Equal(t, testRootIndex, claim.RootIndex)
-			verifyEarner(t, rootBytes, tokenTrees, earnerIndex, claim)
-			verifyTokens(t, d, []int{tokenIndex}, claim)
+			verifyEarner(t, updates[claim.RootIndex].rootBytes, updates[claim.RootIndex].tokenTrees, earnerIndex, claim)
+			verifyTokens(t, updates[claim.RootIndex].distribution, []int{tokenIndex}, claim)
+
+			if claim.RootIndex == testRootIndex+1 {
+				seenNewRootIndex = true
+			}
 		}()
 	}
 
+	cp.Update(context.Background())
+
 	wg.Wait()
+
+	// make sure the update occured in between proofs
+	assert.True(t, seenNewRootIndex)
 }
 
-func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, []byte, *claimprover.ClaimProver) {
+func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, []byte, *claimprover.ClaimProver, *mocks.Transactor, *mocks.DistributionDataService) {
 	mockTransactor := &mocks.Transactor{}
 	mockDistributionDataService := &mocks.DistributionDataService{}
 
@@ -139,10 +176,10 @@ func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.Merkl
 
 	cp := claimprover.NewClaimProver(testUpdateIntervalSeconds, mockTransactor, mockDistributionDataService)
 
-	mockDistributionDataService.On("GetLatestSubmittedDistribution", mock.Anything).Return(d, testTimestamp, nil)
-	mockTransactor.On("GetRootIndex", root).Return(testRootIndex, nil)
+	mockDistributionDataService.On("GetLatestSubmittedDistribution", mock.Anything).Return(d, testTimestamp, nil).Once()
+	mockTransactor.On("GetRootIndex", root).Return(testRootIndex, nil).Once()
 
-	return d, accountTree, tokenTrees, rootBytes, cp
+	return d, accountTree, tokenTrees, rootBytes, cp, mockTransactor, mockDistributionDataService
 }
 
 func verifyEarner(t *testing.T, rootBytes []byte, tokenTrees map[gethcommon.Address]*merkletree.MerkleTree, testAddressIndex int, claim *paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim) {

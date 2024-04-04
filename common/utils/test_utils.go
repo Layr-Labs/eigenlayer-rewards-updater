@@ -121,3 +121,15 @@ func GetTestDistribution() *distribution.Distribution {
 
 	return d
 }
+
+func GetCompleteTestDistribution() *distribution.Distribution {
+	d := distribution.NewDistribution()
+
+	for i := 0; i < len(TestAddresses); i++ {
+		for j := 0; j < len(TestTokens); j++ {
+			d.Set(TestAddresses[i], TestTokens[j], big.NewInt(int64(j+i+2)))
+		}
+	}
+
+	return d
+}
