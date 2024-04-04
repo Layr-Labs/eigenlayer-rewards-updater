@@ -76,7 +76,7 @@ func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) e
 		if prev != nil && prev.Key.Cmp(address) >= 0 {
 			// remove the address
 			d.data.Delete(address)
-			return ErrAddressNotInOrder
+			return fmt.Errorf("%w - prev: %s, attempt: %s", ErrAddressNotInOrder, prev.Key.Hex(), address.Hex())
 		}
 	}
 	allocatedTokens.Set(token, &BigInt{Int: amount})
@@ -86,7 +86,7 @@ func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) e
 	if prev != nil && prev.Key.Cmp(token) >= 0 {
 		// remove the token
 		allocatedTokens.Delete(token)
-		return ErrTokenNotInOrder
+		return fmt.Errorf("%w - prev: %s, attempt: %s", ErrTokenNotInOrder, prev.Key.Hex(), token.Hex())
 	}
 
 	return nil
