@@ -89,6 +89,9 @@ func TestClaimProverGetProofForNonExistantToken(t *testing.T) {
 
 	_, err := cp.GetProof(utils.TestAddresses[0], []gethcommon.Address{utils.TestAddresses[0]})
 	assert.ErrorIs(t, err, claimprover.ErrTokenIndexNotFound)
+
+	_, err = cp.GetProof(utils.TestAddresses[0], []gethcommon.Address{utils.TestTokens[0], utils.TestAddresses[0]})
+	assert.ErrorIs(t, err, claimprover.ErrTokenIndexNotFound)
 }
 
 func TestParallelProofGeneration(t *testing.T) {
