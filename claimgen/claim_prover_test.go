@@ -2,7 +2,10 @@ package claimprover_test
 
 import (
 	"context"
+	"math/rand"
+	"sync"
 	"testing"
+	"time"
 
 	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
 	claimprover "github.com/Layr-Labs/eigenlayer-payment-updater/claimgen"
@@ -86,6 +89,39 @@ func TestClaimProverGetProofForNonExistantToken(t *testing.T) {
 
 	_, err := cp.GetProof(utils.TestAddresses[0], []gethcommon.Address{utils.TestAddresses[0]})
 	assert.ErrorIs(t, err, claimprover.ErrTokenIndexNotFound)
+}
+
+func TestParallelProofGeneration(t *testing.T) {
+	rand.Seed(time.Now().UnixNano()) // Seed the random number generator
+
+	d, _, tokenTrees, rootBytes, cp := createUpdatableClaimProver()
+
+	cp.Update(context.Background())
+
+	var wg sync.WaitGroup
+	numCalls := 1000 // Number of parallel calls to make
+
+	wg.Add(numCalls) // Set the number of goroutines to wait for
+
+	for i := 0; i < numCalls; i++ {
+		go func() {
+			defer wg.Done() // Indicate goroutine completion
+
+			earnerIndex := rand.Intn(len(utils.TestAddresses))
+			earner := utils.TestAddresses[earnerIndex]
+			tokenIndex := rand.Intn(len(tokenTrees[earner].Data))
+			token := utils.TestTokens[tokenIndex]
+
+			claim, err := cp.GetProof(earner, []gethcommon.Address{token})
+			assert.Nil(t, err)
+
+			assert.Equal(t, testRootIndex, claim.RootIndex)
+			verifyEarner(t, rootBytes, tokenTrees, earnerIndex, claim)
+			verifyTokens(t, d, []int{tokenIndex}, claim)
+		}()
+	}
+
+	wg.Wait()
 }
 
 func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, []byte, *claimprover.ClaimProver) {

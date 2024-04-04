@@ -117,6 +117,9 @@ func (d *Distribution) setAccountIndex(address gethcommon.Address, index uint64)
 // Gets the index of the account in the distribution
 // Note that the indices must be set before calling this function
 func (d *Distribution) GetAccountIndex(address gethcommon.Address) (uint64, bool) {
+	if d.accountIndices == nil {
+		return 0, false
+	}
 	index, found := d.accountIndices[address]
 	return index, found
 }
@@ -139,6 +142,10 @@ func (d *Distribution) setTokenIndex(address, token gethcommon.Address, index ui
 // Gets the index of the token for a certain account in the distribution
 // Note that the indices must be set before calling this function
 func (d *Distribution) GetTokenIndex(address, token gethcommon.Address) (uint64, bool) {
+	if d.tokenIndices == nil {
+		return 0, false
+	}
+
 	indices, found := d.tokenIndices[address]
 	if !found {
 		return 0, false
