@@ -104,6 +104,22 @@ func TestEncodeTokenLeaf(t *testing.T) {
 	}
 }
 
+func TestGetAccountIndexBeforeMerklization(t *testing.T) {
+	d := utils.GetTestDistribution()
+
+	accountIndex, found := d.GetAccountIndex(utils.TestAddresses[1])
+	assert.False(t, found)
+	assert.Equal(t, uint64(0), accountIndex)
+}
+
+func TestGetTokenIndexBeforeMerklization(t *testing.T) {
+	d := utils.GetTestDistribution()
+
+	tokenIndex, found := d.GetTokenIndex(utils.TestAddresses[1], utils.TestTokens[1])
+	assert.False(t, found)
+	assert.Equal(t, uint64(0), tokenIndex)
+}
+
 func TestMerklize(t *testing.T) {
 	d := utils.GetTestDistribution()
 
@@ -130,5 +146,15 @@ func TestMerklize(t *testing.T) {
 		accountRoot := tokenTrees[utils.TestAddresses[i]].Root()
 		leaf := accountTree.Data[i]
 		assert.Equal(t, distribution.EncodeAccountLeaf(utils.TestAddresses[i], accountRoot), leaf)
+
+		accountIndex, found := d.GetAccountIndex(utils.TestAddresses[i])
+		assert.True(t, found)
+		assert.Equal(t, uint64(i), accountIndex)
+
+		for j := 0; j < len(utils.TestTokens)-i; j++ {
+			tokenIndex, found := d.GetTokenIndex(utils.TestAddresses[i], utils.TestTokens[j])
+			assert.True(t, found)
+			assert.Equal(t, uint64(j), tokenIndex)
+		}
 	}
 }

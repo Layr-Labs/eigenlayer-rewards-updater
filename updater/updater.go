@@ -5,33 +5,25 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
-	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 )
 
 type Updater struct {
 	updateInterval          time.Duration
+	transactor              services.Transactor
 	distributionDataService services.DistributionDataService
-	transactor              Transactor
 }
 
 func NewUpdater(
 	updateIntervalSeconds int,
+	transactor services.Transactor,
 	distributionDataService services.DistributionDataService,
-	chainClient *common.ChainClient,
-	claimingManagerAddress gethcommon.Address,
 ) (*Updater, error) {
-	transactor, err := NewTransactor(chainClient, claimingManagerAddress)
-	if err != nil {
-		log.Fatal().Msgf("failed to create transactor: %s", err)
-	}
-
 	return &Updater{
 		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),
-		distributionDataService: distributionDataService,
 		transactor:              transactor,
+		distributionDataService: distributionDataService,
 	}, nil
 }
 

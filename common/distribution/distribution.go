@@ -76,7 +76,7 @@ func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) e
 		if prev != nil && prev.Key.Cmp(address) >= 0 {
 			// remove the address
 			d.data.Delete(address)
-			return ErrAddressNotInOrder
+			return fmt.Errorf("%w - prev: %s, attempt: %s", ErrAddressNotInOrder, prev.Key.Hex(), address.Hex())
 		}
 	}
 	allocatedTokens.Set(token, &BigInt{Int: amount})
@@ -86,7 +86,7 @@ func (d *Distribution) Set(address, token gethcommon.Address, amount *big.Int) e
 	if prev != nil && prev.Key.Cmp(token) >= 0 {
 		// remove the token
 		allocatedTokens.Delete(token)
-		return ErrTokenNotInOrder
+		return fmt.Errorf("%w - prev: %s, attempt: %s", ErrTokenNotInOrder, prev.Key.Hex(), token.Hex())
 	}
 
 	return nil
@@ -117,6 +117,9 @@ func (d *Distribution) setAccountIndex(address gethcommon.Address, index uint64)
 // Gets the index of the account in the distribution
 // Note that the indices must be set before calling this function
 func (d *Distribution) GetAccountIndex(address gethcommon.Address) (uint64, bool) {
+	if d.accountIndices == nil {
+		return 0, false
+	}
 	index, found := d.accountIndices[address]
 	return index, found
 }
@@ -139,6 +142,10 @@ func (d *Distribution) setTokenIndex(address, token gethcommon.Address, index ui
 // Gets the index of the token for a certain account in the distribution
 // Note that the indices must be set before calling this function
 func (d *Distribution) GetTokenIndex(address, token gethcommon.Address) (uint64, bool) {
+	if d.tokenIndices == nil {
+		return 0, false
+	}
+
 	indices, found := d.tokenIndices[address]
 	if !found {
 		return 0, false
