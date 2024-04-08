@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"sync"
 	"time"
 
@@ -131,27 +133,37 @@ func (cp *ClaimProver) GetProof(earner gethcommon.Address, tokens []gethcommon.A
 	return merkleClaim, error
 }
 
-// func (cp *ClaimProver) GenerateProofFromJSON(filename string, earner gethcommon.Address, tokens []gethcommon.Address) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
-// 	// // get the distribution from the json file
-// 	cp.distribution, _, err :=
-// 	if err != nil {
-// 		return err
-// 	}
+func (cp *ClaimProver) GenerateProofFromJSON(filePath string, earner gethcommon.Address, tokens []gethcommon.Address) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
+	jsonFile, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer jsonFile.Close()
 
-// 	// generate the trees
-// 	cp.AccountTree, cp.TokenTrees, err := cp.Distribution.Merklize()
+	byteValue, _ := io.ReadAll(jsonFile)
 
-// 	merkleClaim, error := GetProof(GetProofParam{
-// 		Distribution: cp.Distribution,
-// 		RootIndex:    cp.RootIndex,
-// 		AccountTree:  cp.AccountTree,
-// 		TokenTrees:   cp.TokenTrees,
-// 		earner:       earner,
-// 		tokens:       tokens,
-// 	})
+	err = cp.Distribution.UnmarshalJSON(byteValue)
+	if err != nil {
+		return nil, err
+	}
 
-// 	return merkleClaim, error
-// }
+	// generate the trees
+	cp.AccountTree, cp.TokenTrees, err = cp.Distribution.Merklize()
+	if err != nil {
+		return nil, err
+	}
+
+	merkleClaim, error := GetProof(GetProofParam{
+		Distribution: cp.Distribution,
+		RootIndex:    cp.RootIndex,
+		AccountTree:  cp.AccountTree,
+		TokenTrees:   cp.TokenTrees,
+		earner:       earner,
+		tokens:       tokens,
+	})
+
+	return merkleClaim, error
+}
 
 // Helper function for getting the proof for the specified earner and tokens
 func GetProof(params GetProofParam) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
