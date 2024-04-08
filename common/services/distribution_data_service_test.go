@@ -2,7 +2,6 @@ package services_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
@@ -14,7 +13,8 @@ import (
 var testTimestamp int64 = 1712127631
 
 func TestGetDistributionToSubmit(t *testing.T) {
-	d := createTestPaymentsTable(services.PAYMENTS_TO_SUBMIT_TABLE)
+	d := createPaymentsTable()
+	createDistributionRootSubmittedsTable([]int64{testTimestamp - 1})
 
 	dds := services.NewDistributionDataService(dbpool)
 
@@ -31,8 +31,19 @@ func TestGetDistributionToSubmit(t *testing.T) {
 	assert.Equal(t, expectedAccountTree.Root(), fetchedAccountTree.Root())
 }
 
+func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
+	createPaymentsTable()
+	createDistributionRootSubmittedsTable([]int64{testTimestamp})
+
+	dds := services.NewDistributionDataService(dbpool)
+
+	_, _, err := dds.GetDistributionToSubmit(context.Background())
+	assert.ErrorIs(t, err, services.ErrNewDistributionNotCalculated)
+}
+
 func TestLatestSubmittedDistribution(t *testing.T) {
-	d := createTestPaymentsTable(services.LATEST_SUBMITTED_PAYMENTS_TABLE)
+	d := createPaymentsTable()
+	createDistributionRootSubmittedsTable([]int64{testTimestamp})
 
 	dds := services.NewDistributionDataService(dbpool)
 
@@ -49,28 +60,45 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	assert.Equal(t, expectedAccountTree.Root(), fetchedAccountTree.Root())
 }
 
-func createTestPaymentsTable(tablename string) *distribution.Distribution {
-	conn.ExecSQL(fmt.Sprintf("DROP TABLE IF EXISTS localnet_local.%s;", tablename))
+func createPaymentsTable() *distribution.Distribution {
+	conn.ExecSQL("DROP TABLE IF EXISTS localnet_local.cumulative_payments;")
 
-	conn.ExecSQL(fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS localnet_local.%s (
+	conn.ExecSQL(`
+		CREATE TABLE IF NOT EXISTS localnet_local.cumulative_payments (
 			earner bytea,
 			token bytea,
 			cumulative_payment numeric,
 			timestamp numeric
 		);
-	`, tablename))
+	`)
 
 	d := utils.GetTestDistribution()
 
 	for accountPair := d.GetStart(); accountPair != nil; accountPair = accountPair.Next() {
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
-			conn.ExecSQL(fmt.Sprintf(`
-				INSERT INTO localnet_local.%s (earner, token, cumulative_payment, timestamp)
+			conn.ExecSQL(`
+				INSERT INTO localnet_local.cumulative_payments (earner, token, cumulative_payment, timestamp)
 				VALUES ($1, $2, $3, $4);
-			`, tablename), accountPair.Key.Bytes(), tokenPair.Key.Bytes(), tokenPair.Value, testTimestamp)
+			`, accountPair.Key.Bytes(), tokenPair.Key.Bytes(), tokenPair.Value, testTimestamp)
 		}
 	}
 
 	return d
+}
+
+func createDistributionRootSubmittedsTable(timestamps []int64) {
+	conn.ExecSQL(`DROP TABLE IF EXISTS localnet_local.distribution_root_submitteds;`)
+
+	conn.ExecSQL(`
+		CREATE TABLE IF NOT EXISTS localnet_local.distribution_root_submitteds (
+			paymentCalculationEndTimestamp numeric
+		);
+	`)
+
+	for _, timestamp := range timestamps {
+		conn.ExecSQL(`
+			INSERT INTO localnet_local.distribution_root_submitteds (paymentCalculationEndTimestamp)
+			VALUES ($1);
+		`, timestamp)
+	}
 }

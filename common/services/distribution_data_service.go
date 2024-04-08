@@ -12,6 +12,8 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
+var ErrNewDistributionNotCalculated = fmt.Errorf("new distribution not calculated")
+
 type DistributionDataService interface {
 	// Gets the latest calculated distribution that has not been submitted to the chain and the timestamp it which it was calculated until
 	GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error)
@@ -30,25 +32,55 @@ func NewDistributionDataService(dbpool *pgxpool.Pool) DistributionDataService {
 	}
 }
 
-func NewDistributionDataServiceImpl(dbpool *pgxpool.Pool) *DistributionDataServiceImpl {
-	return &DistributionDataServiceImpl{
-		dbpool: dbpool,
-	}
-}
-
 func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
-	return dds.populateDistributionFromTable(ctx, PAYMENTS_TO_SUBMIT_TABLE)
+	// get latest submitted timestamp from the chain
+	var latestSubmittedTimestamp int64
+	err := dds.dbpool.QueryRow(ctx, fmt.Sprintf(getPaymentsCalculatedUntilTimestamp, utils.GetEnvNetwork())).Scan(&latestSubmittedTimestamp)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// get the latest calculated timestamp from the database
+	var timestamp int64
+	err = dds.dbpool.QueryRow(ctx, fmt.Sprintf(getMaxTimestampQuery, utils.GetEnvNetwork())).Scan(&timestamp)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// if the latest submitted timestamp is >= the latest calculated timestamp, return an error
+	if latestSubmittedTimestamp >= timestamp {
+		return nil, 0, fmt.Errorf("%w - latest submitted: %d, latest calculated: %d", ErrNewDistributionNotCalculated, latestSubmittedTimestamp, timestamp)
+	}
+
+	d, err := dds.populateDistributionFromTable(ctx, timestamp)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return d, timestamp, err
 }
 
 func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
-	return dds.populateDistributionFromTable(ctx, LATEST_SUBMITTED_PAYMENTS_TABLE)
-}
-
-func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, table string) (*distribution.Distribution, int64, error) {
-	d := distribution.NewDistribution()
-	rows, err := dds.dbpool.Query(ctx, fmt.Sprintf(getAllPaymentsBalancesQuery, utils.GetEnvNetwork(), table))
+	// get latest submitted timestamp from the chain
+	var latestSubmittedTimestamp int64
+	err := dds.dbpool.QueryRow(ctx, fmt.Sprintf(getPaymentsCalculatedUntilTimestamp, utils.GetEnvNetwork())).Scan(&latestSubmittedTimestamp)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	d, err := dds.populateDistributionFromTable(ctx, latestSubmittedTimestamp)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return d, latestSubmittedTimestamp, err
+}
+
+func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, timestamp int64) (*distribution.Distribution, error) {
+	d := distribution.NewDistribution()
+	rows, err := dds.dbpool.Query(ctx, fmt.Sprintf(getPaymentsAtTimestamp, utils.GetEnvNetwork(), timestamp))
+	if err != nil {
+		return nil, err
 	}
 
 	// populate the distribution
@@ -58,7 +90,7 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 		var cumulativePaymentDecimal decimal.Decimal
 		err := rows.Scan(&earnerBytes, &tokenBytes, &cumulativePaymentDecimal)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 
 		earner := gethcommon.BytesToAddress(earnerBytes)
@@ -67,12 +99,5 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 		d.Set(earner, token, cumulativePaymentDecimal.BigInt())
 	}
 
-	// get the timestamp
-	var timestamp int64
-	err = dds.dbpool.QueryRow(ctx, fmt.Sprintf(getTimestampQuery, utils.GetEnvNetwork(), table)).Scan(&timestamp)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return d, timestamp, nil
+	return d, nil
 }
