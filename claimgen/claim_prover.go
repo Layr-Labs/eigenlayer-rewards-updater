@@ -39,6 +39,16 @@ type ClaimProver struct {
 	mu sync.RWMutex
 }
 
+type GetProofParam struct {
+	Distribution *distribution.Distribution
+	RootIndex    uint32
+	AccountTree  *merkletree.MerkleTree
+	TokenTrees   map[gethcommon.Address]*merkletree.MerkleTree
+
+	earner gethcommon.Address
+	tokens []gethcommon.Address
+}
+
 func NewClaimProver(updateIntervalSeconds int64, transactor services.Transactor, distributionDataService services.DistributionDataService) *ClaimProver {
 
 	claimProver := &ClaimProver{
@@ -106,32 +116,71 @@ func (cp *ClaimProver) GetProof(earner gethcommon.Address, tokens []gethcommon.A
 	// aquire read lock
 	cp.mu.RLock()
 
-	earnerIndex, found := cp.Distribution.GetAccountIndex(earner)
+	// Generate a proof given
+	merkleClaim, error := GetProof(GetProofParam{
+		Distribution: cp.Distribution,
+		RootIndex:    cp.RootIndex,
+		AccountTree:  cp.AccountTree,
+		TokenTrees:   cp.TokenTrees,
+		earner:       earner,
+		tokens:       tokens,
+	})
+
+	cp.mu.RUnlock()
+
+	return merkleClaim, error
+}
+
+// func (cp *ClaimProver) GenerateProofFromJSON(filename string, earner gethcommon.Address, tokens []gethcommon.Address) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
+// 	// // get the distribution from the json file
+// 	cp.distribution, _, err :=
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// generate the trees
+// 	cp.AccountTree, cp.TokenTrees, err := cp.Distribution.Merklize()
+
+// 	merkleClaim, error := GetProof(GetProofParam{
+// 		Distribution: cp.Distribution,
+// 		RootIndex:    cp.RootIndex,
+// 		AccountTree:  cp.AccountTree,
+// 		TokenTrees:   cp.TokenTrees,
+// 		earner:       earner,
+// 		tokens:       tokens,
+// 	})
+
+// 	return merkleClaim, error
+// }
+
+// Helper function for getting the proof for the specified earner and tokens
+func GetProof(params GetProofParam) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
+	earnerIndex, found := params.Distribution.GetAccountIndex(params.earner)
 	if !found {
-		return nil, fmt.Errorf("%w for earner %s", ErrEarnerIndexNotFound, earner.Hex())
+		return nil, fmt.Errorf("%w for earner %s", ErrEarnerIndexNotFound, params.earner.Hex())
 	}
 
 	// get the token proofs
-	tokenIndices := make([]uint32, len(tokens))
-	tokenProofsBytes := make([][]byte, len(tokens))
-	tokenLeaves := make([]paymentCoordinator.IPaymentCoordinatorTokenTreeMerkleLeaf, len(tokens))
-	for i, token := range tokens {
-		tokenIndex, found := cp.Distribution.GetTokenIndex(earner, token)
+	tokenIndices := make([]uint32, len(params.tokens))
+	tokenProofsBytes := make([][]byte, len(params.tokens))
+	tokenLeaves := make([]paymentCoordinator.IPaymentCoordinatorTokenTreeMerkleLeaf, len(params.tokens))
+	for i, token := range params.tokens {
+		tokenIndex, found := params.Distribution.GetTokenIndex(params.earner, token)
 		if !found {
-			return nil, fmt.Errorf("%w for token %s and earner %s", ErrTokenIndexNotFound, token.Hex(), earner.Hex())
+			return nil, fmt.Errorf("%w for token %s and earner %s", ErrTokenIndexNotFound, token.Hex(), params.earner.Hex())
 		}
 		tokenIndices[i] = uint32(tokenIndex)
 
-		tokenProof, err := cp.TokenTrees[earner].GenerateProofWithIndex(tokenIndex, 0)
+		tokenProof, err := params.TokenTrees[params.earner].GenerateProofWithIndex(tokenIndex, 0)
 		if err != nil {
 			return nil, err
 		}
 		tokenProofsBytes[i] = FlattenHashes(tokenProof.Hashes)
 
-		amount, found := cp.Distribution.Get(earner, token)
+		amount, found := params.Distribution.Get(params.earner, token)
 		if !found {
 			// this should never happen due to the token index check above
-			return nil, fmt.Errorf("%w for token %s and earner %s", ErrAmountNotFound, token.Hex(), earner.Hex())
+			return nil, fmt.Errorf("%w for token %s and earner %s", ErrAmountNotFound, token.Hex(), params.earner.Hex())
 		}
 
 		tokenLeaves[i] = paymentCoordinator.IPaymentCoordinatorTokenTreeMerkleLeaf{
@@ -141,24 +190,22 @@ func (cp *ClaimProver) GetProof(earner gethcommon.Address, tokens []gethcommon.A
 	}
 
 	var earnerRoot [32]byte
-	copy(earnerRoot[:], cp.TokenTrees[earner].Root())
+	copy(earnerRoot[:], params.TokenTrees[params.earner].Root())
 
 	// get the account proof
-	earnerTreeProof, err := cp.AccountTree.GenerateProofWithIndex(earnerIndex, 0)
+	earnerTreeProof, err := params.AccountTree.GenerateProofWithIndex(earnerIndex, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	earnerTreeProofBytes := FlattenHashes(earnerTreeProof.Hashes)
 
-	cp.mu.RUnlock()
-
 	return &paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim{
-		RootIndex:       cp.RootIndex,
+		RootIndex:       params.RootIndex,
 		EarnerIndex:     uint32(earnerIndex),
 		EarnerTreeProof: earnerTreeProofBytes,
 		EarnerLeaf: paymentCoordinator.IPaymentCoordinatorEarnerTreeMerkleLeaf{
-			Earner:          earner,
+			Earner:          params.earner,
 			EarnerTokenRoot: earnerRoot,
 		},
 		LeafIndices:     tokenIndices,
