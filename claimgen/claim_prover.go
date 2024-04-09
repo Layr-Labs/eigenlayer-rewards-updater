@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"sync"
 	"time"
 
@@ -119,38 +117,6 @@ func (cp *ClaimProver) GetProof(earner gethcommon.Address, tokens []gethcommon.A
 	)
 
 	cp.mu.RUnlock()
-
-	return merkleClaim, error
-}
-
-func (cp *ClaimProver) GenerateProofFromJSON(filePath string, earner gethcommon.Address, tokens []gethcommon.Address) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
-	jsonFile, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer jsonFile.Close()
-
-	byteValue, _ := io.ReadAll(jsonFile)
-
-	err = cp.Distribution.UnmarshalJSON(byteValue)
-	if err != nil {
-		return nil, err
-	}
-
-	// generate the trees
-	cp.AccountTree, cp.TokenTrees, err = cp.Distribution.Merklize()
-	if err != nil {
-		return nil, err
-	}
-
-	merkleClaim, error := GetProof(
-		cp.Distribution,
-		cp.RootIndex,
-		cp.AccountTree,
-		cp.TokenTrees,
-		earner,
-		tokens,
-	)
 
 	return merkleClaim, error
 }

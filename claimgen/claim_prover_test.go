@@ -59,28 +59,6 @@ func TestClaimProverGetProof(t *testing.T) {
 	verifyTokens(t, d, []int{0, 3}, claim)
 }
 
-func TestClaimProverGenerateProofFromJSON(t *testing.T) {
-	d, _, tokenTrees, rootBytes, cp, _, _ := createUpdatableClaimProver()
-
-	var filePath string = "test_data/data.json"
-
-	claim, err := cp.GenerateProofFromJSON(
-		filePath,
-		utils.TestAddressesJSON[0],
-		[]gethcommon.Address{
-			utils.TestTokensJSON[0],
-			utils.TestTokensJSON[1],
-			utils.TestTokensJSON[2],
-			utils.TestTokensJSON[3],
-		},
-	)
-	assert.Nil(t, err)
-
-	assert.Equal(t, testRootIndex, claim.RootIndex)
-	verifyEarner(t, rootBytes, tokenTrees, 0, claim)
-	verifyTokens(t, d, []int{0, 1, 2, 3}, claim)
-}
-
 func TestClaimProverGetProofDecreasingTokenOrder(t *testing.T) {
 	d, _, tokenTrees, rootBytes, cp, _, _ := createUpdatableClaimProver()
 
