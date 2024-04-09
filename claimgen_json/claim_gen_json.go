@@ -10,14 +10,12 @@ import (
 	claimProver "github.com/Layr-Labs/eigenlayer-payment-updater/claimgen"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
-	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 // Solidity call compatible type structs
-
 type IPaymentCoordinatorEarnerTreeMerkleLeafStrings struct {
-	Earner          common.Address
+	Earner          gethcommon.Address
 	EarnerTokenRoot string
 }
 
@@ -32,7 +30,7 @@ type IPaymentCoordinatorPaymentMerkleClaimStrings struct {
 }
 
 type IPaymentCoordinatorTokenTreeMerkleLeafStrings struct {
-	Token              common.Address
+	Token              gethcommon.Address
 	CumulativeEarnings *big.Int
 }
 
