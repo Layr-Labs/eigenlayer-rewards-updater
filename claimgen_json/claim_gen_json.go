@@ -34,6 +34,7 @@ type IPaymentCoordinatorTokenTreeMerkleLeafStrings struct {
 	CumulativeEarnings *big.Int
 }
 
+// TODO: Update this to take CLI arguments to generate proofs
 func main() {
 	filePath, outputPath := "test_data/distribution_data.json", "test_data/data_output.json"
 	rootIndex := uint32(0)
@@ -164,8 +165,7 @@ func GenerateProofFromJSONForSolidity(
 	return &solidityMerkleClaim, error
 }
 
-/// Test data from test_data/distribution_data.json
-
+// Test data from test_data/distribution_data.json
 var TestAddressesJSON = []gethcommon.Address{
 	gethcommon.HexToAddress("0x0D6bA28b9919CfCDb6b233469Cc5Ce30b979e08E"),
 	gethcommon.HexToAddress("0x31F4155eb332C5bE0350589B8C95C65c3edddC99"),
