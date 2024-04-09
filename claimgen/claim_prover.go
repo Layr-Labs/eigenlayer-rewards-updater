@@ -126,7 +126,6 @@ func (cp *ClaimProver) GetProof(earner gethcommon.Address, tokens []gethcommon.A
 func (cp *ClaimProver) GenerateProofFromJSON(filePath string, earner gethcommon.Address, tokens []gethcommon.Address) (*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim, error) {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		log.Printf("Error opening JSON file")
 		return nil, err
 	}
 	defer jsonFile.Close()
@@ -135,14 +134,12 @@ func (cp *ClaimProver) GenerateProofFromJSON(filePath string, earner gethcommon.
 
 	err = cp.Distribution.UnmarshalJSON(byteValue)
 	if err != nil {
-		log.Printf("Error with unmarshal")
 		return nil, err
 	}
 
 	// generate the trees
 	cp.AccountTree, cp.TokenTrees, err = cp.Distribution.Merklize()
 	if err != nil {
-		log.Printf("Error with merklize")
 		return nil, err
 	}
 
