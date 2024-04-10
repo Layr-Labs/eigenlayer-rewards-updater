@@ -20,13 +20,16 @@ type IPaymentCoordinatorEarnerTreeMerkleLeafStrings struct {
 }
 
 type IPaymentCoordinatorPaymentMerkleClaimStrings struct {
-	RootIndex       uint32
-	EarnerIndex     uint32
-	EarnerTreeProof string
-	EarnerLeaf      IPaymentCoordinatorEarnerTreeMerkleLeafStrings
-	LeafIndices     []uint32
-	TokenTreeProofs []string
-	TokenLeaves     []paymentCoordinator.IPaymentCoordinatorTokenTreeMerkleLeaf
+	Root               string
+	RootIndex          uint32
+	EarnerIndex        uint32
+	EarnerTreeProof    string
+	EarnerLeaf         IPaymentCoordinatorEarnerTreeMerkleLeafStrings
+	LeafIndices        []uint32
+	TokenTreeProofs    []string
+	TokenLeaves        []paymentCoordinator.IPaymentCoordinatorTokenTreeMerkleLeaf
+	TokenTreeProofsNum uint32
+	TokenLeavesNum     uint32
 }
 
 type IPaymentCoordinatorTokenTreeMerkleLeafStrings struct {
@@ -36,19 +39,22 @@ type IPaymentCoordinatorTokenTreeMerkleLeafStrings struct {
 
 // TODO: Update this to take CLI arguments to generate proofs
 func main() {
-	filePath, outputPath := "test_data/distribution_data.json", "test_data/data_output.json"
+	filePath, outputPath := "test_data/distribution_data3.json", "test_data/data_output3.json"
 	rootIndex := uint32(0)
+	earnerIndex := uint32(3)
 
 	GenerateProofFromJSONForSolidity(
 		filePath,
 		outputPath,
 		rootIndex,
-		TestAddressesJSON[0],
+		TestAddressesJSON[earnerIndex],
 		[]gethcommon.Address{
 			TestTokensJSON[0],
 			TestTokensJSON[1],
 			TestTokensJSON[2],
 			TestTokensJSON[3],
+			TestTokensJSON[4],
+			TestTokensJSON[5],
 		},
 	)
 }
@@ -139,6 +145,7 @@ func GenerateProofFromJSONForSolidity(
 
 	// Convert the merkle claim to a solidity compatible struct
 	solidityMerkleClaim := IPaymentCoordinatorPaymentMerkleClaimStrings{
+		Root:            utils.ConvertBytesToString(accountTree.Root()),
 		RootIndex:       merkleClaim.RootIndex,
 		EarnerIndex:     merkleClaim.EarnerIndex,
 		EarnerTreeProof: utils.ConvertBytesToString(merkleClaim.EarnerTreeProof),
@@ -146,9 +153,11 @@ func GenerateProofFromJSONForSolidity(
 			Earner:          merkleClaim.EarnerLeaf.Earner,
 			EarnerTokenRoot: utils.ConvertBytes32ToString(merkleClaim.EarnerLeaf.EarnerTokenRoot),
 		},
-		LeafIndices:     merkleClaim.LeafIndices,
-		TokenTreeProofs: utils.ConvertBytesToStrings(merkleClaim.TokenTreeProofs),
-		TokenLeaves:     merkleClaim.TokenLeaves,
+		LeafIndices:        merkleClaim.LeafIndices,
+		TokenTreeProofs:    utils.ConvertBytesToStrings(merkleClaim.TokenTreeProofs),
+		TokenLeaves:        merkleClaim.TokenLeaves,
+		TokenTreeProofsNum: uint32(len(merkleClaim.TokenTreeProofs)),
+		TokenLeavesNum:     uint32(len(merkleClaim.TokenLeaves)),
 	}
 
 	jsonData, err := json.Marshal(solidityMerkleClaim)
