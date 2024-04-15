@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/big"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
-	"github.com/shopspring/decimal"
+	"github.com/rs/zerolog/log"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
@@ -53,6 +54,8 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 		return nil, 0, fmt.Errorf("%w - latest submitted: %d, latest calculated: %d", ErrNewDistributionNotCalculated, latestSubmittedTimestamp, timestamp)
 	}
 
+	log.Info().Msgf("Latest submitted timestamp: %d, Latest calculated timestamp: %d", latestSubmittedTimestamp, timestamp)
+
 	d, err := dds.populateDistributionFromTable(ctx, timestamp)
 	if err != nil {
 		return nil, 0, err
@@ -87,8 +90,8 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 	for rows.Next() {
 		var earnerString string
 		var tokenString string
-		var cumulativePaymentDecimal decimal.Decimal
-		err := rows.Scan(&earnerString, &tokenString, &cumulativePaymentDecimal)
+		var cumulativePaymentString string
+		err := rows.Scan(&earnerString, &tokenString, &cumulativePaymentString)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +99,16 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 		earner := gethcommon.HexToAddress(earnerString)
 		token := gethcommon.HexToAddress(tokenString)
 
-		d.Set(earner, token, cumulativePaymentDecimal.BigInt())
+		cumulativePayment, ok := new(big.Int).SetString(cumulativePaymentString, 10)
+		if !ok {
+			// todo return error
+			log.Error().Msgf("not a valid big integer: %s", cumulativePaymentString)
+			cumulativePayment = big.NewInt(0)
+
+			//return nil, fmt.Errorf("not a valid big integer: %s", cumulativePaymentString)
+		}
+
+		d.Set(earner, token, cumulativePayment)
 	}
 
 	return d, nil

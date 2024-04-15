@@ -45,7 +45,7 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 
 func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
 	// todo: params
-	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsCalculatedUntilTimestamp.Uint64(), 0)
+	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsCalculatedUntilTimestamp.Uint64())
 	if err != nil {
 		return err
 	}
