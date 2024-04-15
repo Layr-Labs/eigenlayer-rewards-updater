@@ -1,63 +1,24 @@
 package main
 
-// import (
-// 	"os"
+import (
+	"os"
 
-// 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-// 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
-// 	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
-// 	"github.com/ethereum/go-ethereum/ethclient"
-// 	"github.com/ethereum/go-ethereum/rpc"
+	"database/sql"
 
-// 	gethcommon "github.com/ethereum/go-ethereum/common"
-// )
+	drv "github.com/uber/athenadriver/go"
+)
 
-// const (
-// 	rpcUrl = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+const region = "us-east-1"
+const outputBucket = "s3://payment-poc-mock/query-results/"
 
-// 	DB_USER = "eigenlabs_team"
-// 	DB_HOST = "eigenlabs-graph-node-production-3.cg7azkhq5rv5.us-east-1.rds.amazonaws.com"
-// 	DB_PORT = "5432"
-// 	DB_NAME = "graph_node_eigenlabs_3"
-
-// 	GOERLI_ENV = "testnet-goerli"
-// )
-
-// var claimingManagerAddress = gethcommon.HexToAddress("0x7b3f8f4b8e3b7f4f19e7e3f0b7b6e3f1f1b2f1b")
-
-// func main() {
-// 	rpcClient, err := rpc.Dial(rpcUrl)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	ethClient := ethclient.NewClient(rpcClient)
-
-// 	privateKeyString := os.Getenv("PRIVATE_KEY")
-
-// 	chainClient, err := common.NewChainClient(ethClient, privateKeyString)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	connString := common.CreateConnectionString(
-// 		DB_USER,
-// 		os.Getenv("DB_PASSWORD"),
-// 		DB_HOST,
-// 		DB_PORT,
-// 		DB_NAME,
-// 	)
-// 	dbpool := common.CreateConnectionOrDie(connString)
-// 	defer dbpool.Close()
-
-// 	dds := services.NewDistributionDataServiceImpl(dbpool)
-
-// 	updateIntervalSeconds := 100
-
-// 	// elpu, err := updater.NewUpdater(updateIntervalSeconds, dds, chainClient, claimingManagerAddress)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	elpu.Start()
-// }
+func main() {
+	// Step 1. Set AWS Credential in Driver Config.
+	conf, _ := drv.NewDefaultConfig(outputBucket, region, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"))
+	// Step 2. Open Connection.
+	dbpool, _ := sql.Open(drv.DriverName, conf.Stringify())
+	defer dbpool.Close()
+	// Step 3. Query and print results
+	var timestamp int64
+	_ = dbpool.QueryRow("SELECT CAST(to_unixtime(MAX(calculation_timestamp)) AS BIGINT) FROM dev_devnet.cumulative_payments;").Scan(&timestamp)
+	println(timestamp)
+}

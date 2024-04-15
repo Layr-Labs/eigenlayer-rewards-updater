@@ -1,4 +1,4 @@
-package claimprover_test
+package claimgen_test
 
 import (
 	"context"
@@ -200,13 +200,13 @@ func verifyEarner(t *testing.T, rootBytes []byte, tokenTrees map[gethcommon.Addr
 }
 
 func verifyTokens(t *testing.T, d *distribution.Distribution, testTokenIndices []int, claim *paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim) {
-	assert.Equal(t, len(testTokenIndices), len(claim.LeafIndices))
+	assert.Equal(t, len(testTokenIndices), len(claim.TokenIndices))
 	assert.Equal(t, len(testTokenIndices), len(claim.TokenTreeProofs))
 	assert.Equal(t, len(testTokenIndices), len(claim.TokenLeaves))
 
 	for i, index := range testTokenIndices {
 		// verify index and leaf
-		assert.Equal(t, uint32(index), claim.LeafIndices[i])
+		assert.Equal(t, uint32(index), claim.TokenIndices[i])
 		assert.Equal(t, utils.TestTokens[index], claim.TokenLeaves[i].Token)
 
 		testAmount, found := d.Get(claim.EarnerLeaf.Earner, utils.TestTokens[index])

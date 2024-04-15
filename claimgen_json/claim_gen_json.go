@@ -153,7 +153,7 @@ func GenerateProofFromJSONForSolidity(
 			Earner:          merkleClaim.EarnerLeaf.Earner,
 			EarnerTokenRoot: utils.ConvertBytes32ToString(merkleClaim.EarnerLeaf.EarnerTokenRoot),
 		},
-		LeafIndices:        merkleClaim.LeafIndices,
+		LeafIndices:        merkleClaim.TokenIndices,
 		TokenTreeProofs:    utils.ConvertBytesToStrings(merkleClaim.TokenTreeProofs),
 		TokenLeaves:        merkleClaim.TokenLeaves,
 		TokenTreeProofsNum: uint32(len(merkleClaim.TokenTreeProofs)),

@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -23,32 +23,33 @@ type DistributionDataService interface {
 }
 
 type DistributionDataServiceImpl struct {
-	dbpool *pgxpool.Pool
+	db         *sql.DB
+	transactor Transactor
 }
 
-func NewDistributionDataService(dbpool *pgxpool.Pool) DistributionDataService {
+func NewDistributionDataService(db *sql.DB, transactor Transactor) DistributionDataService {
 	return &DistributionDataServiceImpl{
-		dbpool: dbpool,
+		db:         db,
+		transactor: transactor,
 	}
 }
 
 func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
 	// get latest submitted timestamp from the chain
-	var latestSubmittedTimestamp int64
-	err := dds.dbpool.QueryRow(ctx, fmt.Sprintf(getPaymentsCalculatedUntilTimestamp, utils.GetEnvNetwork())).Scan(&latestSubmittedTimestamp)
+	latestSubmittedTimestamp, err := dds.transactor.CurrPaymentCalculationEndTimestamp()
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// get the latest calculated timestamp from the database
 	var timestamp int64
-	err = dds.dbpool.QueryRow(ctx, fmt.Sprintf(getMaxTimestampQuery, utils.GetEnvNetwork())).Scan(&timestamp)
+	err = dds.db.QueryRow(fmt.Sprintf(getMaxTimestampQuery, utils.GetEnvNetwork())).Scan(&timestamp)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// if the latest submitted timestamp is >= the latest calculated timestamp, return an error
-	if latestSubmittedTimestamp >= timestamp {
+	if int64(latestSubmittedTimestamp) >= timestamp {
 		return nil, 0, fmt.Errorf("%w - latest submitted: %d, latest calculated: %d", ErrNewDistributionNotCalculated, latestSubmittedTimestamp, timestamp)
 	}
 
@@ -62,39 +63,38 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 
 func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
 	// get latest submitted timestamp from the chain
-	var latestSubmittedTimestamp int64
-	err := dds.dbpool.QueryRow(ctx, fmt.Sprintf(getPaymentsCalculatedUntilTimestamp, utils.GetEnvNetwork())).Scan(&latestSubmittedTimestamp)
+	latestSubmittedTimestamp, err := dds.transactor.CurrPaymentCalculationEndTimestamp()
 	if err != nil {
 		return nil, 0, err
 	}
 
-	d, err := dds.populateDistributionFromTable(ctx, latestSubmittedTimestamp)
+	d, err := dds.populateDistributionFromTable(ctx, int64(latestSubmittedTimestamp))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return d, latestSubmittedTimestamp, err
+	return d, int64(latestSubmittedTimestamp), err
 }
 
 func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, timestamp int64) (*distribution.Distribution, error) {
 	d := distribution.NewDistribution()
-	rows, err := dds.dbpool.Query(ctx, fmt.Sprintf(getPaymentsAtTimestamp, utils.GetEnvNetwork(), timestamp))
+	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, utils.GetEnvNetwork(), timestamp))
 	if err != nil {
 		return nil, err
 	}
 
 	// populate the distribution
 	for rows.Next() {
-		var earnerBytes []byte
-		var tokenBytes []byte
+		var earnerString string
+		var tokenString string
 		var cumulativePaymentDecimal decimal.Decimal
-		err := rows.Scan(&earnerBytes, &tokenBytes, &cumulativePaymentDecimal)
+		err := rows.Scan(&earnerString, &tokenString, &cumulativePaymentDecimal)
 		if err != nil {
 			return nil, err
 		}
 
-		earner := gethcommon.BytesToAddress(earnerBytes)
-		token := gethcommon.BytesToAddress(tokenBytes)
+		earner := gethcommon.HexToAddress(earnerString)
+		token := gethcommon.HexToAddress(tokenString)
 
 		d.Set(earner, token, cumulativePaymentDecimal.BigInt())
 	}
