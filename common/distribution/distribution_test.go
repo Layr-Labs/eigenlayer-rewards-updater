@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Salts used in Distribution
+var EARNER_LEAF_SALT byte = 0
+var TOKEN_LEAF_SALT byte = 1
+
 func FuzzSetAndGet(f *testing.F) {
 	f.Add([]byte{69}, []byte{42, 0}, uint64(69420))
 
@@ -90,8 +94,9 @@ func TestEncodeAccountLeaf(t *testing.T) {
 	for i := 0; i < len(utils.TestAddresses); i++ {
 		testRoot, _ := hex.DecodeString(utils.TestRootsString[i])
 		leaf := distribution.EncodeAccountLeaf(utils.TestAddresses[i], testRoot)
-		assert.Equal(t, utils.TestAddresses[i][:], leaf[:20])
-		assert.Equal(t, testRoot, leaf[20:])
+		assert.Equal(t, EARNER_LEAF_SALT, leaf[0], "The first byte of the leaf should be EARNER_LEAF_SALT")
+		assert.Equal(t, utils.TestAddresses[i][:], leaf[1:21])
+		assert.Equal(t, testRoot, leaf[21:])
 	}
 }
 
@@ -99,8 +104,9 @@ func TestEncodeTokenLeaf(t *testing.T) {
 	for i := 0; i < len(utils.TestTokens); i++ {
 		testAmount, _ := new(big.Int).SetString(utils.TestAmountsString[i], 10)
 		leaf := distribution.EncodeTokenLeaf(utils.TestTokens[i], testAmount)
-		assert.Equal(t, utils.TestTokens[i][:], leaf[:20])
-		assert.Equal(t, utils.TestAmountsBytes32[i], hex.EncodeToString(leaf[20:]))
+		assert.Equal(t, TOKEN_LEAF_SALT, leaf[0], "The first byte of the leaf should be TOKEN_LEAF_SALT")
+		assert.Equal(t, utils.TestTokens[i][:], leaf[1:21])
+		assert.Equal(t, utils.TestAmountsBytes32[i], hex.EncodeToString(leaf[21:]))
 	}
 }
 
