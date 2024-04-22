@@ -14,6 +14,8 @@ import (
 
 var ErrAddressNotInOrder = errors.New("addresses must be added in order")
 var ErrTokenNotInOrder = errors.New("tokens must be added in order")
+var EARNER_LEAF_SALT = []byte{0}
+var TOKEN_LEAF_SALT = []byte{1}
 
 // Used for marshalling and unmarshalling big integers.
 type BigInt struct {
@@ -213,8 +215,8 @@ func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Addres
 // encodeAccountLeaf encodes an account leaf for a token distribution.
 // precondition: accountRoot must be 32 bytes
 func EncodeAccountLeaf(account gethcommon.Address, accountRoot []byte) []byte {
-	// (account || accountRoot)
-	return append(account.Bytes(), accountRoot[:]...)
+	// (EARNER_LEAF_SALT || account || accountRoot)
+	return append(EARNER_LEAF_SALT, append(account.Bytes(), accountRoot[:]...)...)
 }
 
 // encodeTokenLeaf encodes a token leaf for a token distribution.
@@ -222,6 +224,6 @@ func EncodeTokenLeaf(token gethcommon.Address, amount *big.Int) []byte {
 	// todo: handle this better
 	amountU256, _ := uint256.FromBig(amount)
 	amountBytes := amountU256.Bytes32()
-	// (token || amount)
-	return append(token.Bytes(), amountBytes[:]...)
+	// (TOKEN_LEAF_SALT || token || amount)
+	return append(TOKEN_LEAF_SALT, append(token.Bytes(), amountBytes[:]...)...)
 }
