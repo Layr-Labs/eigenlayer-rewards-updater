@@ -1,10 +1,9 @@
 package utils
 
 import (
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
 	"math/big"
 	"os"
-
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 )
 
 // Utils for unit and integration tests

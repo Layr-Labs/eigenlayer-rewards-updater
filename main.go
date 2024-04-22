@@ -1,15 +1,15 @@
 package main
 
 import (
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
+	services2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	"os"
 
 	"database/sql"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
 	"github.com/ethereum/go-ethereum/ethclient"
 	drv "github.com/uber/athenadriver/go"
 )
@@ -25,12 +25,12 @@ func main() {
 		panic(err)
 	}
 
-	chainClient, err := common.NewChainClient(ethClient, os.Getenv("PRIVATE_KEY"))
+	chainClient, err := pkg.NewChainClient(ethClient, os.Getenv("PRIVATE_KEY"))
 	if err != nil {
 		panic(err)
 	}
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(paymentCoordinatorAddress))
+	transactor, err := services2.NewTransactor(chainClient, gethcommon.HexToAddress(paymentCoordinatorAddress))
 	if err != nil {
 		panic(err)
 	}
@@ -41,7 +41,7 @@ func main() {
 	db, _ := sql.Open(drv.DriverName, conf.Stringify())
 	defer db.Close()
 
-	dds := services.NewDistributionDataService(db, transactor)
+	dds := services2.NewDistributionDataService(db, transactor)
 
 	u, err := updater.NewUpdater(1000, transactor, dds)
 	if err != nil {

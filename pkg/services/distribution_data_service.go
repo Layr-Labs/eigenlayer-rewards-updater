@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"math/big"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	"github.com/rs/zerolog/log"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"

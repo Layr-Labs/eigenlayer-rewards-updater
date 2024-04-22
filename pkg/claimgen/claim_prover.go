@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	services2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"sync"
 	"time"
 
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 	"github.com/wealdtech/go-merkletree/v2"
@@ -27,9 +27,9 @@ type ClaimProofs struct {
 type ClaimProver struct {
 	updateInterval time.Duration
 
-	transactor services.Transactor
+	transactor services2.Transactor
 
-	distributionDataService services.DistributionDataService
+	distributionDataService services2.DistributionDataService
 	Distribution            *distribution.Distribution
 
 	RootIndex   uint32
@@ -39,7 +39,7 @@ type ClaimProver struct {
 	mu sync.RWMutex
 }
 
-func NewClaimProver(updateIntervalSeconds int64, transactor services.Transactor, distributionDataService services.DistributionDataService) *ClaimProver {
+func NewClaimProver(updateIntervalSeconds int64, transactor services2.Transactor, distributionDataService services2.DistributionDataService) *ClaimProver {
 
 	claimProver := &ClaimProver{
 		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),

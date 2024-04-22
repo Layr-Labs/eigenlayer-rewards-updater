@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 )
