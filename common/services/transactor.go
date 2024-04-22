@@ -13,6 +13,7 @@ import (
 const FINALIZATION_DEPTH = 100
 
 type Transactor interface {
+	CurrPaymentCalculationEndTimestamp() (uint64, error)
 	GetRootIndex(root [32]byte) (uint32, error)
 	SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error
 }
@@ -34,13 +35,17 @@ func NewTransactor(chainClient *common.ChainClient, paymentCoordinatorAddress ge
 	}, nil
 }
 
+func (t *TransactorImpl) CurrPaymentCalculationEndTimestamp() (uint64, error) {
+	return t.PaymentCoordinator.CurrPaymentCalculationEndTimestamp(&bind.CallOpts{})
+}
+
 func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
-	return s.PaymentCoordinator.GetRootIndex(&bind.CallOpts{}, root)
+	return s.PaymentCoordinator.GetRootIndexFromHash(&bind.CallOpts{}, root)
 }
 
 func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
 	// todo: params
-	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsCalculatedUntilTimestamp.Uint64(), 0)
+	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsCalculatedUntilTimestamp.Uint64())
 	if err != nil {
 		return err
 	}

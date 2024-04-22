@@ -2,25 +2,47 @@ package services_test
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
 var testTimestamp int64 = 1712127631
 
 func TestGetDistributionToSubmit(t *testing.T) {
-	d := createPaymentsTable()
-	createDistributionRootSubmittedsTable([]int64{testTimestamp - 1})
+	utils.SetTestEnv()
 
-	dds := services.NewDistributionDataService(dbpool)
+	// return test timestamp from chain
+	mockTransactor := &mocks.Transactor{}
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// create rows
+	d, rows := getDistributionAndPaymentRows()
+
+	// return testTimestamp + 1 from db, so we've calculated a new distribution
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, utils.GetEnvNetwork()))).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
+	// return the distribution rows
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, utils.GetEnvNetwork(), testTimestamp+1))).WillReturnRows(rows)
+
+	dds := services.NewDistributionDataService(db, mockTransactor)
 
 	fetchedDistribution, timestamp, err := dds.GetDistributionToSubmit(context.Background())
 	assert.Nil(t, err)
-	assert.Equal(t, testTimestamp, timestamp)
+	assert.Equal(t, testTimestamp+1, timestamp)
 
 	expectedAccountTree, _, err := d.Merklize()
 	assert.Nil(t, err)
@@ -32,20 +54,45 @@ func TestGetDistributionToSubmit(t *testing.T) {
 }
 
 func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
-	createPaymentsTable()
-	createDistributionRootSubmittedsTable([]int64{testTimestamp})
+	utils.SetTestEnv()
 
-	dds := services.NewDistributionDataService(dbpool)
+	mockTransactor := &mocks.Transactor{}
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
 
-	_, _, err := dds.GetDistributionToSubmit(context.Background())
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// return testTimestamp from db, so we haven't calculated a new distribution
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, utils.GetEnvNetwork()))).WillReturnRows(getMaxTimestampRows(testTimestamp))
+
+	dds := services.NewDistributionDataService(db, mockTransactor)
+
+	_, _, err = dds.GetDistributionToSubmit(context.Background())
 	assert.ErrorIs(t, err, services.ErrNewDistributionNotCalculated)
 }
 
 func TestLatestSubmittedDistribution(t *testing.T) {
-	d := createPaymentsTable()
-	createDistributionRootSubmittedsTable([]int64{testTimestamp})
+	utils.SetTestEnv()
 
-	dds := services.NewDistributionDataService(dbpool)
+	mockTransactor := &mocks.Transactor{}
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	// create rows
+	d, rows := getDistributionAndPaymentRows()
+
+	// return the distribution at testTimestamp from db
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, utils.GetEnvNetwork(), testTimestamp))).WillReturnRows(rows)
+
+	dds := services.NewDistributionDataService(db, mockTransactor)
 
 	fetchedDistribution, timestamp, err := dds.GetLatestSubmittedDistribution(context.Background())
 	assert.Nil(t, err)
@@ -60,45 +107,21 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	assert.Equal(t, expectedAccountTree.Root(), fetchedAccountTree.Root())
 }
 
-func createPaymentsTable() *distribution.Distribution {
-	conn.ExecSQL("DROP TABLE IF EXISTS localnet_local.cumulative_payments;")
-
-	conn.ExecSQL(`
-		CREATE TABLE IF NOT EXISTS localnet_local.cumulative_payments (
-			earner bytea,
-			token bytea,
-			cumulative_payment numeric,
-			timestamp numeric
-		);
-	`)
+func getDistributionAndPaymentRows() (*distribution.Distribution, *sqlmock.Rows) {
 
 	d := utils.GetTestDistribution()
 
+	rows := sqlmock.NewRows([]string{"eaner", "token", "culumative_payment"})
+
 	for accountPair := d.GetStart(); accountPair != nil; accountPair = accountPair.Next() {
 		for tokenPair := accountPair.Value.Oldest(); tokenPair != nil; tokenPair = tokenPair.Next() {
-			conn.ExecSQL(`
-				INSERT INTO localnet_local.cumulative_payments (earner, token, cumulative_payment, timestamp)
-				VALUES ($1, $2, $3, $4);
-			`, accountPair.Key.Bytes(), tokenPair.Key.Bytes(), tokenPair.Value, testTimestamp)
+			rows.AddRow(accountPair.Key.String(), tokenPair.Key.String(), decimal.NewFromBigInt(tokenPair.Value.Int, 0))
 		}
 	}
 
-	return d
+	return d, rows
 }
 
-func createDistributionRootSubmittedsTable(timestamps []int64) {
-	conn.ExecSQL(`DROP TABLE IF EXISTS localnet_local.distribution_root_submitteds;`)
-
-	conn.ExecSQL(`
-		CREATE TABLE IF NOT EXISTS localnet_local.distribution_root_submitteds (
-			paymentCalculationEndTimestamp numeric
-		);
-	`)
-
-	for _, timestamp := range timestamps {
-		conn.ExecSQL(`
-			INSERT INTO localnet_local.distribution_root_submitteds (paymentCalculationEndTimestamp)
-			VALUES ($1);
-		`, timestamp)
-	}
+func getMaxTimestampRows(timestamp int64) *sqlmock.Rows {
+	return sqlmock.NewRows([]string{"_col0"}).AddRow(timestamp)
 }

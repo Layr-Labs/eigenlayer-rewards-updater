@@ -1,63 +1,52 @@
 package main
 
-// import (
-// 	"os"
+import (
+	"os"
 
-// 	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
-// 	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
-// 	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
-// 	"github.com/ethereum/go-ethereum/ethclient"
-// 	"github.com/ethereum/go-ethereum/rpc"
+	"database/sql"
 
-// 	gethcommon "github.com/ethereum/go-ethereum/common"
-// )
+	gethcommon "github.com/ethereum/go-ethereum/common"
 
-// const (
-// 	rpcUrl = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
+	"github.com/ethereum/go-ethereum/ethclient"
+	drv "github.com/uber/athenadriver/go"
+)
 
-// 	DB_USER = "eigenlabs_team"
-// 	DB_HOST = "eigenlabs-graph-node-production-3.cg7azkhq5rv5.us-east-1.rds.amazonaws.com"
-// 	DB_PORT = "5432"
-// 	DB_NAME = "graph_node_eigenlabs_3"
+const paymentCoordinatorAddress = "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896"
 
-// 	GOERLI_ENV = "testnet-goerli"
-// )
+const region = "us-east-1"
+const outputBucket = "s3://payment-poc-mock/query-results/"
 
-// var claimingManagerAddress = gethcommon.HexToAddress("0x7b3f8f4b8e3b7f4f19e7e3f0b7b6e3f1f1b2f1b")
+func main() {
+	ethClient, err := ethclient.Dial(os.Getenv("RPC_URL"))
+	if err != nil {
+		panic(err)
+	}
 
-// func main() {
-// 	rpcClient, err := rpc.Dial(rpcUrl)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	chainClient, err := common.NewChainClient(ethClient, os.Getenv("PRIVATE_KEY"))
+	if err != nil {
+		panic(err)
+	}
 
-// 	ethClient := ethclient.NewClient(rpcClient)
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(paymentCoordinatorAddress))
+	if err != nil {
+		panic(err)
+	}
 
-// 	privateKeyString := os.Getenv("PRIVATE_KEY")
+	// Step 1. Set AWS Credential in Driver Config.
+	conf, _ := drv.NewDefaultConfig(outputBucket, region, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"))
+	// Step 2. Open Connection.
+	db, _ := sql.Open(drv.DriverName, conf.Stringify())
+	defer db.Close()
 
-// 	chainClient, err := common.NewChainClient(ethClient, privateKeyString)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	dds := services.NewDistributionDataService(db, transactor)
 
-// 	connString := common.CreateConnectionString(
-// 		DB_USER,
-// 		os.Getenv("DB_PASSWORD"),
-// 		DB_HOST,
-// 		DB_PORT,
-// 		DB_NAME,
-// 	)
-// 	dbpool := common.CreateConnectionOrDie(connString)
-// 	defer dbpool.Close()
+	u, err := updater.NewUpdater(1000, transactor, dds)
+	if err != nil {
+		panic(err)
+	}
 
-// 	dds := services.NewDistributionDataServiceImpl(dbpool)
-
-// 	updateIntervalSeconds := 100
-
-// 	// elpu, err := updater.NewUpdater(updateIntervalSeconds, dds, chainClient, claimingManagerAddress)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	elpu.Start()
-// }
+	u.Start()
+}

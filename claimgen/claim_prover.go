@@ -1,4 +1,4 @@
-package claimprover
+package claimgen
 
 import (
 	"context"
@@ -183,7 +183,7 @@ func GetProof(
 			Earner:          earner,
 			EarnerTokenRoot: earnerRoot,
 		},
-		LeafIndices:     tokenIndices,
+		TokenIndices:    tokenIndices,
 		TokenTreeProofs: tokenProofsBytes,
 		TokenLeaves:     tokenLeaves,
 	}, nil
