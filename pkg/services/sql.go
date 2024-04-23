@@ -1,6 +1,7 @@
 package services
 
 // TODO: use correct table names
+// TODO(seanmcgary): convert this to prepared statements
 const getPaymentsAtTimestampQuery = `
 SELECT earner, token, cumulative_amount
 FROM %s.cumulative_payments

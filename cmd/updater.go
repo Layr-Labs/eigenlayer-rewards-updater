@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/viper"
 	drv "github.com/uber/athenadriver/go"
 	"go.uber.org/zap"
+	"log"
 )
 
 func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
@@ -90,11 +91,15 @@ var updaterCmd = &cobra.Command{
 			Debug: cfg.Debug,
 		})
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 		defer logger.Sync()
+		logger.Sugar().Debug(cfg)
 
-		runUpdater(cfg, logger)
+		err = runUpdater(cfg, logger)
+		if err != nil {
+			logger.Sugar().Fatalln(err)
+		}
 	},
 }
 
