@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"fmt"
+	logger "github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
@@ -19,6 +20,8 @@ import (
 var testTimestamp int64 = 1712127631
 
 func TestGetDistributionToSubmit(t *testing.T) {
+	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
+	defer logger.Sync()
 	cfg := config.UpdaterConfig{
 		Environment: config.Environment_LOCAL,
 		Network:     "local",
@@ -49,6 +52,7 @@ func TestGetDistributionToSubmit(t *testing.T) {
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
 		EnvNetwork: networkEnv,
+		Logger:     logger,
 	})
 
 	fetchedDistribution, timestamp, err := dds.GetDistributionToSubmit(context.Background())
@@ -65,6 +69,8 @@ func TestGetDistributionToSubmit(t *testing.T) {
 }
 
 func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
+	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
+	defer logger.Sync()
 	cfg := config.UpdaterConfig{
 		Environment: config.Environment_LOCAL,
 		Network:     "local",
@@ -89,6 +95,7 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
 		EnvNetwork: networkEnv,
+		Logger:     logger,
 	})
 
 	_, _, err = dds.GetDistributionToSubmit(context.Background())
@@ -96,6 +103,8 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 }
 
 func TestLatestSubmittedDistribution(t *testing.T) {
+	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
+	defer logger.Sync()
 	cfg := config.UpdaterConfig{
 		Environment: config.Environment_LOCAL,
 		Network:     "local",
@@ -123,6 +132,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
 		EnvNetwork: networkEnv,
+		Logger:     logger,
 	})
 
 	fetchedDistribution, timestamp, err := dds.GetLatestSubmittedDistribution(context.Background())

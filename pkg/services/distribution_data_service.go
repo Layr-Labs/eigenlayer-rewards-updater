@@ -5,9 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"go.uber.org/zap"
 	"math/big"
-
-	"github.com/rs/zerolog/log"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
@@ -24,6 +23,7 @@ type DistributionDataService interface {
 
 type DistributionDataServiceConfig struct {
 	EnvNetwork string
+	Logger     *zap.Logger
 }
 
 type DistributionDataServiceImpl struct {
@@ -59,7 +59,11 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 		return nil, 0, fmt.Errorf("%w - latest submitted: %d, latest calculated: %d", ErrNewDistributionNotCalculated, latestSubmittedTimestamp, timestamp)
 	}
 
-	log.Info().Msgf("Latest submitted timestamp: %d, Latest calculated timestamp: %d", latestSubmittedTimestamp, timestamp)
+	dds.config.Logger.Sugar().Info(
+		fmt.Sprintf("Latest submitted timestamp: %d, Latest calculated timestamp: %d", latestSubmittedTimestamp, timestamp),
+		zap.Int64("timestamp", timestamp),
+		zap.Uint64("latestSubmittedTimestamp", latestSubmittedTimestamp),
+	)
 
 	d, err := dds.populateDistributionFromTable(ctx, timestamp)
 	if err != nil {
@@ -107,7 +111,10 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 		cumulativePayment, ok := new(big.Int).SetString(cumulativePaymentString, 10)
 		if !ok {
 			// todo return error
-			log.Error().Msgf("not a valid big integer: %s", cumulativePaymentString)
+			dds.config.Logger.Sugar().Error(
+				fmt.Sprintf("not a valid big integer: %s", cumulativePaymentString),
+				zap.String("cumulativePaymentString", cumulativePaymentString),
+			)
 			cumulativePayment = big.NewInt(0)
 
 			//return nil, fmt.Errorf("not a valid big integer: %s", cumulativePaymentString)
