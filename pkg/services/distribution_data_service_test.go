@@ -27,7 +27,7 @@ func TestGetDistributionToSubmit(t *testing.T) {
 		Network:     "local",
 	}
 
-	networkEnv, err := cfg.GetEnvNetwork()
+	envNetwork, err := cfg.GetEnvNetwork()
 	if err != nil {
 		t.Fatalf("Failed to get EnvNetwork")
 	}
@@ -46,12 +46,12 @@ func TestGetDistributionToSubmit(t *testing.T) {
 	d, rows := getDistributionAndPaymentRows()
 
 	// return testTimestamp + 1 from db, so we've calculated a new distribution
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, networkEnv))).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, envNetwork))).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
 	// return the distribution rows
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, networkEnv, testTimestamp+1))).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, envNetwork, testTimestamp+1))).WillReturnRows(rows)
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
-		EnvNetwork: networkEnv,
+		EnvNetwork: envNetwork,
 		Logger:     logger,
 	})
 
@@ -76,7 +76,7 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 		Network:     "local",
 	}
 
-	networkEnv, err := cfg.GetEnvNetwork()
+	envNetwork, err := cfg.GetEnvNetwork()
 	if err != nil {
 		t.Fatalf("Failed to get EnvNetwork")
 	}
@@ -91,10 +91,10 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 	defer db.Close()
 
 	// return testTimestamp from db, so we haven't calculated a new distribution
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, networkEnv))).WillReturnRows(getMaxTimestampRows(testTimestamp))
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, envNetwork))).WillReturnRows(getMaxTimestampRows(testTimestamp))
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
-		EnvNetwork: networkEnv,
+		EnvNetwork: envNetwork,
 		Logger:     logger,
 	})
 
@@ -110,7 +110,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 		Network:     "local",
 	}
 
-	networkEnv, err := cfg.GetEnvNetwork()
+	envNetwork, err := cfg.GetEnvNetwork()
 	if err != nil {
 		t.Fatalf("Failed to get EnvNetwork")
 	}
@@ -128,10 +128,10 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	d, rows := getDistributionAndPaymentRows()
 
 	// return the distribution at testTimestamp from db
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, networkEnv, testTimestamp))).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, envNetwork, testTimestamp))).WillReturnRows(rows)
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
-		EnvNetwork: networkEnv,
+		EnvNetwork: envNetwork,
 		Logger:     logger,
 	})
 
