@@ -3,12 +3,12 @@ package services_test
 import (
 	"context"
 	"fmt"
-	logger "github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
-	utils2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"regexp"
 	"testing"
 
@@ -149,7 +149,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 }
 
 func getDistributionAndPaymentRows() (*distribution.Distribution, *sqlmock.Rows) {
-	d := utils2.GetTestDistribution()
+	d := utils.GetTestDistribution()
 
 	rows := sqlmock.NewRows([]string{"eaner", "token", "culumative_payment"})
 

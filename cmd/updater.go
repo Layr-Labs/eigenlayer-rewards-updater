@@ -98,7 +98,7 @@ var updaterCmd = &cobra.Command{
 
 		err = runUpdater(cfg, logger)
 		if err != nil {
-			logger.Sugar().Fatalln(err)
+			logger.Sugar().Error(err)
 		}
 	},
 }
@@ -107,6 +107,8 @@ func init() {
 	fmt.Println("Updater init")
 	rootCmd.AddCommand(updaterCmd)
 
+	updaterCmd.Flags().String("environment", "dev", "The environment to use")
+	updaterCmd.Flags().String("network", "localnet", "Which network to use")
 	updaterCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	updaterCmd.Flags().String("private-key", "", "An ethereum private key")
 	updaterCmd.Flags().String("aws-access-key-id", "", "AWS access key ID")
