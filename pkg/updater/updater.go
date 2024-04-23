@@ -2,23 +2,23 @@ package updater
 
 import (
 	"context"
+	services2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"math/big"
 	"time"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
 	"github.com/rs/zerolog/log"
 )
 
 type Updater struct {
 	updateInterval          time.Duration
-	transactor              services.Transactor
-	distributionDataService services.DistributionDataService
+	transactor              services2.Transactor
+	distributionDataService services2.DistributionDataService
 }
 
 func NewUpdater(
 	updateIntervalSeconds int,
-	transactor services.Transactor,
-	distributionDataService services.DistributionDataService,
+	transactor services2.Transactor,
+	distributionDataService services2.DistributionDataService,
 ) (*Updater, error) {
 	return &Updater{
 		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),

@@ -2,14 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
+	claimProver "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/claimgen"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"io"
 	"math/big"
 	"os"
 
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
-	claimProver "github.com/Layr-Labs/eigenlayer-payment-updater/claimgen"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 

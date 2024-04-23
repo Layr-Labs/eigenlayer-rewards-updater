@@ -3,14 +3,14 @@ package services_test
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	services2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	utils2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services/mocks"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +18,7 @@ import (
 var testTimestamp int64 = 1712127631
 
 func TestGetDistributionToSubmit(t *testing.T) {
-	utils.SetTestEnv()
+	utils2.SetTestEnv()
 
 	// return test timestamp from chain
 	mockTransactor := &mocks.Transactor{}
@@ -34,11 +34,11 @@ func TestGetDistributionToSubmit(t *testing.T) {
 	d, rows := getDistributionAndPaymentRows()
 
 	// return testTimestamp + 1 from db, so we've calculated a new distribution
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, utils.GetEnvNetwork()))).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services2.GetMaxTimestampQuery, utils2.GetEnvNetwork()))).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
 	// return the distribution rows
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, utils.GetEnvNetwork(), testTimestamp+1))).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services2.GetPaymentsAtTimestampQuery, utils2.GetEnvNetwork(), testTimestamp+1))).WillReturnRows(rows)
 
-	dds := services.NewDistributionDataService(db, mockTransactor)
+	dds := services2.NewDistributionDataService(db, mockTransactor)
 
 	fetchedDistribution, timestamp, err := dds.GetDistributionToSubmit(context.Background())
 	assert.Nil(t, err)
@@ -54,7 +54,7 @@ func TestGetDistributionToSubmit(t *testing.T) {
 }
 
 func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
-	utils.SetTestEnv()
+	utils2.SetTestEnv()
 
 	mockTransactor := &mocks.Transactor{}
 	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
@@ -66,16 +66,16 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 	defer db.Close()
 
 	// return testTimestamp from db, so we haven't calculated a new distribution
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, utils.GetEnvNetwork()))).WillReturnRows(getMaxTimestampRows(testTimestamp))
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services2.GetMaxTimestampQuery, utils2.GetEnvNetwork()))).WillReturnRows(getMaxTimestampRows(testTimestamp))
 
-	dds := services.NewDistributionDataService(db, mockTransactor)
+	dds := services2.NewDistributionDataService(db, mockTransactor)
 
 	_, _, err = dds.GetDistributionToSubmit(context.Background())
-	assert.ErrorIs(t, err, services.ErrNewDistributionNotCalculated)
+	assert.ErrorIs(t, err, services2.ErrNewDistributionNotCalculated)
 }
 
 func TestLatestSubmittedDistribution(t *testing.T) {
-	utils.SetTestEnv()
+	utils2.SetTestEnv()
 
 	mockTransactor := &mocks.Transactor{}
 	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
@@ -90,9 +90,9 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	d, rows := getDistributionAndPaymentRows()
 
 	// return the distribution at testTimestamp from db
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, utils.GetEnvNetwork(), testTimestamp))).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services2.GetPaymentsAtTimestampQuery, utils2.GetEnvNetwork(), testTimestamp))).WillReturnRows(rows)
 
-	dds := services.NewDistributionDataService(db, mockTransactor)
+	dds := services2.NewDistributionDataService(db, mockTransactor)
 
 	fetchedDistribution, timestamp, err := dds.GetLatestSubmittedDistribution(context.Background())
 	assert.Nil(t, err)
@@ -109,7 +109,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 
 func getDistributionAndPaymentRows() (*distribution.Distribution, *sqlmock.Rows) {
 
-	d := utils.GetTestDistribution()
+	d := utils2.GetTestDistribution()
 
 	rows := sqlmock.NewRows([]string{"eaner", "token", "culumative_payment"})
 

@@ -2,12 +2,12 @@ package updater_test
 
 import (
 	"context"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"math/big"
 	"testing"
 
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services/mocks"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/updater"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

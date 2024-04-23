@@ -2,15 +2,15 @@ package claimgen_test
 
 import (
 	"context"
+	mocks2 "github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
+	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
+	claimprover "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/claimgen"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	utils2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"math/rand"
 	"sync"
 	"testing"
 
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
-	claimprover "github.com/Layr-Labs/eigenlayer-payment-updater/claimgen"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/services/mocks"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common/utils"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,7 +51,7 @@ func TestClaimProverGetProof(t *testing.T) {
 
 	cp.Update(context.Background())
 
-	claim, err := cp.GetProof(utils.TestAddresses[0], []gethcommon.Address{utils.TestTokens[0], utils.TestTokens[3]})
+	claim, err := cp.GetProof(utils2.TestAddresses[0], []gethcommon.Address{utils2.TestTokens[0], utils2.TestTokens[3]})
 	assert.Nil(t, err)
 
 	assert.Equal(t, testRootIndex, claim.RootIndex)
@@ -64,7 +64,7 @@ func TestClaimProverGetProofDecreasingTokenOrder(t *testing.T) {
 
 	cp.Update(context.Background())
 
-	claim, err := cp.GetProof(utils.TestAddresses[2], []gethcommon.Address{utils.TestTokens[2], utils.TestTokens[0]})
+	claim, err := cp.GetProof(utils2.TestAddresses[2], []gethcommon.Address{utils2.TestTokens[2], utils2.TestTokens[0]})
 	assert.Nil(t, err)
 
 	assert.Equal(t, testRootIndex, claim.RootIndex)
@@ -77,7 +77,7 @@ func TestClaimProverGetProofForNonExistantEarner(t *testing.T) {
 
 	cp.Update(context.Background())
 
-	_, err := cp.GetProof(utils.TestTokens[0], []gethcommon.Address{utils.TestTokens[0]})
+	_, err := cp.GetProof(utils2.TestTokens[0], []gethcommon.Address{utils2.TestTokens[0]})
 	assert.ErrorIs(t, err, claimprover.ErrEarnerIndexNotFound)
 }
 
@@ -86,10 +86,10 @@ func TestClaimProverGetProofForNonExistantToken(t *testing.T) {
 
 	cp.Update(context.Background())
 
-	_, err := cp.GetProof(utils.TestAddresses[0], []gethcommon.Address{utils.TestAddresses[0]})
+	_, err := cp.GetProof(utils2.TestAddresses[0], []gethcommon.Address{utils2.TestAddresses[0]})
 	assert.ErrorIs(t, err, claimprover.ErrTokenIndexNotFound)
 
-	_, err = cp.GetProof(utils.TestAddresses[0], []gethcommon.Address{utils.TestTokens[0], utils.TestAddresses[0]})
+	_, err = cp.GetProof(utils2.TestAddresses[0], []gethcommon.Address{utils2.TestTokens[0], utils2.TestAddresses[0]})
 	assert.ErrorIs(t, err, claimprover.ErrTokenIndexNotFound)
 }
 
@@ -99,7 +99,7 @@ func TestParallelProofGeneration(t *testing.T) {
 	cp.Update(context.Background())
 
 	// prepare values for next update call
-	postD := utils.GetCompleteTestDistribution()
+	postD := utils2.GetCompleteTestDistribution()
 	postAccountTree, postTokenTrees, _ := postD.Merklize()
 	postRootBytes := postAccountTree.Root()
 	var root [32]byte
@@ -137,12 +137,12 @@ func TestParallelProofGeneration(t *testing.T) {
 		go func() {
 			defer wg.Done() // Indicate goroutine completion
 
-			earnerIndex := rand.Intn(len(utils.TestAddresses))
-			earner := utils.TestAddresses[earnerIndex]
+			earnerIndex := rand.Intn(len(utils2.TestAddresses))
+			earner := utils2.TestAddresses[earnerIndex]
 
 			// even the cp.TokenTrees may be different than when GetProof is called, this is ok, because the tree is cumulative
 			tokenIndex := rand.Intn(len(cp.TokenTrees[earner].Data))
-			token := utils.TestTokens[tokenIndex]
+			token := utils2.TestTokens[tokenIndex]
 
 			claim, err := cp.GetProof(earner, []gethcommon.Address{token})
 			assert.Nil(t, err)
@@ -164,11 +164,11 @@ func TestParallelProofGeneration(t *testing.T) {
 	assert.True(t, seenNewRootIndex)
 }
 
-func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, []byte, *claimprover.ClaimProver, *mocks.Transactor, *mocks.DistributionDataService) {
-	mockTransactor := &mocks.Transactor{}
-	mockDistributionDataService := &mocks.DistributionDataService{}
+func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, []byte, *claimprover.ClaimProver, *mocks2.Transactor, *mocks2.DistributionDataService) {
+	mockTransactor := &mocks2.Transactor{}
+	mockDistributionDataService := &mocks2.DistributionDataService{}
 
-	d := utils.GetTestDistribution()
+	d := utils2.GetTestDistribution()
 	accountTree, tokenTrees, _ := d.Merklize()
 	rootBytes := accountTree.Root()
 	var root [32]byte
@@ -184,7 +184,7 @@ func createUpdatableClaimProver() (*distribution.Distribution, *merkletree.Merkl
 
 func verifyEarner(t *testing.T, rootBytes []byte, tokenTrees map[gethcommon.Address]*merkletree.MerkleTree, testAddressIndex int, claim *paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim) {
 	assert.Equal(t, uint32(testAddressIndex), claim.EarnerIndex)
-	assert.Equal(t, utils.TestAddresses[claim.EarnerIndex], claim.EarnerLeaf.Earner)
+	assert.Equal(t, utils2.TestAddresses[claim.EarnerIndex], claim.EarnerLeaf.Earner)
 	assert.Equal(t, tokenTrees[claim.EarnerLeaf.Earner].Root(), claim.EarnerLeaf.EarnerTokenRoot[:])
 
 	// verify the earner proof
@@ -207,16 +207,16 @@ func verifyTokens(t *testing.T, d *distribution.Distribution, testTokenIndices [
 	for i, index := range testTokenIndices {
 		// verify index and leaf
 		assert.Equal(t, uint32(index), claim.TokenIndices[i])
-		assert.Equal(t, utils.TestTokens[index], claim.TokenLeaves[i].Token)
+		assert.Equal(t, utils2.TestTokens[index], claim.TokenLeaves[i].Token)
 
-		testAmount, found := d.Get(claim.EarnerLeaf.Earner, utils.TestTokens[index])
+		testAmount, found := d.Get(claim.EarnerLeaf.Earner, utils2.TestTokens[index])
 		assert.True(t, found)
 
 		assert.Equal(t, testAmount, claim.TokenLeaves[i].CumulativeEarnings)
 
 		// verify the token proof
 		verified, err := merkletree.VerifyProofUsing(
-			distribution.EncodeTokenLeaf(utils.TestTokens[index], testAmount),
+			distribution.EncodeTokenLeaf(utils2.TestTokens[index], testAmount),
 			false,
 			getProofFromBytesAndIndex(claim.TokenTreeProofs[i], uint32(index)),
 			[][]byte{claim.EarnerLeaf.EarnerTokenRoot[:]},

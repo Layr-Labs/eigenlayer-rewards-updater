@@ -2,10 +2,10 @@ package services
 
 import (
 	"context"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
+	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
 	"math/big"
 
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/bindings/IPaymentCoordinator"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
@@ -19,11 +19,11 @@ type Transactor interface {
 }
 
 type TransactorImpl struct {
-	ChainClient        *common.ChainClient
+	ChainClient        *pkg.ChainClient
 	PaymentCoordinator *paymentCoordinator.ContractIPaymentCoordinator
 }
 
-func NewTransactor(chainClient *common.ChainClient, paymentCoordinatorAddress gethcommon.Address) (Transactor, error) {
+func NewTransactor(chainClient *pkg.ChainClient, paymentCoordinatorAddress gethcommon.Address) (Transactor, error) {
 	paymentCoordinatorContract, err := paymentCoordinator.NewContractIPaymentCoordinator(paymentCoordinatorAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, payments
 	}
 
 	if receipt.Status != 1 {
-		return common.ErrTransactionFailed
+		return pkg.ErrTransactionFailed
 	}
 
 	return nil
