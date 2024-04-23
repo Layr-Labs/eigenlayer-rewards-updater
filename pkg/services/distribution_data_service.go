@@ -110,14 +110,12 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 
 		cumulativePayment, ok := new(big.Int).SetString(cumulativePaymentString, 10)
 		if !ok {
-			// todo return error
+			errorMessage := fmt.Sprintf("not a valid big integer: %s", cumulativePaymentString)
 			dds.config.Logger.Sugar().Error(
-				fmt.Sprintf("not a valid big integer: %s", cumulativePaymentString),
+				errorMessage,
 				zap.String("cumulativePaymentString", cumulativePaymentString),
 			)
-			cumulativePayment = big.NewInt(0)
-
-			//return nil, fmt.Errorf("not a valid big integer: %s", cumulativePaymentString)
+			return nil, fmt.Errorf(errorMessage)
 		}
 
 		d.Set(earner, token, cumulativePayment)
