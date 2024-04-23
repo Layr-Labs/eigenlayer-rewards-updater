@@ -3,6 +3,8 @@
 GO = $(shell which go)
 BIN = ./bin/
 
+binary_name = payment-updater
+
 all: build
 
 .PHONY: deps
@@ -10,17 +12,17 @@ deps:
 	${GO} install github.com/vektra/mockery/v2@v2.42.3
 	${GO} mod tidy
 
-build_amd64: mocks
-	GOARCH=amd64 ${GO} build -o ${BIN}/amd64/ main.go
+build_amd64:
+	GOARCH=amd64 ${GO} build -o ${BIN}/amd64/${binary_name} main.go
 
-build_arm64: mocks
-	GOARCH=arm64 ${GO} build -o ${BIN}/arm64/ main.go
+build_arm64:
+	GOARCH=arm64 ${GO} build -o ${BIN}/arm64/${binary_name} main.go
 
-build_linux_amd64: mocks
-	GOOS=linux GOARCH=amd64 ${GO} build -o ${BIN}/linux/amd64/ main.go
+build_linux_amd64:
+	GOOS=linux GOARCH=amd64 ${GO} build -o ${BIN}/linux/amd64/${binary_name} main.go
 
-build: mocks
-	${GO} build -o ${BIN} main.go
+build:
+	${GO} build -o ${BIN}${binary_name} main.go
 
 .PHONY: mocks
 mocks:
@@ -34,3 +36,7 @@ clean:
 .PHONY: test
 test:
 	${GO} test ./...
+
+.PHONY: docker
+docker:
+	docker build -t payments-updater:latest .
