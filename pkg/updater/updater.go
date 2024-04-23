@@ -15,6 +15,7 @@ type Updater struct {
 	distributionDataService services2.DistributionDataService
 }
 
+// TODO(seanmcgary): refactor this to remove the update interval
 func NewUpdater(
 	updateIntervalSeconds int,
 	transactor services2.Transactor,
