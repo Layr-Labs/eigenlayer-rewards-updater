@@ -5,6 +5,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
+	"github.com/spf13/pflag"
 	"os"
 	"strings"
 
@@ -47,7 +49,11 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eigenlayer-payment-updater/config.yaml)")
+	rootCmd.PersistentFlags().Bool("debug", false, "'true' or 'false'")
 
+	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		viper.BindPFlag(config.KebabToSnakeCase(f.Name), f)
+	})
 	initConfig(rootCmd)
 }
 

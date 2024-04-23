@@ -88,7 +88,6 @@ func init() {
 	updaterCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
 
 	updaterCmd.Flags().VisitAll(func(f *pflag.Flag) {
-		fmt.Printf("flag: %v\n", config.KebabToSnakeCase(f.Name))
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {
 			fmt.Printf("Failed to bind flag '%s' - %+v\n", f.Name, err)
 		}

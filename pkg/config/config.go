@@ -7,8 +7,9 @@ import (
 	"strings"
 )
 
-func KebabToSnakeCase(str string) string {
-	return strings.ReplaceAll(str, "-", "_")
+type GlobalConfig struct {
+	Config string `mapstructure:"config"`
+	Debug  bool   `mapstructure:"debug"`
 }
 
 type Environment int
@@ -21,6 +22,7 @@ var (
 )
 
 type UpdaterConfig struct {
+	GlobalConfig
 	Environment               Environment `mapstructure:"environment"`
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
@@ -67,6 +69,10 @@ func StringEnvironmentFromEnum(env Environment) (string, error) {
 // them in a struct
 func NewUpdaterConfig() *UpdaterConfig {
 	updaterConfig = &UpdaterConfig{
+		GlobalConfig: GlobalConfig{
+			Config: viper.GetString("config"),
+			Debug:  viper.GetBool("debug"),
+		},
 		Environment:               parseEnvironment(viper.GetString("environment")),
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
@@ -91,4 +97,8 @@ func (c *UpdaterConfig) GetEnvNetwork() (string, error) {
 
 func GetUpdaterConfig() *UpdaterConfig {
 	return updaterConfig
+}
+
+func KebabToSnakeCase(str string) string {
+	return strings.ReplaceAll(str, "-", "_")
 }
