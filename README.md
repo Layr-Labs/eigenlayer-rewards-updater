@@ -24,7 +24,7 @@ make test
 ```bash
 make docker
 
-docker run payment-updater:latest [updater]
+docker run payments-updater:latest [updater]
 ```
 
 ## Running
@@ -36,7 +36,6 @@ To run the `payment-updater` with a config file, copy the `config.yml.tpl` templ
 Then, pass the path of the config file using the `--config=<path>` flag.
 
 ### Command line args
-
 
 ```bash
 ./bin/payment-updater updater \
@@ -50,4 +49,22 @@ Then, pass the path of the config file using the `--config=<path>` flag.
     --aws-region "us-east-1" \ 
     --s3-output-bucket "s3://<url>" \
     --payment-coordinator-address "<contract address>"
+```
+
+### docker-compose
+
+To run with docker compose, simply execute:
+
+```bash
+docker compose up <service>
+
+docker compose up updater
+```
+
+By default, docker compose will be looking for a config file in the root of this project.
+
+If you wish to provide the parameters through flags, update the `updater-cli-args` service and run:
+
+```bash
+docker compose up updater-cli-args
 ```
