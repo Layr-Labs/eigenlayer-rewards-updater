@@ -51,7 +51,7 @@ func runUpdater(config *config.UpdaterConfig) {
 		EnvNetwork: envNetwork,
 	})
 
-	u, err := updater.NewUpdater(1000, transactor, dds)
+	u, err := updater.NewUpdater(transactor, dds)
 	if err != nil {
 		fmt.Println("Failed to create updater")
 		panic(err)

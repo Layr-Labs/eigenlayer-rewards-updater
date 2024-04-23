@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var testUpdaterIntervalSeconds = 10
 var testTimestamp int64 = 1712127631
 
 func TestUpdaterUpdate(t *testing.T) {
@@ -28,7 +27,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	mockDistributionDataService.On("GetDistributionToSubmit", mock.Anything).Return(d, testTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, big.NewInt(testTimestamp)).Return(nil)
 
-	updater, err := updater.NewUpdater(testUpdaterIntervalSeconds, mockTransactor, mockDistributionDataService)
+	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService)
 	assert.Nil(t, err)
 
 	err = updater.Update(context.Background())
