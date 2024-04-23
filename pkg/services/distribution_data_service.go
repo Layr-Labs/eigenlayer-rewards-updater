@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"math/big"
 
 	"github.com/rs/zerolog/log"
@@ -23,15 +22,21 @@ type DistributionDataService interface {
 	GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error)
 }
 
+type DistributionDataServiceConfig struct {
+	EnvNetwork string
+}
+
 type DistributionDataServiceImpl struct {
 	db         *sql.DB
 	transactor Transactor
+	config     *DistributionDataServiceConfig
 }
 
-func NewDistributionDataService(db *sql.DB, transactor Transactor) DistributionDataService {
+func NewDistributionDataService(db *sql.DB, transactor Transactor, cfg *DistributionDataServiceConfig) DistributionDataService {
 	return &DistributionDataServiceImpl{
 		db:         db,
 		transactor: transactor,
+		config:     cfg,
 	}
 }
 
@@ -44,7 +49,7 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 
 	// get the latest calculated timestamp from the database
 	var timestamp int64
-	err = dds.db.QueryRow(fmt.Sprintf(getMaxTimestampQuery, utils.GetEnvNetwork())).Scan(&timestamp)
+	err = dds.db.QueryRow(fmt.Sprintf(getMaxTimestampQuery, dds.config.EnvNetwork)).Scan(&timestamp)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -81,7 +86,7 @@ func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx conte
 
 func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, timestamp int64) (*distribution.Distribution, error) {
 	d := distribution.NewDistribution()
-	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, utils.GetEnvNetwork(), timestamp))
+	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, dds.config.EnvNetwork, timestamp))
 	if err != nil {
 		return nil, err
 	}

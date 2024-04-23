@@ -14,9 +14,10 @@ func KebabToSnakeCase(str string) string {
 type Environment int
 
 var (
-	Environment_DEV      Environment = 0
-	Environment_PRE_PROD Environment = 1
-	Environment_PROD     Environment = 2
+	Environment_LOCAL    Environment = 0
+	Environment_DEV      Environment = 1
+	Environment_PRE_PROD Environment = 2
+	Environment_PROD     Environment = 3
 )
 
 type UpdaterConfig struct {
@@ -40,13 +41,15 @@ func parseEnvironment(env string) Environment {
 		return Environment_PRE_PROD
 	case "prod", "production":
 		return Environment_PROD
+	case "local", "localnet":
+		return Environment_LOCAL
 	default:
 		return Environment_DEV
 	}
 }
 
-// stringEnvironmentFromEnum gets a string environment value from the enum
-func stringEnvironmentFromEnum(env Environment) (string, error) {
+// StringEnvironmentFromEnum gets a string environment value from the enum
+func StringEnvironmentFromEnum(env Environment) (string, error) {
 	switch env {
 	case Environment_PROD:
 		return "prod", nil
@@ -54,6 +57,8 @@ func stringEnvironmentFromEnum(env Environment) (string, error) {
 		return "pre-prod", nil
 	case Environment_DEV:
 		return "dev", nil
+	case Environment_LOCAL:
+		return "localnet", nil
 	}
 	return "", errors.New(fmt.Sprintf("String env not found for '%d'", env))
 }
@@ -77,7 +82,7 @@ func NewUpdaterConfig() *UpdaterConfig {
 
 // GetEnvNetwork returns a string concatenation of "{environment}_{network}"
 func (c *UpdaterConfig) GetEnvNetwork() (string, error) {
-	envString, err := stringEnvironmentFromEnum(c.Environment)
+	envString, err := StringEnvironmentFromEnum(c.Environment)
 	if err != nil {
 		return "", nil
 	}

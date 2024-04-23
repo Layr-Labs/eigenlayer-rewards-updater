@@ -14,24 +14,24 @@ func TestKebabToSnakeCase(t *testing.T) {
 }
 
 func TestGetEnvNetwork_ValidNetworkProd(t *testing.T) {
-	envNetwork, err := stringEnvironmentFromEnum(Environment_PROD)
+	envNetwork, err := StringEnvironmentFromEnum(Environment_PROD)
 	assert.Nil(t, err)
 	assert.Equal(t, "prod", envNetwork)
 }
 
 func TestGetEnvNetwork_ValidNetworkPreProd(t *testing.T) {
-	envNetwork, err := stringEnvironmentFromEnum(Environment_PRE_PROD)
+	envNetwork, err := StringEnvironmentFromEnum(Environment_PRE_PROD)
 	assert.Nil(t, err)
 	assert.Equal(t, "pre-prod", envNetwork)
 }
 
 func TestGetEnvNetwork_ValidNetworkPreDev(t *testing.T) {
-	envNetwork, err := stringEnvironmentFromEnum(Environment_DEV)
+	envNetwork, err := StringEnvironmentFromEnum(Environment_DEV)
 	assert.Nil(t, err)
 	assert.Equal(t, "dev", envNetwork)
 }
 
 func TestGetEnvNetwork_InvalidNetwork(t *testing.T) {
-	_, err := stringEnvironmentFromEnum(4)
+	_, err := StringEnvironmentFromEnum(4)
 	assert.NotNil(t, err)
 }

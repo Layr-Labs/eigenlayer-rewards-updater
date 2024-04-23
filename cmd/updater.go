@@ -43,7 +43,13 @@ func runUpdater(config *config.UpdaterConfig) {
 	db, _ := sql.Open(drv.DriverName, conf.Stringify())
 	defer db.Close()
 
-	dds := services.NewDistributionDataService(db, transactor)
+	envNetwork, err := config.GetEnvNetwork()
+	if err != nil {
+		panic(err)
+	}
+	dds := services.NewDistributionDataService(db, transactor, &services.DistributionDataServiceConfig{
+		EnvNetwork: envNetwork,
+	})
 
 	u, err := updater.NewUpdater(1000, transactor, dds)
 	if err != nil {
