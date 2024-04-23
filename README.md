@@ -19,6 +19,14 @@ make
 make test
 ```
 
+### Dockerfile
+
+```bash
+make docker
+
+docker run payment-updater:latest [updater]
+```
+
 ## Running
 
 ### With config
