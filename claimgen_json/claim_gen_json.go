@@ -1,50 +1,30 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
 	claimProver "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"io"
-	"math/big"
+	"log"
 	"os"
+	"time"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-// Solidity call compatible type structs
-type IPaymentCoordinatorEarnerTreeMerkleLeafStrings struct {
-	Earner          gethcommon.Address
-	EarnerTokenRoot string
-}
-
-type IPaymentCoordinatorPaymentMerkleClaimStrings struct {
-	Root               string
-	RootIndex          uint32
-	EarnerIndex        uint32
-	EarnerTreeProof    string
-	EarnerLeaf         IPaymentCoordinatorEarnerTreeMerkleLeafStrings
-	LeafIndices        []uint32
-	TokenTreeProofs    []string
-	TokenLeaves        []paymentCoordinator.IPaymentCoordinatorTokenTreeMerkleLeaf
-	TokenTreeProofsNum uint32
-	TokenLeavesNum     uint32
-}
-
-type IPaymentCoordinatorTokenTreeMerkleLeafStrings struct {
-	Token              gethcommon.Address
-	CumulativeEarnings *big.Int
-}
-
 // TODO: Update this to take CLI arguments to generate proofs
 func main() {
-	filePath, outputPath := "test_data/distribution_data3.json", "test_data/data_output3.json"
+	currentUnixTime := time.Now().Unix()
+	inputPath := "claimgen_json/test_data/distribution_data3.json"
+	outputPath := fmt.Sprintf("claimgen_json/test_data/data_output_%d.json", currentUnixTime)
 	rootIndex := uint32(0)
 	earnerIndex := uint32(3)
 
-	GenerateProofFromJSONForSolidity(
-		filePath,
+	_, err := GenerateProofFromJSONForSolidity(
+		inputPath,
 		outputPath,
 		rootIndex,
 		TestAddressesJSON[earnerIndex],
@@ -56,7 +36,11 @@ func main() {
 			TestTokensJSON[4],
 			TestTokensJSON[5],
 		},
+		true,
 	)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func GenerateProofFromJSON(
@@ -79,20 +63,18 @@ func GenerateProofFromJSON(
 	if err != nil {
 		return nil, err
 	}
-	// generate the trees
-	accountTree, tokenTrees, err := distro.Merklize()
+	ctx := context.Background()
+
+	_, merkleClaim, err := claimProver.GenerateClaimProofForEarner(
+		ctx,
+		earner,
+		tokens,
+		rootIndex,
+		distro,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	merkleClaim, error := claimProver.GetProof(
-		distro,
-		rootIndex,
-		accountTree,
-		tokenTrees,
-		earner,
-		tokens,
-	)
 
 	jsonData, err := json.Marshal(merkleClaim)
 	if err != nil {
@@ -105,7 +87,7 @@ func GenerateProofFromJSON(
 		return nil, err
 	}
 
-	return merkleClaim, error
+	return merkleClaim, nil
 }
 
 func GenerateProofFromJSONForSolidity(
@@ -114,7 +96,8 @@ func GenerateProofFromJSONForSolidity(
 	rootIndex uint32,
 	earner gethcommon.Address,
 	tokens []gethcommon.Address,
-) (*IPaymentCoordinatorPaymentMerkleClaimStrings, error) {
+	prettyJson bool,
+) (*claimProver.IPaymentCoordinatorPaymentMerkleClaimStrings, error) {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -128,39 +111,28 @@ func GenerateProofFromJSONForSolidity(
 	if err != nil {
 		return nil, err
 	}
-	// generate the trees
-	accountTree, tokenTrees, err := distro.Merklize()
+
+	ctx := context.Background()
+	merkleTree, merkleClaim, err := claimProver.GenerateClaimProofForEarner(
+		ctx,
+		earner,
+		tokens,
+		rootIndex,
+		distro,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	merkleClaim, error := claimProver.GetProof(
-		distro,
-		rootIndex,
-		accountTree,
-		tokenTrees,
-		earner,
-		tokens,
-	)
+	solidityMerkleClaim := claimProver.FormatProofForSolidity(merkleTree.Root(), merkleClaim)
 
-	// Convert the merkle claim to a solidity compatible struct
-	solidityMerkleClaim := IPaymentCoordinatorPaymentMerkleClaimStrings{
-		Root:            utils.ConvertBytesToString(accountTree.Root()),
-		RootIndex:       merkleClaim.RootIndex,
-		EarnerIndex:     merkleClaim.EarnerIndex,
-		EarnerTreeProof: utils.ConvertBytesToString(merkleClaim.EarnerTreeProof),
-		EarnerLeaf: IPaymentCoordinatorEarnerTreeMerkleLeafStrings{
-			Earner:          merkleClaim.EarnerLeaf.Earner,
-			EarnerTokenRoot: utils.ConvertBytes32ToString(merkleClaim.EarnerLeaf.EarnerTokenRoot),
-		},
-		LeafIndices:        merkleClaim.TokenIndices,
-		TokenTreeProofs:    utils.ConvertBytesToStrings(merkleClaim.TokenTreeProofs),
-		TokenLeaves:        merkleClaim.TokenLeaves,
-		TokenTreeProofsNum: uint32(len(merkleClaim.TokenTreeProofs)),
-		TokenLeavesNum:     uint32(len(merkleClaim.TokenLeaves)),
+	var jsonData []byte
+	if prettyJson {
+		jsonData, err = json.MarshalIndent(solidityMerkleClaim, "", "  ")
+	} else {
+		jsonData, err = json.Marshal(solidityMerkleClaim)
 	}
 
-	jsonData, err := json.Marshal(solidityMerkleClaim)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +143,7 @@ func GenerateProofFromJSONForSolidity(
 		return nil, err
 	}
 
-	return &solidityMerkleClaim, error
+	return solidityMerkleClaim, nil
 }
 
 // Test data from test_data/distribution_data.json
