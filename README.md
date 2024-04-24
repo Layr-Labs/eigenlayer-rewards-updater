@@ -68,3 +68,75 @@ If you wish to provide the parameters through flags, update the `updater-cli-arg
 ```bash
 docker compose up updater-cli-args
 ```
+
+# Flags and arguments
+
+## Global flags
+
+### `--config`
+
+Optional, path to a file based config to use
+
+### `--debug`
+
+*Values:* `true, false`
+
+Enables debug logging
+
+## Updater
+
+### `--environment`
+
+The target environment
+
+*Values:* `local, dev, preprod, prod`
+
+### `--network`
+
+The Ethereum network to target
+
+*Values:* `local, devnet, holesky, mainnet`
+
+### `--rpc-url`
+
+Fully qualified URL to an Ethereum RPC node.
+
+_Example_
+
+```bash
+https://ethereum-holesky-rpc.publicnode.com
+```
+
+### `--private-key`
+
+An Ethereum account private key, in hexidecimal form.
+
+### `--aws-access-key-id` & `--aws-access-secret-key`
+
+An AWS AccessKeyId/AccessSecretKey pair that has access to the Athena cluster containing the data to build the payment proof as well as the specified S3 output bucket
+
+### `--aws-region`
+
+*Default value:* `us-east-1`
+
+The region to use for Athena queries and S3 output.
+
+### `--s3-output-bucket`
+
+The bucket name and path where the output of the Athena query should be put.
+
+_Example_
+
+```bash
+s3://<bucket name>/<bucket>/<path>
+```
+
+### `--payment-coordinator-address`
+
+The contract address of the target payment coordinator contract used to post payment proofs
+
+_Example_
+
+```bash
+0x56c119bD92Af45eb74443ab14D4e93B7f5C67896
+```

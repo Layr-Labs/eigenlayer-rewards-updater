@@ -22,7 +22,7 @@ func TestGetEnvNetwork_ValidNetworkProd(t *testing.T) {
 func TestGetEnvNetwork_ValidNetworkPreProd(t *testing.T) {
 	envNetwork, err := StringEnvironmentFromEnum(Environment_PRE_PROD)
 	assert.Nil(t, err)
-	assert.Equal(t, "pre-prod", envNetwork)
+	assert.Equal(t, "preprod", envNetwork)
 }
 
 func TestGetEnvNetwork_ValidNetworkPreDev(t *testing.T) {

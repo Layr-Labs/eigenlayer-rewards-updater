@@ -56,11 +56,11 @@ func StringEnvironmentFromEnum(env Environment) (string, error) {
 	case Environment_PROD:
 		return "prod", nil
 	case Environment_PRE_PROD:
-		return "pre-prod", nil
+		return "preprod", nil
 	case Environment_DEV:
 		return "dev", nil
 	case Environment_LOCAL:
-		return "localnet", nil
+		return "local", nil
 	}
 	return "", errors.New(fmt.Sprintf("String env not found for '%d'", env))
 }
