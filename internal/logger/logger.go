@@ -2,7 +2,6 @@ package logger
 
 import (
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type LoggerConfig struct {
@@ -12,7 +11,6 @@ type LoggerConfig struct {
 func NewLogger(cfg *LoggerConfig, options ...zap.Option) (*zap.Logger, error) {
 	mergedOptions := []zap.Option{
 		zap.WithCaller(true),
-		zap.AddStacktrace(zapcore.ErrorLevel),
 	}
 	copy(mergedOptions, options)
 

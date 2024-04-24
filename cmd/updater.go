@@ -73,8 +73,8 @@ func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
 	}
 
 	if err := u.Update(ctx); err != nil {
-		logger.Sugar().Errorf("Failed to update", zap.Error(err))
-		return err
+		logger.Sugar().Info("Failed to update", zap.Error(err))
+		return nil
 	}
 	logger.Sugar().Info("Update successful")
 	return nil
