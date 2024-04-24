@@ -3,17 +3,7 @@ package utils
 import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
 	"math/big"
-	"os"
 )
-
-// Utils for unit and integration tests
-
-var ()
-
-func SetTestEnv() {
-	os.Setenv("ENV", "localnet")
-	os.Setenv("NETWORK", "local")
-}
 
 func GetTestDistribution() *distribution.Distribution {
 	d := distribution.NewDistribution()

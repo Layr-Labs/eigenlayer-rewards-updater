@@ -2,6 +2,7 @@ package updater_test
 
 import (
 	"context"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
@@ -12,10 +13,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var testUpdaterIntervalSeconds = 10
 var testTimestamp int64 = 1712127631
 
 func TestUpdaterUpdate(t *testing.T) {
+	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
+
 	mockTransactor := &mocks.Transactor{}
 	mockDistributionDataService := &mocks.DistributionDataService{}
 
@@ -28,7 +30,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	mockDistributionDataService.On("GetDistributionToSubmit", mock.Anything).Return(d, testTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, big.NewInt(testTimestamp)).Return(nil)
 
-	updater, err := updater.NewUpdater(testUpdaterIntervalSeconds, mockTransactor, mockDistributionDataService)
+	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService, logger)
 	assert.Nil(t, err)
 
 	err = updater.Update(context.Background())

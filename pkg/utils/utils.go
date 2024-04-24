@@ -2,12 +2,7 @@ package utils
 
 import (
 	"encoding/hex"
-	"os"
 )
-
-func GetEnvNetwork() string {
-	return os.Getenv("ENV") + "_" + os.Getenv("NETWORK")
-}
 
 func ConvertBytesToStrings(b [][]byte) []string {
 	var s []string

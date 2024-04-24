@@ -1,0 +1,27 @@
+services:
+  updater:
+    image: payments-updater:latest
+    build:
+      dockerfile: Dockerfile
+    volumes:
+      - "$PWD:/etc/eigenlayer-payment-updater"
+    command:
+      - "updater"
+  updater-cli-args:
+    image: payments-updater:latest
+    build:
+      dockerfile: Dockerfile
+    volumes:
+      - "$PWD:/etc/eigenlayer-payment-updater"
+    command:
+      - "updater"
+      - "--debug=true"
+      - "--environment='dev'"
+      - "--network='devnet'"
+      - "--rpc-url='http://....'"
+      - "--private-key='<ethereum private key>'"
+      - "--aws-access-key-id='<aws access key id>'"
+      - "--aws-secret-access-key='<aws secret key>'"
+      - "--aws-region='us-east-1'"
+      - "--s3-output-bucket='s3://<url>'"
+      - "--payment-coordinator-address='<contract address>'"

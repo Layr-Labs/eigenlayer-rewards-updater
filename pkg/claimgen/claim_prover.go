@@ -6,7 +6,7 @@ import (
 	"fmt"
 	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
-	services2 "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"sync"
 	"time"
 
@@ -27,9 +27,9 @@ type ClaimProofs struct {
 type ClaimProver struct {
 	updateInterval time.Duration
 
-	transactor services2.Transactor
+	transactor services.Transactor
 
-	distributionDataService services2.DistributionDataService
+	distributionDataService services.DistributionDataService
 	Distribution            *distribution.Distribution
 
 	RootIndex   uint32
@@ -39,7 +39,7 @@ type ClaimProver struct {
 	mu sync.RWMutex
 }
 
-func NewClaimProver(updateIntervalSeconds int64, transactor services2.Transactor, distributionDataService services2.DistributionDataService) *ClaimProver {
+func NewClaimProver(updateIntervalSeconds int64, transactor services.Transactor, distributionDataService services.DistributionDataService) *ClaimProver {
 
 	claimProver := &ClaimProver{
 		updateInterval:          time.Second * time.Duration(updateIntervalSeconds),
