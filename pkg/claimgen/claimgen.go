@@ -4,9 +4,12 @@ import (
 	"context"
 	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/wealdtech/go-merkletree/v2"
+	"go.uber.org/zap"
+	"time"
 )
 
 type IPaymentCoordinatorEarnerTreeMerkleLeafStrings struct {
@@ -75,4 +78,38 @@ func FormatProofForSolidity(accountTreeRoot []byte, proof *paymentCoordinator.IP
 		TokenTreeProofsNum: uint32(len(proof.TokenTreeProofs)),
 		TokenLeavesNum:     uint32(len(proof.TokenLeaves)),
 	}
+}
+
+type Claimgen struct {
+	dds    services.DistributionDataService
+	logger *zap.Logger
+}
+
+func NewClaimgen(dds services.DistributionDataService, logger *zap.Logger) *Claimgen {
+	return &Claimgen{
+		dds:    dds,
+		logger: logger,
+	}
+}
+
+// GenerateClaimProofFromLatestPayment takes a DataDistributionService and generates a claim proof
+// for the given earner and token(s) using the latest submitted distribution
+func (c *Claimgen) GenerateClaimProofFromLatestPayment(
+	ctx context.Context,
+	earner gethcommon.Address,
+	tokens []gethcommon.Address,
+	rootIndex uint32,
+) (
+	*merkletree.MerkleTree,
+	*paymentCoordinator.IPaymentCoordinatorPaymentMerkleClaim,
+	error,
+) {
+	latestDistribution, latestTimestamp, err := c.dds.GetLatestSubmittedDistribution(ctx)
+	c.logger.Sugar().Debug("Got distribution for timestamp '%s'", time.Unix(latestTimestamp, 0).String())
+	if err != nil {
+		c.logger.Sugar().Errorf("Failed to get latest distribution", zap.Error(err))
+		return nil, nil, err
+	}
+
+	return GenerateClaimProofForEarner(ctx, earner, tokens, rootIndex, latestDistribution)
 }
