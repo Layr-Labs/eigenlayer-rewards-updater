@@ -72,7 +72,9 @@ func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
 		return err
 	}
 
-	if err := u.Update(ctx); err != nil {
+	tree, err := u.Update(ctx)
+	fmt.Printf("tree: %+v\n", tree)
+	if err != nil {
 		logger.Sugar().Info("Failed to update", zap.Error(err))
 		return nil
 	}
