@@ -108,6 +108,15 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 		earner := gethcommon.HexToAddress(earnerString)
 		token := gethcommon.HexToAddress(tokenString)
 
+		// If the payment is an empty string, assume 0
+		if cumulativePaymentString == "" {
+			cumulativePaymentString = "0"
+			dds.config.Logger.Sugar().Info("Found row with empty amount",
+				zap.String("earner", earner.String()),
+				zap.String("token", token.String()),
+			)
+		}
+
 		cumulativePayment, ok := new(big.Int).SetString(cumulativePaymentString, 10)
 		if !ok {
 			errorMessage := fmt.Sprintf("not a valid big integer: %s", cumulativePaymentString)

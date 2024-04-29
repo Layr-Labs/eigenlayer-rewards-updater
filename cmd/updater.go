@@ -82,7 +82,7 @@ func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
 	return nil
 }
 
-// updaterCmd represents the updater command
+// distribution represents the updater command
 var updaterCmd = &cobra.Command{
 	Use:   "updater",
 	Short: "Generate and update payments merkle tree",
