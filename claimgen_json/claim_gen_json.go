@@ -91,14 +91,14 @@ func GenerateProofFromJSON(
 }
 
 func GenerateProofFromJSONForSolidity(
-	filePath string,
+	inputTreeFilePath string,
 	outputPath string,
 	rootIndex uint32,
 	earner gethcommon.Address,
 	tokens []gethcommon.Address,
 	prettyJson bool,
 ) (*claimProver.IPaymentCoordinatorPaymentMerkleClaimStrings, error) {
-	jsonFile, err := os.Open(filePath)
+	jsonFile, err := os.Open(inputTreeFilePath)
 	if err != nil {
 		return nil, err
 	}
