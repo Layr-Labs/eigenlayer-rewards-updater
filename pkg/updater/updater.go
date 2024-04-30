@@ -3,6 +3,7 @@ package updater
 import (
 	"context"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
 	"math/big"
 )
@@ -25,19 +26,19 @@ func NewUpdater(
 	}, nil
 }
 
-func (u *Updater) Update(ctx context.Context) error {
+func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	// get the current distribution
 	u.logger.Sugar().Info("getting current distribution")
 	distribution, calculatedUntilTimestamp, err := u.distributionDataService.GetDistributionToSubmit(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// merklize the distribution roots
 	u.logger.Sugar().Info("merklizing distribution roots")
 	accountTree, _, err := distribution.Merklize()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var newRoot [32]byte
@@ -46,8 +47,8 @@ func (u *Updater) Update(ctx context.Context) error {
 	// send the merkle root to the smart contract
 	u.logger.Sugar().Info("updating payments")
 	if err := u.transactor.SubmitRoot(ctx, newRoot, big.NewInt(calculatedUntilTimestamp)); err != nil {
-		return err
+		return accountTree, err
 	}
 
-	return nil
+	return accountTree, nil
 }

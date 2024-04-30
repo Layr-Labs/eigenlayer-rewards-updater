@@ -33,7 +33,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService, logger)
 	assert.Nil(t, err)
 
-	err = updater.Update(context.Background())
+	_, err = updater.Update(context.Background())
 
 	assert.Nil(t, err)
 }

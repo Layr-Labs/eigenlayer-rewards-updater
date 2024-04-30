@@ -164,8 +164,8 @@ func (d *Distribution) GetStart() *orderedmap.Pair[gethcommon.Address, *orderedm
 }
 
 // Merklizes the distribution and returns the account tree and the token trees.
-// TODO: Do we need to have an option to merklize without all returning all the token trees and data?
 func (d *Distribution) Merklize() (*merkletree.MerkleTree, map[gethcommon.Address]*merkletree.MerkleTree, error) {
+	// TODO: Do we need to have an option to merklize without all returning all the token trees and data?
 	tokenTrees := make(map[gethcommon.Address]*merkletree.MerkleTree, d.data.Len())
 
 	// todo: parallelize this
