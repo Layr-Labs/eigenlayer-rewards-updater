@@ -2,8 +2,8 @@ package services
 
 import (
 	"context"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

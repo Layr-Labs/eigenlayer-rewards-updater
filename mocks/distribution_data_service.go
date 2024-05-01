@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	distribution "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	distribution "github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	mock "github.com/stretchr/testify/mock"
 )
 
