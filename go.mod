@@ -4,7 +4,7 @@ go 1.22.2
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
-	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501151056-799556511f9c
+	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501184349-03da13d119a9
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0

@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"go.uber.org/zap"
-	"math/big"
-
-	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 var ErrNewDistributionNotCalculated = fmt.Errorf("new distribution not calculated")
@@ -49,7 +46,7 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 
 	// get the latest calculated timestamp from the database
 	var timestamp int64
-	err = dds.db.QueryRow(fmt.Sprintf(getMaxTimestampQuery, dds.config.EnvNetwork)).Scan(&timestamp)
+	err = dds.db.QueryRow(getMaxTimestampQuery).Scan(&timestamp)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -80,6 +77,8 @@ func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx conte
 		return nil, 0, err
 	}
 
+	dds.config.Logger.Sugar().Debugf("Got timestamp '%d'", latestSubmittedTimestamp)
+
 	d, err := dds.populateDistributionFromTable(ctx, int64(latestSubmittedTimestamp))
 	if err != nil {
 		return nil, 0, err
@@ -90,7 +89,7 @@ func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx conte
 
 func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, timestamp int64) (*distribution.Distribution, error) {
 	d := distribution.NewDistribution()
-	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, dds.config.EnvNetwork, timestamp))
+	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, timestamp))
 	if err != nil {
 		return nil, err
 	}
@@ -105,30 +104,12 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 			return nil, err
 		}
 
-		earner := gethcommon.HexToAddress(earnerString)
-		token := gethcommon.HexToAddress(tokenString)
-
-		// If the payment is an empty string, assume 0
-		if cumulativePaymentString == "" {
-			cumulativePaymentString = "0"
-			dds.config.Logger.Sugar().Info("Found row with empty amount",
-				zap.String("earner", earner.String()),
-				zap.String("token", token.String()),
-			)
-		}
-
-		cumulativePayment, ok := new(big.Int).SetString(cumulativePaymentString, 10)
-		if !ok {
-			errorMessage := fmt.Sprintf("not a valid big integer: %s", cumulativePaymentString)
-			dds.config.Logger.Sugar().Error(
-				errorMessage,
-				zap.String("cumulativePaymentString", cumulativePaymentString),
-			)
-			return nil, fmt.Errorf(errorMessage)
-		}
-
-		d.Set(earner, token, cumulativePayment)
+		d.LoadLine(&distribution.EarnerLine{
+			Earner:           earnerString,
+			Token:            tokenString,
+			CumulativeAmount: cumulativePaymentString,
+		})
 	}
-
+	fmt.Printf("Distribution: %+v\n", d)
 	return d, nil
 }

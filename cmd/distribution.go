@@ -64,6 +64,10 @@ func run(
 		logger.Sugar().Errorf("Failed to create athena driver config", zap.Error(err))
 		return nil, err
 	}
+	slo := drv.NewServiceLimitOverride()
+	slo.SetDMLQueryTimeout(10)
+	conf.SetWorkGroup(drv.NewDefaultWG("eigenLabs_workgroup", nil, nil))
+	conf.SetServiceLimitOverride(*slo)
 
 	// Step 2. Open Connection.
 	db, err := sql.Open(drv.DriverName, conf.Stringify())
@@ -83,7 +87,7 @@ func run(
 		Logger:     logger,
 	})
 
-	distro, ts, err := dds.GetLatestSubmittedDistribution(ctx)
+	distro, ts, err := dds.GetDistributionToSubmit(ctx)
 	if err != nil {
 		return nil, err
 	}
