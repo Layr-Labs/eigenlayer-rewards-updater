@@ -88,8 +88,10 @@ func runClaimgen(
 
 	tokenAddresses := make([]gethcommon.Address, 0)
 	for _, t := range config.Tokens {
+		t = t
 		tokenAddresses = append(tokenAddresses, gethcommon.HexToAddress(t))
 	}
+	fmt.Printf("Tokens: %+v\n", tokenAddresses)
 
 	accounts, claim, err := cg.GenerateClaimProofForEarner(
 		gethcommon.HexToAddress(config.EarnerAddress),
