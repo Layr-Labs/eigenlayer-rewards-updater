@@ -9,6 +9,10 @@ github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501151056-799556511f9
 github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501151056-799556511f9c/go.mod h1:TFLVXA1ArPh23GKab8kTMrm7ZfNa9Jrk3sU501SlW98=
 github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501184349-03da13d119a9 h1:Tc/wqItecd1ykcVDE1S+MRGp0KixakSlgV9690SW7Ic=
 github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501184349-03da13d119a9/go.mod h1:TFLVXA1ArPh23GKab8kTMrm7ZfNa9Jrk3sU501SlW98=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501205955-5a78803568ad h1:bMM5shkQXqqPVjIOl+hg2b/zqRXCQg1QIzBycqWV+N8=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501205955-5a78803568ad/go.mod h1:TFLVXA1ArPh23GKab8kTMrm7ZfNa9Jrk3sU501SlW98=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501211720-3876608382bd h1:PPmcbmv+gFzY1zjAHijGj7Czxk89pJCy3fVzbzdZuR4=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240501211720-3876608382bd/go.mod h1:TFLVXA1ArPh23GKab8kTMrm7ZfNa9Jrk3sU501SlW98=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/StackExchange/wmi v1.2.1 h1:VIkavFPXSjcnS+O8yTq7NI32k0R5Aj+v39y29VYDOSA=

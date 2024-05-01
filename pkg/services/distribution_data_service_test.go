@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testTimestamp int64 = 1712127631
+var testTimestamp int32 = 1712127631
 
 func TestGetDistributionToSubmit(t *testing.T) {
 	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
@@ -34,7 +34,7 @@ func TestGetDistributionToSubmit(t *testing.T) {
 
 	// return test timestamp from chain
 	mockTransactor := &mocks.Transactor{}
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint32(testTimestamp), nil)
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -82,7 +82,7 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 	}
 
 	mockTransactor := &mocks.Transactor{}
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint32(testTimestamp), nil)
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -116,7 +116,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	}
 
 	mockTransactor := &mocks.Transactor{}
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint32(testTimestamp), nil)
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -162,6 +162,6 @@ func getDistributionAndPaymentRows() (*distribution.Distribution, *sqlmock.Rows)
 	return d, rows
 }
 
-func getMaxTimestampRows(timestamp int64) *sqlmock.Rows {
+func getMaxTimestampRows(timestamp int32) *sqlmock.Rows {
 	return sqlmock.NewRows([]string{"_col0"}).AddRow(timestamp)
 }

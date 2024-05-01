@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
 	"math/big"
@@ -13,9 +14,10 @@ import (
 const FINALIZATION_DEPTH = 100
 
 type Transactor interface {
-	CurrPaymentCalculationEndTimestamp() (uint64, error)
+	CurrPaymentCalculationEndTimestamp() (uint32, error)
 	GetRootIndex(root [32]byte) (uint32, error)
 	SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error
+	GetPaymentCoordinator() *paymentCoordinator.ContractIPaymentCoordinator
 }
 
 type TransactorImpl struct {
@@ -35,7 +37,7 @@ func NewTransactor(chainClient *pkg.ChainClient, paymentCoordinatorAddress gethc
 	}, nil
 }
 
-func (t *TransactorImpl) CurrPaymentCalculationEndTimestamp() (uint64, error) {
+func (t *TransactorImpl) CurrPaymentCalculationEndTimestamp() (uint32, error) {
 	return t.PaymentCoordinator.CurrPaymentCalculationEndTimestamp(&bind.CallOpts{})
 }
 
@@ -45,13 +47,15 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 
 func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
 	// todo: params
-	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsCalculatedUntilTimestamp.Uint64())
+	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, uint32(paymentsCalculatedUntilTimestamp.Uint64()))
 	if err != nil {
+		fmt.Printf("Payment coordinator, failed to submit root: %+v - %+v\n", err, tx)
 		return err
 	}
 
 	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(ctx, tx, "submitRoot")
 	if err != nil {
+		fmt.Printf("Failed to estimate gas: %+v\n", err)
 		return err
 	}
 
@@ -60,4 +64,8 @@ func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, payments
 	}
 
 	return nil
+}
+
+func (t *TransactorImpl) GetPaymentCoordinator() *paymentCoordinator.ContractIPaymentCoordinator {
+	return t.PaymentCoordinator
 }

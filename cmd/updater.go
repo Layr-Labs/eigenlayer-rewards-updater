@@ -47,6 +47,10 @@ func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
 		logger.Sugar().Errorf("Failed to create athena driver config", zap.Error(err))
 		return err
 	}
+	slo := drv.NewServiceLimitOverride()
+	slo.SetDMLQueryTimeout(10)
+	conf.SetWorkGroup(drv.NewDefaultWG("eigenLabs_workgroup", nil, nil))
+	conf.SetServiceLimitOverride(*slo)
 
 	// Step 2. Open Connection.
 	db, err := sql.Open(drv.DriverName, conf.Stringify())

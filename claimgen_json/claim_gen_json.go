@@ -2,21 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	claimProver "github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
-	"io"
-	"log"
-	"os"
-	"time"
-
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"io"
+	"os"
 )
 
 // TODO: Update this to take CLI arguments to generate proofs
 func main() {
-	currentUnixTime := time.Now().Unix()
+	/*currentUnixTime := time.Now().Unix()
 	inputPath := "claimgen_json/test_data/distribution_data3.json"
 	outputPath := fmt.Sprintf("claimgen_json/test_data/data_output_%d.json", currentUnixTime)
 	rootIndex := uint32(0)
@@ -39,7 +35,14 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalln(err)
+	}*/
+	/*addrString := gethcommon.HexToAddress("0x2222aac0c980cc029624b7ff55b88bc6f63c538f")
+	tokens := []gethcommon.Address{
+		gethcommon.HexToAddress("0x94373a4919b3240d86ea41593d5eba789fef3848"),
 	}
+
+	distro := distribution.NewDistribution()*/
+
 }
 
 func GenerateProofFromJSON(

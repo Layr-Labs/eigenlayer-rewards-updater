@@ -15,7 +15,7 @@ type DistributionDataService struct {
 }
 
 // GetDistributionToSubmit provides a mock function with given fields: ctx
-func (_m *DistributionDataService) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
+func (_m *DistributionDataService) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int32, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
@@ -23,9 +23,9 @@ func (_m *DistributionDataService) GetDistributionToSubmit(ctx context.Context) 
 	}
 
 	var r0 *distribution.Distribution
-	var r1 int64
+	var r1 int32
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*distribution.Distribution, int64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*distribution.Distribution, int32, error)); ok {
 		return rf(ctx)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) *distribution.Distribution); ok {
@@ -36,10 +36,10 @@ func (_m *DistributionDataService) GetDistributionToSubmit(ctx context.Context) 
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) int64); ok {
+	if rf, ok := ret.Get(1).(func(context.Context) int32); ok {
 		r1 = rf(ctx)
 	} else {
-		r1 = ret.Get(1).(int64)
+		r1 = ret.Get(1).(int32)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
@@ -52,7 +52,7 @@ func (_m *DistributionDataService) GetDistributionToSubmit(ctx context.Context) 
 }
 
 // GetLatestSubmittedDistribution provides a mock function with given fields: ctx
-func (_m *DistributionDataService) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
+func (_m *DistributionDataService) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int32, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
@@ -60,9 +60,9 @@ func (_m *DistributionDataService) GetLatestSubmittedDistribution(ctx context.Co
 	}
 
 	var r0 *distribution.Distribution
-	var r1 int64
+	var r1 int32
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*distribution.Distribution, int64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*distribution.Distribution, int32, error)); ok {
 		return rf(ctx)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) *distribution.Distribution); ok {
@@ -73,10 +73,10 @@ func (_m *DistributionDataService) GetLatestSubmittedDistribution(ctx context.Co
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) int64); ok {
+	if rf, ok := ret.Get(1).(func(context.Context) int32); ok {
 		r1 = rf(ctx)
 	} else {
-		r1 = ret.Get(1).(int64)
+		r1 = ret.Get(1).(int32)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
