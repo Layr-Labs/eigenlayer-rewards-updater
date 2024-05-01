@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"go.uber.org/zap"
 	"math/big"
 

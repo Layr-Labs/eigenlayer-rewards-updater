@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/bindings/IPaymentCoordinator"
-	claimProver "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/claimgen"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	claimProver "github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/claimgen"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
 	"io"
 	"log"
 	"os"
@@ -58,19 +57,17 @@ func GenerateProofFromJSON(
 
 	byteValue, _ := io.ReadAll(jsonFile)
 
-	distro := distribution.NewDistribution()
-	err = distro.UnmarshalJSON(byteValue)
+	distro, err := distribution.NewDistributionWithData(byteValue)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 
-	_, merkleClaim, err := claimProver.GenerateClaimProofForEarner(
-		ctx,
+	cg := claimProver.NewClaimgen(distro)
+
+	_, merkleClaim, err := cg.GenerateClaimProofForEarner(
 		earner,
 		tokens,
 		rootIndex,
-		distro,
 	)
 	if err != nil {
 		return nil, err
@@ -106,25 +103,23 @@ func GenerateProofFromJSONForSolidity(
 
 	byteValue, _ := io.ReadAll(jsonFile)
 
-	distro := distribution.NewDistribution()
-	err = distro.UnmarshalJSON(byteValue)
+	distro, err := distribution.NewDistributionWithData(byteValue)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx := context.Background()
-	merkleTree, merkleClaim, err := claimProver.GenerateClaimProofForEarner(
-		ctx,
+	cg := claimProver.NewClaimgen(distro)
+
+	accountTree, merkleClaim, err := cg.GenerateClaimProofForEarner(
 		earner,
 		tokens,
 		rootIndex,
-		distro,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	solidityMerkleClaim := claimProver.FormatProofForSolidity(merkleTree.Root(), merkleClaim)
+	solidityMerkleClaim := claimProver.FormatProofForSolidity(accountTree.Root(), merkleClaim)
 
 	var jsonData []byte
 	if prettyJson {

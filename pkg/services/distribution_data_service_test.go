@@ -3,10 +3,10 @@ package services_test
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"regexp"

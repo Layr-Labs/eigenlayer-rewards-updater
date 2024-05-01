@@ -4,6 +4,12 @@ Generates proofs for posting payments to chain that stakers and operators can cl
 
 ## Building
 
+_Note: if you are running into `go mod` issues, make sure you add this to your shell profile:_
+
+```bash
+export GOPRIVATE=github.com/Layr-Labs/*
+```
+
 ```bash
 git clone git@github.com:Layr-Labs/eigenlayer-payment-updater.git
 

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"math/big"
 )
 
@@ -20,18 +20,6 @@ func GetTestDistribution() *distribution.Distribution {
 	for i := 0; i < len(TestAddresses); i++ {
 		for j := 0; j < len(TestTokens)-i; j++ {
 			d.Set(TestAddresses[i], TestTokens[j], big.NewInt(int64(j+i+1)))
-		}
-	}
-
-	return d
-}
-
-func GetCompleteTestDistribution() *distribution.Distribution {
-	d := distribution.NewDistribution()
-
-	for i := 0; i < len(TestAddresses); i++ {
-		for j := 0; j < len(TestTokens); j++ {
-			d.Set(TestAddresses[i], TestTokens[j], big.NewInt(int64(j+i+2)))
 		}
 	}
 
