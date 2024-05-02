@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var testTimestamp int64 = 1712127631
+var testTimestamp int32 = 1712127631
 
 func TestUpdaterUpdate(t *testing.T) {
 	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
@@ -28,7 +28,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	copy(root[:], rootBytes)
 
 	mockDistributionDataService.On("GetDistributionToSubmit", mock.Anything).Return(d, testTimestamp, nil)
-	mockTransactor.On("SubmitRoot", mock.Anything, root, big.NewInt(testTimestamp)).Return(nil)
+	mockTransactor.On("SubmitRoot", mock.Anything, root, big.NewInt(int64(testTimestamp))).Return(nil)
 
 	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService, logger)
 	assert.Nil(t, err)

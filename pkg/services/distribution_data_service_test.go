@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testTimestamp int64 = 1712127631
+var testTimestamp int32 = 1712127631
 
 func TestGetDistributionToSubmit(t *testing.T) {
 	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
@@ -34,7 +34,7 @@ func TestGetDistributionToSubmit(t *testing.T) {
 
 	// return test timestamp from chain
 	mockTransactor := &mocks.Transactor{}
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint32(testTimestamp), nil)
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -46,9 +46,9 @@ func TestGetDistributionToSubmit(t *testing.T) {
 	d, rows := getDistributionAndPaymentRows()
 
 	// return testTimestamp + 1 from db, so we've calculated a new distribution
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, envNetwork))).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
+	mock.ExpectQuery(regexp.QuoteMeta(services.GetMaxTimestampQuery)).WillReturnRows(getMaxTimestampRows(testTimestamp + 1))
 	// return the distribution rows
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, envNetwork, testTimestamp+1))).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, testTimestamp+1))).WillReturnRows(rows)
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
 		EnvNetwork: envNetwork,
@@ -82,7 +82,7 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 	}
 
 	mockTransactor := &mocks.Transactor{}
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint32(testTimestamp), nil)
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -91,7 +91,7 @@ func TestGetDistributionToSubmitWhenNoNewCalculations(t *testing.T) {
 	defer db.Close()
 
 	// return testTimestamp from db, so we haven't calculated a new distribution
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetMaxTimestampQuery, envNetwork))).WillReturnRows(getMaxTimestampRows(testTimestamp))
+	mock.ExpectQuery(regexp.QuoteMeta(services.GetMaxTimestampQuery)).WillReturnRows(getMaxTimestampRows(testTimestamp))
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
 		EnvNetwork: envNetwork,
@@ -116,7 +116,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	}
 
 	mockTransactor := &mocks.Transactor{}
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint64(testTimestamp), nil)
+	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(uint32(testTimestamp), nil)
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -128,7 +128,7 @@ func TestLatestSubmittedDistribution(t *testing.T) {
 	d, rows := getDistributionAndPaymentRows()
 
 	// return the distribution at testTimestamp from db
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, envNetwork, testTimestamp))).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf(services.GetPaymentsAtTimestampQuery, testTimestamp))).WillReturnRows(rows)
 
 	dds := services.NewDistributionDataService(db, mockTransactor, &services.DistributionDataServiceConfig{
 		EnvNetwork: envNetwork,
@@ -162,6 +162,6 @@ func getDistributionAndPaymentRows() (*distribution.Distribution, *sqlmock.Rows)
 	return d, rows
 }
 
-func getMaxTimestampRows(timestamp int64) *sqlmock.Rows {
+func getMaxTimestampRows(timestamp int32) *sqlmock.Rows {
 	return sqlmock.NewRows([]string{"_col0"}).AddRow(timestamp)
 }

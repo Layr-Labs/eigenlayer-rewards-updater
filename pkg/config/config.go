@@ -47,9 +47,25 @@ type DistributionConfig struct {
 	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
 	Output                    string      `mapstructure:"output"`
 }
+type ClaimConfig struct {
+	GlobalConfig
+	Environment               Environment `mapstructure:"environment"`
+	Network                   string      `mapstructure:"network"`
+	RPCUrl                    string      `mapstructure:"rpc_url"`
+	PrivateKey                string      `mapstructure:"private_key"`
+	AWSAccessKeyId            string      `mapstructure:"aws_access_key_id"`
+	AWSSecretAccessKey        string      `mapstructure:"aws_secret_access_key"`
+	AWSRegion                 string      `mapstructure:"aws_region"`
+	S3OutputBucket            string      `mapstructure:"s3_output_bucket"`
+	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
+	Output                    string      `mapstructure:"output"`
+	EarnerAddress             string      `mapstructure:"earner_address"`
+	Tokens                    []string    `mapstructure:"tokens"`
+}
 
 var updaterConfig *UpdaterConfig
 var distributionConfig *DistributionConfig
+var claimConfig *ClaimConfig
 
 // parseEnvironment normalizes environment names to an enum value
 func parseEnvironment(env string) Environment {
@@ -120,6 +136,27 @@ func NewDistributionConfig() *DistributionConfig {
 	}
 	return distributionConfig
 }
+func NewClaimConfig() *ClaimConfig {
+	claimConfig = &ClaimConfig{
+		GlobalConfig: GlobalConfig{
+			Config: viper.GetString("config"),
+			Debug:  viper.GetBool("debug"),
+		},
+		Environment:               parseEnvironment(viper.GetString("environment")),
+		Network:                   viper.GetString("network"),
+		RPCUrl:                    viper.GetString("rpc_url"),
+		PrivateKey:                viper.GetString("private_key"),
+		AWSAccessKeyId:            viper.GetString("aws_access_key_id"),
+		AWSSecretAccessKey:        viper.GetString("aws_secret_access_key"),
+		AWSRegion:                 viper.GetString("aws_region"),
+		S3OutputBucket:            viper.GetString("s3_output_bucket"),
+		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
+		Output:                    viper.GetString("output"),
+		EarnerAddress:             viper.GetString("earner_address"),
+		Tokens:                    viper.GetStringSlice("tokens"),
+	}
+	return claimConfig
+}
 
 func getEnvNetwork(environment Environment, network string) (string, error) {
 	envString, err := StringEnvironmentFromEnum(environment)
@@ -136,6 +173,11 @@ func (c *UpdaterConfig) GetEnvNetwork() (string, error) {
 
 // GetEnvNetwork returns a string concatenation of "{environment}_{network}"
 func (d *DistributionConfig) GetEnvNetwork() (string, error) {
+	return getEnvNetwork(d.Environment, d.Network)
+}
+
+// GetEnvNetwork returns a string concatenation of "{environment}_{network}"
+func (d *ClaimConfig) GetEnvNetwork() (string, error) {
 	return getEnvNetwork(d.Environment, d.Network)
 }
 

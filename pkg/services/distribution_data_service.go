@@ -6,19 +6,16 @@ import (
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"go.uber.org/zap"
-	"math/big"
-
-	gethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 var ErrNewDistributionNotCalculated = fmt.Errorf("new distribution not calculated")
 
 type DistributionDataService interface {
 	// Gets the latest calculated distribution that has not been submitted to the chain and the timestamp it which it was calculated until
-	GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error)
+	GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int32, error)
 
 	// Gets the latest submitted distribution
-	GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error)
+	GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int32, error)
 }
 
 type DistributionDataServiceConfig struct {
@@ -40,7 +37,7 @@ func NewDistributionDataService(db *sql.DB, transactor Transactor, cfg *Distribu
 	}
 }
 
-func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int64, error) {
+func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Context) (*distribution.Distribution, int32, error) {
 	// get latest submitted timestamp from the chain
 	latestSubmittedTimestamp, err := dds.transactor.CurrPaymentCalculationEndTimestamp()
 	if err != nil {
@@ -48,21 +45,21 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 	}
 
 	// get the latest calculated timestamp from the database
-	var timestamp int64
-	err = dds.db.QueryRow(fmt.Sprintf(getMaxTimestampQuery, dds.config.EnvNetwork)).Scan(&timestamp)
+	var timestamp int32
+	err = dds.db.QueryRow(getMaxTimestampQuery).Scan(&timestamp)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// if the latest submitted timestamp is >= the latest calculated timestamp, return an error
-	if int64(latestSubmittedTimestamp) >= timestamp {
+	if int32(latestSubmittedTimestamp) >= timestamp {
 		return nil, 0, fmt.Errorf("%w - latest submitted: %d, latest calculated: %d", ErrNewDistributionNotCalculated, latestSubmittedTimestamp, timestamp)
 	}
 
 	dds.config.Logger.Sugar().Info(
 		fmt.Sprintf("Latest submitted timestamp: %d, Latest calculated timestamp: %d", latestSubmittedTimestamp, timestamp),
-		zap.Int64("timestamp", timestamp),
-		zap.Uint64("latestSubmittedTimestamp", latestSubmittedTimestamp),
+		zap.Int32("timestamp", timestamp),
+		zap.Uint32("latestSubmittedTimestamp", latestSubmittedTimestamp),
 	)
 
 	d, err := dds.populateDistributionFromTable(ctx, timestamp)
@@ -73,24 +70,26 @@ func (dds *DistributionDataServiceImpl) GetDistributionToSubmit(ctx context.Cont
 	return d, timestamp, err
 }
 
-func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int64, error) {
+func (dds *DistributionDataServiceImpl) GetLatestSubmittedDistribution(ctx context.Context) (*distribution.Distribution, int32, error) {
 	// get latest submitted timestamp from the chain
 	latestSubmittedTimestamp, err := dds.transactor.CurrPaymentCalculationEndTimestamp()
 	if err != nil {
 		return nil, 0, err
 	}
 
-	d, err := dds.populateDistributionFromTable(ctx, int64(latestSubmittedTimestamp))
+	dds.config.Logger.Sugar().Debugf("Got timestamp '%d'", latestSubmittedTimestamp)
+
+	d, err := dds.populateDistributionFromTable(ctx, int32(latestSubmittedTimestamp))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return d, int64(latestSubmittedTimestamp), err
+	return d, int32(latestSubmittedTimestamp), err
 }
 
-func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, timestamp int64) (*distribution.Distribution, error) {
+func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx context.Context, timestamp int32) (*distribution.Distribution, error) {
 	d := distribution.NewDistribution()
-	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, dds.config.EnvNetwork, timestamp))
+	rows, err := dds.db.Query(fmt.Sprintf(GetPaymentsAtTimestampQuery, timestamp))
 	if err != nil {
 		return nil, err
 	}
@@ -105,30 +104,12 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 			return nil, err
 		}
 
-		earner := gethcommon.HexToAddress(earnerString)
-		token := gethcommon.HexToAddress(tokenString)
-
-		// If the payment is an empty string, assume 0
-		if cumulativePaymentString == "" {
-			cumulativePaymentString = "0"
-			dds.config.Logger.Sugar().Info("Found row with empty amount",
-				zap.String("earner", earner.String()),
-				zap.String("token", token.String()),
-			)
-		}
-
-		cumulativePayment, ok := new(big.Int).SetString(cumulativePaymentString, 10)
-		if !ok {
-			errorMessage := fmt.Sprintf("not a valid big integer: %s", cumulativePaymentString)
-			dds.config.Logger.Sugar().Error(
-				errorMessage,
-				zap.String("cumulativePaymentString", cumulativePaymentString),
-			)
-			return nil, fmt.Errorf(errorMessage)
-		}
-
-		d.Set(earner, token, cumulativePayment)
+		d.LoadLine(&distribution.EarnerLine{
+			Earner:           earnerString,
+			Token:            tokenString,
+			CumulativeAmount: cumulativePaymentString,
+		})
 	}
-
+	fmt.Printf("Distribution: %+v\n", d)
 	return d, nil
 }
