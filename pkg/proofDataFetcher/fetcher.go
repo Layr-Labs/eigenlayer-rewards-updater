@@ -2,13 +2,17 @@ package proofDataFetcher
 
 import (
 	"encoding/json"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/wealdtech/go-merkletree/v2"
 	"net/http"
 	"time"
 )
 
 type ProofDataFetcher interface {
-	FetchProofDataForDate(date string) error
-	FetchRecentSnapshotList() ([]Snapshot, error)
+	FetchClaimAmountsForDate(date string) (*PaymentProofData, error)
+	FetchRecentSnapshotList() ([]*Snapshot, error)
+	FetchLatestSnapshot() (*Snapshot, error)
 }
 
 type HTTPClient interface {
@@ -38,4 +42,11 @@ func (s *Snapshot) UnmarshalJSON(data []byte) error {
 		}
 	}
 	return nil
+}
+
+type PaymentProofData struct {
+	Distribution *distribution.Distribution
+	AccountTree  *merkletree.MerkleTree
+	TokenTree    map[common.Address]*merkletree.MerkleTree
+	Hash         string
 }

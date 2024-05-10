@@ -233,3 +233,7 @@ func GetFullTestEarnerLines() string {
 {"earner":"0x2349a5b27700b3a19178c07a81bd407a916ad07a","token":"0x3f1c547b21f65e10480de3ad8e19faac46c95034","snapshot":1713916800000,"cumulative_amount":228239278067823.0}
 `
 }
+
+func GetFullSnapshotDatesList() string {
+	return `[{"snapshot_date":1715040000000},{"snapshot_date":1714953600000},{"snapshot_date":1714867200000},{"snapshot_date":1714780800000},{"snapshot_date":1714694400000},{"snapshot_date":1714608000000},{"snapshot_date":1714521600000},{"snapshot_date":1714435200000},{"snapshot_date":1714348800000},{"snapshot_date":1714262400000}]`
+}

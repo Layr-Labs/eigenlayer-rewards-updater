@@ -7,6 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -17,34 +18,38 @@ import (
 	drv "github.com/uber/athenadriver/go"
 	"go.uber.org/zap"
 	"log"
+	"net/http"
 )
 
-func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
+func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
 	ctx := context.Background()
 
-	ethClient, err := ethclient.Dial(config.RPCUrl)
+	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
 		fmt.Println("Failed to create new eth client")
 		logger.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
 		return err
 	}
 
-	chainClient, err := pkg.NewChainClient(ethClient, config.PrivateKey)
+	chainClient, err := pkg.NewChainClient(ethClient, cfg.PrivateKey)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return err
 	}
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(config.PaymentCoordinatorAddress))
+	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
+	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, logger)
+
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
 	if err != nil {
 		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return err
 	}
 
 	// Step 1. Set AWS Credential in Driver Config.
-	conf, err := drv.NewDefaultConfig(config.S3OutputBucket, config.AWSRegion, config.AWSAccessKeyId, config.AWSSecretAccessKey)
+	conf, err := drv.NewDefaultConfig(cfg.S3OutputBucket, cfg.AWSRegion, cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to create athena driver config", zap.Error(err))
+		logger.Sugar().Errorf("Failed to create athena driver cfg", zap.Error(err))
 		return err
 	}
 	slo := drv.NewServiceLimitOverride()
@@ -60,7 +65,7 @@ func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
 	}
 	defer db.Close()
 
-	envNetwork, err := config.GetEnvNetwork()
+	envNetwork, err := cfg.GetEnvNetwork()
 	if err != nil {
 		logger.Sugar().Errorf("Failed to get EnvNetwork", zap.Error(err))
 		return err
@@ -70,7 +75,7 @@ func runUpdater(config *config.UpdaterConfig, logger *zap.Logger) error {
 		Logger:     logger,
 	})
 
-	u, err := updater.NewUpdater(transactor, dds, logger)
+	u, err := updater.NewUpdater(transactor, dds, dataFetcher, logger)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create updater", zap.Error(err))
 		return err

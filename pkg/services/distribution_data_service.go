@@ -94,22 +94,25 @@ func (dds *DistributionDataServiceImpl) populateDistributionFromTable(ctx contex
 		return nil, err
 	}
 
+	earners := []*distribution.EarnerLine{}
+
 	// populate the distribution
 	for rows.Next() {
 		var earnerString string
 		var tokenString string
-		var cumulativePaymentString string
+		var cumulativePaymentString uint64
 		err := rows.Scan(&earnerString, &tokenString, &cumulativePaymentString)
 		if err != nil {
 			return nil, err
 		}
 
-		d.LoadLine(&distribution.EarnerLine{
+		earners = append(earners, &distribution.EarnerLine{
 			Earner:           earnerString,
 			Token:            tokenString,
-			CumulativeAmount: cumulativePaymentString,
+			CumulativeAmount: float64(cumulativePaymentString),
 		})
 	}
+	d.LoadLines(earners)
 	fmt.Printf("Distribution: %+v\n", d)
 	return d, nil
 }

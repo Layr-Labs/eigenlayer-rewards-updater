@@ -32,6 +32,7 @@ type UpdaterConfig struct {
 	AWSRegion                 string      `mapstructure:"aws_region"`
 	S3OutputBucket            string      `mapstructure:"s3_output_bucket"`
 	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
+	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 }
 
 type DistributionConfig struct {
@@ -113,6 +114,7 @@ func NewUpdaterConfig() *UpdaterConfig {
 		AWSRegion:                 viper.GetString("aws_region"),
 		S3OutputBucket:            viper.GetString("s3_output_bucket"),
 		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
+		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 	}
 	return updaterConfig
 }

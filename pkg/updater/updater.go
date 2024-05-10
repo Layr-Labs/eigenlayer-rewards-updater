@@ -3,48 +3,68 @@ package updater
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
 	"math/big"
+	"time"
 )
 
 type Updater struct {
 	transactor              services.Transactor
 	distributionDataService services.DistributionDataService
 	logger                  *zap.Logger
+	proofDataFetcher        proofDataFetcher.ProofDataFetcher
 }
 
 func NewUpdater(
 	transactor services.Transactor,
 	distributionDataService services.DistributionDataService,
+	fetcher proofDataFetcher.ProofDataFetcher,
 	logger *zap.Logger,
 ) (*Updater, error) {
 	return &Updater{
 		transactor:              transactor,
 		distributionDataService: distributionDataService,
 		logger:                  logger,
+		proofDataFetcher:        fetcher,
 	}, nil
 }
 
 func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
-	// get the current distribution
-	u.logger.Sugar().Info("getting current distribution")
-	distribution, calculatedUntilTimestamp, err := u.distributionDataService.GetDistributionToSubmit(ctx)
+	// Get the most recent snapshot timestamp
+	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot()
 	if err != nil {
 		return nil, err
 	}
 
-	// merklize the distribution roots
-	u.logger.Sugar().Info("merklizing distribution roots")
-	accountTree, _, err := distribution.Merklize()
+	u.logger.Sugar().Debugf("latest snapshot: %s", latestSnapshot.GetDateString())
+
+	// Grab latest submitted timestamp directly from chain
+	latestSubmittedTimestamp, err := u.transactor.CurrPaymentCalculationEndTimestamp()
+	lst := time.Unix(int64(latestSubmittedTimestamp), 0).UTC()
+
+	u.logger.Sugar().Debugf("latest submitted timestamp: %s", lst.Format(time.DateOnly))
+
+	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
+	if lst.Equal(latestSnapshot.SnapshotDate) {
+		return nil, fmt.Errorf("latest snapshot is the most recent payment")
+	}
+	// If the most recent snapshot timestamp is less than whats already on chain, we have a problem
+	if lst.After(latestSnapshot.SnapshotDate) {
+		return nil, fmt.Errorf("recent snapshot occurs before latest submitted timestamp")
+	}
+
+	// Get the data for the latest snapshot and load it into a distribution instance
+	paymentProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(latestSnapshot.GetDateString())
 	if err != nil {
-		u.logger.Sugar().Debug("Failed to merklize distribution roots", zap.Error(err))
 		return nil, err
 	}
 
-	newRoot := accountTree.Root()
+	newRoot := paymentProofData.AccountTree.Root()
+	calculatedUntilTimestamp := latestSnapshot.SnapshotDate.UTC().Unix()
 
 	// send the merkle root to the smart contract
 	u.logger.Sugar().Info("updating payments", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
@@ -52,8 +72,8 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), big.NewInt(int64(calculatedUntilTimestamp))); err != nil {
 		fmt.Printf("Failed to submit root: %v\n", err)
 		u.logger.Sugar().Error("Failed to submit root", zap.Error(err))
-		return accountTree, err
+		return paymentProofData.AccountTree, err
 	}
 
-	return accountTree, nil
+	return paymentProofData.AccountTree, nil
 }

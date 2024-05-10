@@ -30,7 +30,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	mockDistributionDataService.On("GetDistributionToSubmit", mock.Anything).Return(d, testTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, big.NewInt(int64(testTimestamp))).Return(nil)
 
-	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService, logger)
+	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService, nil, logger)
 	assert.Nil(t, err)
 
 	_, err = updater.Update(context.Background())
