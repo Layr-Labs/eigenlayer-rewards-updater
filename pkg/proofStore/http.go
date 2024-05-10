@@ -19,6 +19,7 @@ type HTTPProofStore struct {
 
 	RecentPayments []SubmittedPayment
 	ActivePayment  *SubmittedPayment
+	Snapshots      []Snapshot
 	Proofs         map[string]*PaymentProofData
 	logger         *zap.Logger
 }
