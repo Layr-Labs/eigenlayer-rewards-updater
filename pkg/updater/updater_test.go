@@ -19,8 +19,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var testTimestamp int32 = 1712127631
-
 type mockHttpClient struct {
 	mockDo func(r *http.Request) *http.Response
 }
@@ -65,11 +63,10 @@ func TestUpdaterUpdate(t *testing.T) {
 	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
 
 	mockTransactor := &mocks.Transactor{}
-	mockDistributionDataService := &mocks.DistributionDataService{}
 
 	fetcher := httpProofDataFetcher.NewHttpProofDataFetcher(baseUrl, env, network, mockClient, logger)
 
-	updater, err := updater.NewUpdater(mockTransactor, mockDistributionDataService, fetcher, logger)
+	updater, err := updater.NewUpdater(mockTransactor, fetcher, logger)
 	assert.Nil(t, err)
 
 	// setup data

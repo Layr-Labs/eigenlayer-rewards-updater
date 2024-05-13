@@ -12,23 +12,20 @@ import (
 )
 
 type Updater struct {
-	transactor              services.Transactor
-	distributionDataService services.DistributionDataService
-	logger                  *zap.Logger
-	proofDataFetcher        proofDataFetcher.ProofDataFetcher
+	transactor       services.Transactor
+	logger           *zap.Logger
+	proofDataFetcher proofDataFetcher.ProofDataFetcher
 }
 
 func NewUpdater(
 	transactor services.Transactor,
-	distributionDataService services.DistributionDataService,
 	fetcher proofDataFetcher.ProofDataFetcher,
 	logger *zap.Logger,
 ) (*Updater, error) {
 	return &Updater{
-		transactor:              transactor,
-		distributionDataService: distributionDataService,
-		logger:                  logger,
-		proofDataFetcher:        fetcher,
+		transactor:       transactor,
+		logger:           logger,
+		proofDataFetcher: fetcher,
 	}, nil
 }
 

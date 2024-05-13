@@ -65,17 +65,7 @@ func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
 	}
 	defer db.Close()
 
-	envNetwork, err := cfg.GetEnvNetwork()
-	if err != nil {
-		logger.Sugar().Errorf("Failed to get EnvNetwork", zap.Error(err))
-		return err
-	}
-	dds := services.NewDistributionDataService(db, transactor, &services.DistributionDataServiceConfig{
-		EnvNetwork: envNetwork,
-		Logger:     logger,
-	})
-
-	u, err := updater.NewUpdater(transactor, dds, dataFetcher, logger)
+	u, err := updater.NewUpdater(transactor, dataFetcher, logger)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create updater", zap.Error(err))
 		return err
