@@ -96,6 +96,7 @@ func init() {
 	updaterCmd.Flags().String("aws-region", "us-east-1", "us-east-1")
 	updaterCmd.Flags().String("s3-output-bucket", "", "s3://<bucket name and path>")
 	updaterCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
+	updaterCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 
 	updaterCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {

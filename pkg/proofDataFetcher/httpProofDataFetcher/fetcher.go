@@ -125,12 +125,18 @@ func (h *HttpProofDataFetcher) handleRequest(fullUrl string) ([]byte, error) {
 
 	rawBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		h.logger.Error("Failed to read response body", zap.Error(err))
+		h.logger.Error("Failed to read response body",
+			zap.String("url", fullUrl),
+			zap.Error(err),
+		)
 	}
 
 	if res.StatusCode >= 400 {
 		errMsg := fmt.Sprintf("Received error code '%d'", res.StatusCode)
-		h.logger.Sugar().Error(errMsg, zap.String("body", string(rawBody)))
+		h.logger.Sugar().Error(errMsg,
+			zap.String("url", fullUrl),
+			zap.String("body", string(rawBody)),
+		)
 		return nil, errors.New(errMsg)
 	}
 
