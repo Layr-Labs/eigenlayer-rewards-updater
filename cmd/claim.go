@@ -1,100 +1,80 @@
 package cmd
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	drv "github.com/uber/athenadriver/go"
 	"go.uber.org/zap"
 	"log"
+	"net/http"
 	"os"
 	"time"
 )
 
 func runClaimgen(
-	config *config.ClaimConfig,
-	logger *zap.Logger,
+	cfg *config.ClaimConfig,
+	l *zap.Logger,
 ) (
 	*claimgen.IPaymentCoordinatorPaymentMerkleClaimStrings,
 	error,
 ) {
-	ctx := context.Background()
-
-	ethClient, err := ethclient.Dial(config.RPCUrl)
+	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
 		fmt.Println("Failed to create new eth client")
-		logger.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
+		l.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
 		return nil, err
 	}
 
-	chainClient, err := pkg.NewChainClient(ethClient, config.PrivateKey)
+	chainClient, err := pkg.NewChainClient(ethClient, cfg.PrivateKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
+		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return nil, err
 	}
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(config.PaymentCoordinatorAddress))
+	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
+	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
+
+	claimDate := cfg.ClaimTimestamp
+
+	if cfg.ClaimTimestamp == "latest" {
+		l.Sugar().Info("Generating claim based on latest submitted payment")
+		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+		if err != nil {
+			l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
+			return nil, err
+		}
+
+		latestSubmittedTimestamp, err := transactor.CurrPaymentCalculationEndTimestamp()
+		claimDate = time.Unix(int64(latestSubmittedTimestamp), 0).UTC().Format(time.DateOnly)
+	}
+
+	proofData, err := dataFetcher.FetchClaimAmountsForDate(claimDate)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
+		l.Sugar().Errorf("Failed to fetch proof data", zap.Error(err))
 		return nil, err
 	}
 
-	// Step 1. Set AWS Credential in Driver Config.
-	conf, err := drv.NewDefaultConfig(config.S3OutputBucket, config.AWSRegion, config.AWSAccessKeyId, config.AWSSecretAccessKey)
-	if err != nil {
-		logger.Sugar().Errorf("Failed to create athena driver config", zap.Error(err))
-		return nil, err
-	}
-	slo := drv.NewServiceLimitOverride()
-	slo.SetDMLQueryTimeout(10)
-	conf.SetWorkGroup(drv.NewDefaultWG("eigenLabs_workgroup", nil, nil))
-	conf.SetServiceLimitOverride(*slo)
-
-	// Step 2. Open Connection.
-	db, err := sql.Open(drv.DriverName, conf.Stringify())
-	if err != nil {
-		logger.Sugar().Errorf("Failed to open database connection", zap.Error(err))
-		return nil, err
-	}
-	defer db.Close()
-
-	envNetwork, err := config.GetEnvNetwork()
-	if err != nil {
-		logger.Sugar().Errorf("Failed to get EnvNetwork", zap.Error(err))
-		return nil, err
-	}
-	dds := services.NewDistributionDataService(db, transactor, &services.DistributionDataServiceConfig{
-		EnvNetwork: envNetwork,
-		Logger:     logger,
-	})
-
-	distro, _, err := dds.GetLatestSubmittedDistribution(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	cg := claimgen.NewClaimgen(distro)
+	cg := claimgen.NewClaimgen(proofData.Distribution)
 
 	tokenAddresses := make([]gethcommon.Address, 0)
-	for _, t := range config.Tokens {
+	for _, t := range cfg.Tokens {
 		t = t
 		tokenAddresses = append(tokenAddresses, gethcommon.HexToAddress(t))
 	}
 	fmt.Printf("Tokens: %+v\n", tokenAddresses)
 
 	accounts, claim, err := cg.GenerateClaimProofForEarner(
-		gethcommon.HexToAddress(config.EarnerAddress),
+		gethcommon.HexToAddress(cfg.EarnerAddress),
 		tokenAddresses,
 		0,
 	)
@@ -105,7 +85,7 @@ func runClaimgen(
 	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
 
 	// transactor.GetPaymentCoordinator().ProcessClaim(&bind.TransactOpts{
-	// 	From:   gethcommon.HexToAddress(config.EarnerAddress),
+	// 	From:   gethcommon.HexToAddress(cfg.EarnerAddress),
 	// 	NoSend: true,
 	// })
 
@@ -162,14 +142,12 @@ func init() {
 	claimCmd.Flags().String("network", "localnet", "Which network to use")
 	claimCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	claimCmd.Flags().String("private-key", "", "An ethereum private key")
-	claimCmd.Flags().String("aws-access-key-id", "", "AWS access key ID")
-	claimCmd.Flags().String("aws-secret-access-key", "", "AWS secret access key")
-	claimCmd.Flags().String("aws-region", "us-east-1", "us-east-1")
-	claimCmd.Flags().String("s3-output-bucket", "", "s3://<bucket name and path>")
 	claimCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
 	claimCmd.Flags().String("output", "", "File to write output json to")
-	claimCmd.Flags().String("earnerAddress", "", "Address of the earner")
+	claimCmd.Flags().String("earner-address", "", "Address of the earner")
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")
+	claimCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
+	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the payment root to claim against")
 
 	claimCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {
