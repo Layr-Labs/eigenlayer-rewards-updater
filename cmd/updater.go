@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
@@ -29,7 +29,7 @@ func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
 		return err
 	}
 
-	chainClient, err := pkg.NewChainClient(ethClient, cfg.PrivateKey)
+	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return err

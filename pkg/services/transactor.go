@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
-
-const FINALIZATION_DEPTH = 100
 
 type Transactor interface {
 	CurrPaymentCalculationEndTimestamp() (uint32, error)
@@ -19,11 +17,11 @@ type Transactor interface {
 }
 
 type TransactorImpl struct {
-	ChainClient        *pkg.ChainClient
+	ChainClient        *chainClient.ChainClient
 	PaymentCoordinator *paymentCoordinator.ContractIPaymentCoordinator
 }
 
-func NewTransactor(chainClient *pkg.ChainClient, paymentCoordinatorAddress gethcommon.Address) (Transactor, error) {
+func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddress gethcommon.Address) (Transactor, error) {
 	paymentCoordinatorContract, err := paymentCoordinator.NewContractIPaymentCoordinator(paymentCoordinatorAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
@@ -58,7 +56,7 @@ func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, payments
 	}
 
 	if receipt.Status != 1 {
-		return pkg.ErrTransactionFailed
+		return chainClient.ErrTransactionFailed
 	}
 
 	return nil

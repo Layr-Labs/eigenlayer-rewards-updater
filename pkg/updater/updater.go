@@ -3,9 +3,9 @@ package updater
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
 	"time"
