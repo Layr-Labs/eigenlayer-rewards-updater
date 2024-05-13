@@ -38,19 +38,18 @@ func NewHttpProofDataFetcher(
 }
 
 func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.PaymentProofData, error) {
-	fullUrl := h.buildRecentSnapshotsUrl()
+	fullUrl := h.buildClaimAmountsUrl(date)
 
 	rawBody, err := h.handleRequest(fullUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	return h.processClaimAmountsFromRawBody(rawBody)
+	return h.ProcessClaimAmountsFromRawBody(rawBody)
 }
 
-func (h *HttpProofDataFetcher) processClaimAmountsFromRawBody(rawBody []byte) (*proofDataFetcher.PaymentProofData, error) {
+func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*proofDataFetcher.PaymentProofData, error) {
 	strLines := strings.Split(string(rawBody), "\n")
-
 	distro := distribution.NewDistribution()
 	lines := []*distribution.EarnerLine{}
 	for _, line := range strLines {
@@ -148,7 +147,7 @@ func (h *HttpProofDataFetcher) buildRecentSnapshotsUrl() string {
 }
 
 func (h *HttpProofDataFetcher) buildClaimAmountsUrl(snapshotDate string) string {
-	// <baseurl>/<env>/<network>/<snapshot_date>/claim_amounts.json
+	// <baseurl>/<env>/<network>/<snapshot_date>/claim-amounts.json
 	return fmt.Sprintf("%s/%s/%s/%s/claim-amounts.json",
 		h.BaseUrl,
 		h.Environment,

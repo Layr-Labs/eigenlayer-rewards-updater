@@ -8,7 +8,6 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/utils"
 	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
-	"math/big"
 	"time"
 )
 
@@ -64,13 +63,15 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	}
 
 	newRoot := paymentProofData.AccountTree.Root()
+
 	calculatedUntilTimestamp := latestSnapshot.SnapshotDate.UTC().Unix()
 
 	// send the merkle root to the smart contract
 	u.logger.Sugar().Info("updating payments", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
 
-	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), big.NewInt(int64(calculatedUntilTimestamp))); err != nil {
-		fmt.Printf("Failed to submit root: %v\n", err)
+	// return paymentProofData.AccountTree, nil
+	fmt.Printf("Calculated timestamp: %+v\n", calculatedUntilTimestamp)
+	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), uint32(calculatedUntilTimestamp)); err != nil {
 		u.logger.Sugar().Error("Failed to submit root", zap.Error(err))
 		return paymentProofData.AccountTree, err
 	}

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 )
@@ -16,7 +14,7 @@ const FINALIZATION_DEPTH = 100
 type Transactor interface {
 	CurrPaymentCalculationEndTimestamp() (uint32, error)
 	GetRootIndex(root [32]byte) (uint32, error)
-	SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error
+	SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error
 	GetPaymentCoordinator() *paymentCoordinator.ContractIPaymentCoordinator
 }
 
@@ -45,9 +43,9 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 	return s.PaymentCoordinator.GetRootIndexFromHash(&bind.CallOpts{}, root)
 }
 
-func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsCalculatedUntilTimestamp *big.Int) error {
+func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error {
 	// todo: params
-	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, uint32(paymentsCalculatedUntilTimestamp.Uint64()))
+	tx, err := t.PaymentCoordinator.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsUnixTimestamp)
 	if err != nil {
 		fmt.Printf("Payment coordinator, failed to submit root: %+v - %+v\n", err, tx)
 		return err
