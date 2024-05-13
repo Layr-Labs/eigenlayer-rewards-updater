@@ -1,108 +1,75 @@
 package cmd
 
 import (
-	"context"
-	"database/sql"
+	"encoding/json"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	drv "github.com/uber/athenadriver/go"
-	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
 	"log"
+	"net/http"
 	"os"
 	"time"
 )
 
 type Result struct {
-	distro      *distribution.Distribution
-	timestamp   int32
-	accountTree *merkletree.MerkleTree
-	tokenTree   map[gethcommon.Address]*merkletree.MerkleTree
+	LatestPaymentDate      string `json:"latestPaymentDate"`
+	MostRecentSnapshotDate string `json:"mostRecentSnapshotDate"`
 }
 
 func run(
-	config *config.DistributionConfig,
-	logger *zap.Logger,
+	cfg *config.DistributionConfig,
+	l *zap.Logger,
 ) (
 	result *Result,
 	err error,
 ) {
-	ctx := context.Background()
-	result = &Result{}
-
-	ethClient, err := ethclient.Dial(config.RPCUrl)
+	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
 		fmt.Println("Failed to create new eth client")
-		logger.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
+		l.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
 		return nil, err
 	}
 
-	chainClient, err := pkg.NewChainClient(ethClient, config.PrivateKey)
+	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
+		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return nil, err
 	}
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(config.PaymentCoordinatorAddress))
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
 	if err != nil {
-		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
+		l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return nil, err
 	}
 
-	// Step 1. Set AWS Credential in Driver Config.
-	conf, err := drv.NewDefaultConfig(config.S3OutputBucket, config.AWSRegion, config.AWSAccessKeyId, config.AWSSecretAccessKey)
-	if err != nil {
-		logger.Sugar().Errorf("Failed to create athena driver config", zap.Error(err))
-		return nil, err
-	}
-	slo := drv.NewServiceLimitOverride()
-	slo.SetDMLQueryTimeout(10)
-	conf.SetWorkGroup(drv.NewDefaultWG("eigenLabs_workgroup", nil, nil))
-	conf.SetServiceLimitOverride(*slo)
+	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
+	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
 
-	// Step 2. Open Connection.
-	db, err := sql.Open(drv.DriverName, conf.Stringify())
-	if err != nil {
-		logger.Sugar().Errorf("Failed to open database connection", zap.Error(err))
-		return nil, err
-	}
-	defer db.Close()
-
-	envNetwork, err := config.GetEnvNetwork()
-	if err != nil {
-		logger.Sugar().Errorf("Failed to get EnvNetwork", zap.Error(err))
-		return nil, err
-	}
-	dds := services.NewDistributionDataService(db, transactor, &services.DistributionDataServiceConfig{
-		EnvNetwork: envNetwork,
-		Logger:     logger,
-	})
-
-	distro, ts, err := dds.GetDistributionToSubmit(ctx)
+	latestSnapshot, err := dataFetcher.FetchLatestSnapshot()
 	if err != nil {
 		return nil, err
 	}
-	result.distro = distro
-	result.timestamp = ts
 
-	accountTree, tokenTree, err := distro.Merklize()
-	if err != nil {
-		return result, err
-	}
+	l.Sugar().Debugf("latest snapshot: %s", latestSnapshot.GetDateString())
 
-	result.accountTree = accountTree
-	result.tokenTree = tokenTree
+	latestSubmittedTimestamp, err := transactor.CurrPaymentCalculationEndTimestamp()
+	lst := time.Unix(int64(latestSubmittedTimestamp), 0).UTC()
 
-	return result, nil
+	l.Sugar().Debugf("latest submitted timestamp: %s", lst.Format(time.DateOnly))
+
+	return &Result{
+		LatestPaymentDate:      lst.Format(time.DateOnly),
+		MostRecentSnapshotDate: latestSnapshot.GetDateString(),
+	}, nil
 
 }
 
@@ -128,22 +95,22 @@ var distributionCmd = &cobra.Command{
 			logger.Sugar().Error(err)
 		}
 
-		logger.Sugar().Infof("Got distribution at timestamp '%s'", time.Unix(int64(res.timestamp), 0).String())
+		fmt.Printf("result: %+v\n", res)
 
-		jsonTree, err := res.distro.MarshalJSON()
+		jsonRes, err := json.MarshalIndent(res, "", "  ")
 
 		if err != nil {
-			logger.Sugar().Fatal("Failed to unmarshal tree", zap.Error(err))
+			logger.Sugar().Fatal("Failed to marshal results", zap.Error(err))
 		}
 
 		if cfg.Output != "" {
-			path := fmt.Sprintf("%s/%d.json", cfg.Output, res.timestamp)
-			err := os.WriteFile(path, jsonTree, 0755)
+			path := fmt.Sprintf("%s/%d.json", cfg.Output, jsonRes)
+			err := os.WriteFile(path, jsonRes, 0755)
 			if err != nil {
 				logger.Sugar().Fatal("Failed to write to output file", zap.Error(err))
 			}
 		} else {
-			fmt.Printf("distribution: %+v\n", string(jsonTree))
+			fmt.Printf("distribution: %+v\n", string(jsonRes))
 		}
 	},
 }
@@ -156,12 +123,9 @@ func init() {
 	distributionCmd.Flags().String("network", "localnet", "Which network to use")
 	distributionCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	distributionCmd.Flags().String("private-key", "", "An ethereum private key")
-	distributionCmd.Flags().String("aws-access-key-id", "", "AWS access key ID")
-	distributionCmd.Flags().String("aws-secret-access-key", "", "AWS secret access key")
-	distributionCmd.Flags().String("aws-region", "us-east-1", "us-east-1")
-	distributionCmd.Flags().String("s3-output-bucket", "", "s3://<bucket name and path>")
 	distributionCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
 	distributionCmd.Flags().String("output", "", "File to write output json to")
+	distributionCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 
 	distributionCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {

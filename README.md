@@ -50,11 +50,8 @@ Then, pass the path of the config file using the `--config=<path>` flag.
     --network "devnet" \ 
     --rpc-url "http://...." \
     --private-key "<ethereum private key>" \
-    --aws-access-key-id "<aws access key id>" \
-    --aws-secret-access-key "<aws secret key" \
-    --aws-region "us-east-1" \ 
-    --s3-output-bucket "s3://<url>" \
-    --payment-coordinator-address "<contract address>"
+    --payment-coordinator-address "<contract address>" \
+    --proof-store-base-url "http://...."
 ```
 
 ### docker-compose
@@ -117,26 +114,6 @@ https://ethereum-holesky-rpc.publicnode.com
 
 An Ethereum account private key, in hexidecimal form.
 
-### `--aws-access-key-id` & `--aws-access-secret-key`
-
-An AWS AccessKeyId/AccessSecretKey pair that has access to the Athena cluster containing the data to build the payment proof as well as the specified S3 output bucket
-
-### `--aws-region`
-
-*Default value:* `us-east-1`
-
-The region to use for Athena queries and S3 output.
-
-### `--s3-output-bucket`
-
-The bucket name and path where the output of the Athena query should be put.
-
-_Example_
-
-```bash
-s3://<bucket name>/<bucket>/<path>
-```
-
 ### `--payment-coordinator-address`
 
 The contract address of the target payment coordinator contract used to post payment proofs
@@ -145,4 +122,25 @@ _Example_
 
 ```bash
 0x56c119bD92Af45eb74443ab14D4e93B7f5C67896
+```
+
+### `--proof-store-base-url`
+
+The base URL of where payments data is stored.
+
+e.g.
+
+```bash
+https://eigenpayments-dev.s3.us-east-2.amazonaws.com
+```
+
+The proof store will fetch two files from this URL with the following paths:
+
+```bash
+# Recent snapshots
+<base url>/<environment>/<network>/recent-snapshots.json
+
+# Claim amounts
+<base url>/<environment>/<network>/<snapshot date>/claim-amounts.json
+
 ```

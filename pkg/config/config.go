@@ -27,11 +27,8 @@ type UpdaterConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	AWSAccessKeyId            string      `mapstructure:"aws_access_key_id"`
-	AWSSecretAccessKey        string      `mapstructure:"aws_secret_access_key"`
-	AWSRegion                 string      `mapstructure:"aws_region"`
-	S3OutputBucket            string      `mapstructure:"s3_output_bucket"`
 	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
+	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 }
 
 type DistributionConfig struct {
@@ -40,12 +37,9 @@ type DistributionConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	AWSAccessKeyId            string      `mapstructure:"aws_access_key_id"`
-	AWSSecretAccessKey        string      `mapstructure:"aws_secret_access_key"`
-	AWSRegion                 string      `mapstructure:"aws_region"`
-	S3OutputBucket            string      `mapstructure:"s3_output_bucket"`
 	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
 	Output                    string      `mapstructure:"output"`
+	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 }
 type ClaimConfig struct {
 	GlobalConfig
@@ -53,14 +47,12 @@ type ClaimConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	AWSAccessKeyId            string      `mapstructure:"aws_access_key_id"`
-	AWSSecretAccessKey        string      `mapstructure:"aws_secret_access_key"`
-	AWSRegion                 string      `mapstructure:"aws_region"`
-	S3OutputBucket            string      `mapstructure:"s3_output_bucket"`
 	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
 	Output                    string      `mapstructure:"output"`
 	EarnerAddress             string      `mapstructure:"earner_address"`
 	Tokens                    []string    `mapstructure:"tokens"`
+	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
+	ClaimTimestamp            string      `mapstructure:"claim_timestamp"`
 }
 
 var updaterConfig *UpdaterConfig
@@ -108,11 +100,8 @@ func NewUpdaterConfig() *UpdaterConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		AWSAccessKeyId:            viper.GetString("aws_access_key_id"),
-		AWSSecretAccessKey:        viper.GetString("aws_secret_access_key"),
-		AWSRegion:                 viper.GetString("aws_region"),
-		S3OutputBucket:            viper.GetString("s3_output_bucket"),
 		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
+		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 	}
 	return updaterConfig
 }
@@ -127,12 +116,9 @@ func NewDistributionConfig() *DistributionConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		AWSAccessKeyId:            viper.GetString("aws_access_key_id"),
-		AWSSecretAccessKey:        viper.GetString("aws_secret_access_key"),
-		AWSRegion:                 viper.GetString("aws_region"),
-		S3OutputBucket:            viper.GetString("s3_output_bucket"),
 		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
 		Output:                    viper.GetString("output"),
+		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 	}
 	return distributionConfig
 }
@@ -146,14 +132,12 @@ func NewClaimConfig() *ClaimConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		AWSAccessKeyId:            viper.GetString("aws_access_key_id"),
-		AWSSecretAccessKey:        viper.GetString("aws_secret_access_key"),
-		AWSRegion:                 viper.GetString("aws_region"),
-		S3OutputBucket:            viper.GetString("s3_output_bucket"),
 		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
 		Output:                    viper.GetString("output"),
 		EarnerAddress:             viper.GetString("earner_address"),
 		Tokens:                    viper.GetStringSlice("tokens"),
+		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
+		ClaimTimestamp:            viper.GetString("claim_timestamp"),
 	}
 	return claimConfig
 }
