@@ -32,7 +32,17 @@ func NewUpdater(
 	}, nil
 }
 
+// Update fetches the most recent snapshot and the most recent submitted timestamp from the chain.
 func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
+	/*
+		1. Fetch the list of most recently generated snapshots (list of timestamps)
+		2. Get the timestamp of the most recently submitted on-chain payment
+		3. If the most recent snapshot is less than or equal to the latest on-chain payment, no new payment exists.
+		4. Fetch the claim amounts generated for the new snapshot based on snapshot date
+		5. Generate Merkle tree from claim amounts
+		6. Submit the new Merkle root to the smart contract
+	*/
+
 	// Get the most recent snapshot timestamp
 	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot()
 	if err != nil {
