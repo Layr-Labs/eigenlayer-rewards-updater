@@ -27,10 +27,6 @@ type UpdaterConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	AWSAccessKeyId            string      `mapstructure:"aws_access_key_id"`
-	AWSSecretAccessKey        string      `mapstructure:"aws_secret_access_key"`
-	AWSRegion                 string      `mapstructure:"aws_region"`
-	S3OutputBucket            string      `mapstructure:"s3_output_bucket"`
 	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
 	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 }
@@ -109,10 +105,6 @@ func NewUpdaterConfig() *UpdaterConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		AWSAccessKeyId:            viper.GetString("aws_access_key_id"),
-		AWSSecretAccessKey:        viper.GetString("aws_secret_access_key"),
-		AWSRegion:                 viper.GetString("aws_region"),
-		S3OutputBucket:            viper.GetString("s3_output_bucket"),
 		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
 		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 	}

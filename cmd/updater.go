@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg"
@@ -15,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	drv "github.com/uber/athenadriver/go"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -45,25 +43,6 @@ func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
 		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return err
 	}
-
-	// Step 1. Set AWS Credential in Driver Config.
-	conf, err := drv.NewDefaultConfig(cfg.S3OutputBucket, cfg.AWSRegion, cfg.AWSAccessKeyId, cfg.AWSSecretAccessKey)
-	if err != nil {
-		logger.Sugar().Errorf("Failed to create athena driver cfg", zap.Error(err))
-		return err
-	}
-	slo := drv.NewServiceLimitOverride()
-	slo.SetDMLQueryTimeout(10)
-	conf.SetWorkGroup(drv.NewDefaultWG("eigenLabs_workgroup", nil, nil))
-	conf.SetServiceLimitOverride(*slo)
-
-	// Step 2. Open Connection.
-	db, err := sql.Open(drv.DriverName, conf.Stringify())
-	if err != nil {
-		logger.Sugar().Errorf("Failed to open database connection", zap.Error(err))
-		return err
-	}
-	defer db.Close()
 
 	u, err := updater.NewUpdater(transactor, dataFetcher, logger)
 	if err != nil {
