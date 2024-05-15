@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the payment updater
+Wants=payment-updater.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/payment-updater.sh
+
+[Install]
+WantedBy=multi-user.target

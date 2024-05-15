@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the payment updater every hour
+Requires=payment-updater.service
+
+[Timer]
+Unit=payment-updater.service
+# hourly
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=timers.target
