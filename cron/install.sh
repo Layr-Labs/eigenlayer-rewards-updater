@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 mkdir -p /etc/payment-updater || true
-cp payment-updater.sh /usr/local/bin
+cp ./cron/payment-updater.sh /usr/local/bin
 
-cp payment-updater.service /etc/systemd/system
-cp payment-updater.timer /etc/systemd/system
+cp ./cron/payment-updater.service /etc/systemd/system
+cp ./cron/payment-updater.timer /etc/systemd/system
 
 systemctl enable payment-updater.timer
 systemctl start payment-updater.timer
