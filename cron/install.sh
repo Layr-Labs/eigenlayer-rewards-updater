@@ -11,6 +11,6 @@ systemctl enable payment-updater.timer
 systemctl start payment-updater.timer
 
 cp config.yml.tpl /etc/payment-updater/config.yml
-ch
+
 
 echo "Make sure to fill out config.yml"
