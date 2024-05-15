@@ -84,7 +84,6 @@ var updaterCmd = &cobra.Command{
 }
 
 func init() {
-	fmt.Println("Updater init")
 	rootCmd.AddCommand(updaterCmd)
 
 	updaterCmd.Flags().String("environment", "dev", "The environment to use")
