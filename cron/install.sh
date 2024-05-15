@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 mkdir -p /etc/payment-updater || true
+chown -R ubuntu:ubuntu /etc/payment-updater
 cp ./cron/payment-updater.sh /usr/local/bin
 
 cp ./cron/payment-updater.service /etc/systemd/system
@@ -10,5 +11,6 @@ systemctl enable payment-updater.timer
 systemctl start payment-updater.timer
 
 cp config.yml.tpl /etc/payment-updater/config.yml
+ch
 
 echo "Make sure to fill out config.yml"
