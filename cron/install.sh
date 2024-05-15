@@ -10,7 +10,7 @@ cp ./cron/payment-updater.timer /etc/systemd/system
 systemctl enable payment-updater.timer
 systemctl start payment-updater.timer
 
-cp config.yml.tpl /etc/payment-updater/config.yml
+cp config.yml.tpl ./config.yml
 
 
 echo "Make sure to fill out config.yml"
