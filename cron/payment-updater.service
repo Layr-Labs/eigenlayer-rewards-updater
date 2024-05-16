@@ -4,7 +4,7 @@ Wants=payment-updater.timer
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/payment-updater.sh
+ExecStart=/usr/local/bin/payment-updater.sh
 
 [Install]
 WantedBy=multi-user.target
