@@ -80,6 +80,7 @@ var distributionCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewDistributionConfig()
+		fmt.Printf("Config: %+v\n", cfg)
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
 		})
@@ -116,7 +117,6 @@ var distributionCmd = &cobra.Command{
 }
 
 func init() {
-	fmt.Println("Updater init")
 	rootCmd.AddCommand(distributionCmd)
 
 	distributionCmd.Flags().String("environment", "dev", "The environment to use")

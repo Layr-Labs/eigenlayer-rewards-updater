@@ -135,7 +135,6 @@ var claimCmd = &cobra.Command{
 }
 
 func init() {
-	fmt.Println("Claim init")
 	rootCmd.AddCommand(claimCmd)
 
 	claimCmd.Flags().String("environment", "dev", "The environment to use")

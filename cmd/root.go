@@ -41,6 +41,7 @@ func init() {
 }
 
 func initConfig(cmd *cobra.Command) {
+	fmt.Printf("cfgFile: %s\n", cfgFile)
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -65,5 +66,7 @@ func initConfig(cmd *cobra.Command) {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	} else {
+		fmt.Printf("Error loading config file: %s\n", err)
 	}
 }
