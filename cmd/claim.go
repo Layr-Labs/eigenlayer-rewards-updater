@@ -84,11 +84,6 @@ func runClaimgen(
 
 	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
 
-	// transactor.GetPaymentCoordinator().ProcessClaim(&bind.TransactOpts{
-	// 	From:   gethcommon.HexToAddress(cfg.EarnerAddress),
-	// 	NoSend: true,
-	// })
-
 	return solidity, nil
 
 }
