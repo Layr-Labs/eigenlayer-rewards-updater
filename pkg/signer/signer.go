@@ -22,5 +22,5 @@ func GetSignerForBackend(cfg *config.UpdaterConfig) (Signer, error) {
 	case config.SigningBackendKind_Ledger:
 		return ledger.NewLedgerSigner(cfg.LedgerAddress)
 	}
-	return nil, fmt.Errorf("unsupported signing backend: %s", cfg.SigningBackend)
+	return nil, fmt.Errorf("unsupported signing backend provided")
 }
