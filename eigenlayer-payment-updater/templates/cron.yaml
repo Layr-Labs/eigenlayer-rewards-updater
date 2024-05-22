@@ -1,0 +1,24 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.cronJob.name }}
+spec:
+  schedule: {{ .Values.cronJob.schedule }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: payment-updater
+              image: {{ .Values.cronJob.image.repository }}:{{ .Values.cronJob.image.tag }}
+              imagePullPolicy: {{ .Values.cronJob.image.pullPolicy }}
+              volumeMounts:
+                - name: config-volume
+                  mountPath: "/usr/local/eigenlabs-payment-updater/config.yml"
+                  readOnly: true
+          volumes:
+            - name: config-volume
+              secret:
+                secretName: {{ .Values.cronJob.name }}-secret
