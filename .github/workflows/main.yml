@@ -3,6 +3,17 @@ name: build-container
 on: push
 
 jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+      - name: Run tests
+        run: make ci-test
   build:
     runs-on: ubuntu-latest
     steps:
@@ -25,13 +36,3 @@ jobs:
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-      ## - name: Docker setup
-      ##   uses: docker/setup-buildx-action@v3
-      ## - name: Build and push - development
-      ##   uses: docker/build-push-action@v5
-      ##   if: github.ref != 'refs/heads/master'
-      ##   with:
-      ##     context: .
-      ##     file: ./Dockerfile
-      ##     push: false
-      ##     tags: eigenlayer-payment-updater:${{ github.sha }}
