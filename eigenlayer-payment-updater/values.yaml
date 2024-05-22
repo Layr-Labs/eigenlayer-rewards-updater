@@ -1,6 +1,7 @@
 cronJob:
   name: eigenlayer-payment-updater
-  schedule: "15 0 * * *"    # Runs every 15 minutes looking for new roots to post
+  namespace: default
+  schedule: "*/15 * * * *"    # Runs every 15 minutes looking for new roots to post
   image:
     repository: 225727539677.dkr.ecr.us-east-1.amazonaws.com/eigenlayer-payment-updater
     tag: latest

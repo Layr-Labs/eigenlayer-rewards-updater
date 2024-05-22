@@ -3,8 +3,11 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ .Values.cronJob.name }}
+  namespace: {{ .Values.cronJob.namespace }}
+  labels:
+    app: {{ .Values.cronJob.name }}
 spec:
-  schedule: {{ .Values.cronJob.schedule }}
+  schedule: "{{ .Values.cronJob.schedule }}"
   jobTemplate:
     spec:
       template:
@@ -14,9 +17,11 @@ spec:
             - name: payment-updater
               image: {{ .Values.cronJob.image.repository }}:{{ .Values.cronJob.image.tag }}
               imagePullPolicy: {{ .Values.cronJob.image.pullPolicy }}
+              args:
+                - "updater"
               volumeMounts:
                 - name: config-volume
-                  mountPath: "/usr/local/eigenlabs-payment-updater/config.yml"
+                  mountPath: "/etc/eigenlayer-payment-updater/"
                   readOnly: true
           volumes:
             - name: config-volume
