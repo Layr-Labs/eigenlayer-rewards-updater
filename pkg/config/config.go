@@ -35,6 +35,7 @@ type UpdaterConfig struct {
 	RPCUrl                    string             `mapstructure:"rpc_url"`
 	SigningBackend            SigningBackendKind `mapstructure:"signing_backend"`
 	PrivateKey                string             `mapstructure:"private_key"`
+	LedgerAddress             string             `mapstructure:"ledger_address"`
 	PaymentCoordinatorAddress string             `mapstructure:"payment_coordinator_address"`
 	ProofStoreBaseUrl         string             `mapstructure:"proof_store_base_url"`
 }
@@ -129,6 +130,7 @@ func NewUpdaterConfig() *UpdaterConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		SigningBackend:            parseSigningBackend(viper.GetString("signing_backend")),
+		LedgerAddress:             viper.GetString("ledger_address"),
 		PrivateKey:                viper.GetString("private_key"),
 		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
 		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),

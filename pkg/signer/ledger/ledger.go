@@ -17,9 +17,10 @@ type LedgerSigner struct {
 	address common.Address
 }
 
-func NewLedgerSigner(address common.Address) (*LedgerSigner, error) {
+func NewLedgerSigner(address string) (*LedgerSigner, error) {
+	addressParsed := common.HexToAddress(address)
 	return &LedgerSigner{
-		address: address,
+		address: addressParsed,
 	}, nil
 }
 

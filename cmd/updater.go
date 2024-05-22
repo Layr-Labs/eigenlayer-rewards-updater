@@ -7,7 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/signer/ledger"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/signer"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/transactor"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -30,13 +30,12 @@ func runUpdater(cfg *config.UpdaterConfig, l *zap.Logger) error {
 		return err
 	}
 
-	// signer, err := privateKey.NewPrivateKeySigner(cfg.PrivateKey)
-	signer, err := ledger.NewLedgerSigner(gethcommon.HexToAddress("0xcbe8C3C3c1d60C328ECa0868A607BdbBA9902Abb"))
+	s, err := signer.GetSignerForBackend(cfg)
 	if err != nil {
-		l.Sugar().Error("Failed to create new private key signer", zap.Error(err))
+		l.Sugar().Fatal("Failed to get signing backend", zap.Error(err))
 	}
 
-	chainClient, err := chainClient.NewChainClient(ethClient, signer, l)
+	chainClient, err := chainClient.NewChainClient(ethClient, s, l)
 	if err != nil {
 		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return err
@@ -97,9 +96,8 @@ func init() {
 	updaterCmd.Flags().String("network", "localnet", "Which network to use")
 	updaterCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	updaterCmd.Flags().String("private-key", "", "An ethereum private key")
-	updaterCmd.Flags().String("aws-access-key-id", "", "AWS access key ID")
-	updaterCmd.Flags().String("aws-secret-access-key", "", "AWS secret access key")
-	updaterCmd.Flags().String("aws-region", "us-east-1", "us-east-1")
+	updaterCmd.Flags().String("ledger-address", "", "The address of the ledger")
+	updaterCmd.Flags().String("signing-backend", "", "The signing backend to use")
 	updaterCmd.Flags().String("s3-output-bucket", "", "s3://<bucket name and path>")
 	updaterCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
 	updaterCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
