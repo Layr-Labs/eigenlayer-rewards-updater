@@ -144,3 +144,23 @@ The proof store will fetch two files from this URL with the following paths:
 <base url>/<environment>/<network>/<snapshot date>/claim-amounts.json
 
 ```
+
+## Deploying to Kubernetes with Helm
+
+This repo comes with a helm chart that enables you to deploy the updater in an automated fashion, running it as a cronjob.
+
+This chart follows the standard patterns of all other helm charts; values can be overridden in a separate yaml file or passed as flags when invoking helm.
+
+Example:
+```bash
+helm upgrade --install \
+  --atomic \
+  --cleanup-on-fail \
+  --timeout 2m \
+  --force \
+  --debug \
+  --wait  \
+  --version=$(date +%s) \
+  -f ./eigenlayer-payment-updater/values.yaml \
+  payment-updater ./eigenlayer-payment-updater
+```
