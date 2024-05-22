@@ -7,6 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/signer/ledger"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/transactor"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -19,44 +20,50 @@ import (
 	"net/http"
 )
 
-func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
+func runUpdater(cfg *config.UpdaterConfig, l *zap.Logger) error {
 	ctx := context.Background()
 
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
 		fmt.Println("Failed to create new eth client")
-		logger.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
+		l.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
 		return err
 	}
 
-	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
+	// signer, err := privateKey.NewPrivateKeySigner(cfg.PrivateKey)
+	signer, err := ledger.NewLedgerSigner(gethcommon.HexToAddress("0xcbe8C3C3c1d60C328ECa0868A607BdbBA9902Abb"))
 	if err != nil {
-		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
+		l.Sugar().Error("Failed to create new private key signer", zap.Error(err))
+	}
+
+	chainClient, err := chainClient.NewChainClient(ethClient, signer, l)
+	if err != nil {
+		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return err
 	}
 
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
-	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, logger)
+	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
 
-	transactor, err := transactor.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+	transactor, err := transactor.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress), l)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
+		l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return err
 	}
 
-	u, err := updater.NewUpdater(transactor, dataFetcher, logger)
+	u, err := updater.NewUpdater(transactor, dataFetcher, l)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to create updater", zap.Error(err))
+		l.Sugar().Errorf("Failed to create updater", zap.Error(err))
 		return err
 	}
 
 	tree, err := u.Update(ctx)
 	fmt.Printf("tree: %+v\n", tree)
 	if err != nil {
-		logger.Sugar().Info("Failed to update", zap.Error(err))
+		l.Sugar().Info("Failed to update", zap.Error(err))
 		return nil
 	}
-	logger.Sugar().Info("Update successful")
+	l.Sugar().Info("Update successful")
 	return nil
 }
 

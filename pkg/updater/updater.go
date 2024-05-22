@@ -12,8 +12,8 @@ import (
 )
 
 type Updater struct {
-	transactor transactor.Transactor
-	logger     *zap.Logger
+	transactor       transactor.Transactor
+	logger           *zap.Logger
 	proofDataFetcher proofDataFetcher.ProofDataFetcher
 }
 
@@ -56,7 +56,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 
 	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
 	if lst.Equal(latestSnapshot.SnapshotDate) {
-		return nil, fmt.Errorf("latest snapshot is the most recent payment")
+		// return nil, fmt.Errorf("latest snapshot is the most recent payment")
 	}
 	// If the most recent snapshot timestamp is less than whats already on chain, we have a problem
 	if lst.After(latestSnapshot.SnapshotDate) {

@@ -7,6 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/signer/privateKey"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/transactor"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -39,13 +40,18 @@ func run(
 		return nil, err
 	}
 
-	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
+	signer, err := privateKey.NewPrivateKeySigner(cfg.PrivateKey)
+	if err != nil {
+		l.Sugar().Error("Failed to create new private key signer", zap.Error(err))
+	}
+
+	chainClient, err := chainClient.NewChainClient(ethClient, signer, l)
 	if err != nil {
 		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return nil, err
 	}
 
-	transactor, err := transactor.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+	transactor, err := transactor.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress), l)
 	if err != nil {
 		l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return nil, err

@@ -5,6 +5,8 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/signer"
+	"go.uber.org/zap"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -12,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog/log"
 )
@@ -29,46 +30,19 @@ type ChainClient struct {
 	AccountAddress     common.Address
 	NoSendTransactOpts *bind.TransactOpts
 	Contracts          map[common.Address]*bind.BoundContract
+	signer             signer.Signer
+	logger             *zap.Logger
 }
 
-func NewChainClient(ethClient *ethclient.Client, privateKeyString string) (*ChainClient, error) {
-	var accountAddress common.Address
-	var privateKey *ecdsa.PrivateKey
+func NewChainClient(ethClient *ethclient.Client, signer signer.Signer, l *zap.Logger) (*ChainClient, error) {
 	var opts *bind.TransactOpts
-	var err error
-
-	if len(privateKeyString) != 0 {
-		privateKey, err = crypto.HexToECDSA(privateKeyString)
-		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot parse private key: %w", err)
-		}
-		publicKey := privateKey.Public()
-		publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-
-		if !ok {
-			log.Error().Msg("NewClient: cannot get publicKeyECDSA")
-			return nil, ErrCannotGetECDSAPubKey
-		}
-		accountAddress = crypto.PubkeyToAddress(*publicKeyECDSA)
-
-		chainIDBigInt, err := ethClient.ChainID(context.Background())
-		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot get chainId: %w", err)
-		}
-
-		// generate and memoize NoSendTransactOpts
-		opts, err = bind.NewKeyedTransactorWithChainID(privateKey, chainIDBigInt)
-		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot create NoSendTransactOpts: %w", err)
-		}
-		opts.NoSend = true
-	}
+	// var err error
 
 	c := &ChainClient{
-		privateKey:     privateKey,
-		AccountAddress: accountAddress,
-		Client:         ethClient,
-		Contracts:      make(map[common.Address]*bind.BoundContract),
+		Client:    ethClient,
+		Contracts: make(map[common.Address]*bind.BoundContract),
+		signer:    signer,
+		logger:    l,
 	}
 
 	c.NoSendTransactOpts = opts
@@ -82,11 +56,21 @@ func (c *ChainClient) GetCurrentBlockNumber(ctx context.Context) (uint32, error)
 }
 
 func (c *ChainClient) GetAccountAddress() common.Address {
-	return c.AccountAddress
+	return c.signer.GetAddress()
 }
 
-func (c *ChainClient) GetNoSendTransactOpts() *bind.TransactOpts {
-	return c.NoSendTransactOpts
+func (c *ChainClient) GetNoSendTransactOpts() (*bind.TransactOpts, error) {
+	chainId, err := c.Client.ChainID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("GetNoSendTransactOpts: failed to get chain id: %w", err)
+	}
+	txOpts, err := c.signer.GetTransactOpts(chainId)
+	if err != nil {
+		return nil, fmt.Errorf("GetNoSendTransactOpts: failed to get transact opts: %w", err)
+	}
+	txOpts.NoSend = true
+
+	return txOpts, nil
 }
 
 // EstimateGasPriceAndLimitAndSendTx sends and returns an otherwise identical txn
@@ -109,7 +93,7 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 		// method, so in the event their API is unreachable we can fallback to a
 		// degraded mode of operation. This also applies to our test
 		// environments, as hardhat doesn't support the query either.
-		log.Debug().Msgf("EstimateGasPriceAndLimitAndSendTx: cannot get gasTipCap: %v", err)
+		c.logger.Sugar().Info("EstimateGasPriceAndLimitAndSendTx: cannot get gasTipCap", zap.Error(err))
 		gasTipCap = FallbackGasTipCap
 	}
 
@@ -139,10 +123,8 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 		return nil, err
 	}
 
-	opts, err := bind.NewKeyedTransactorWithChainID(c.privateKey, tx.ChainId())
-	if err != nil {
-		return nil, fmt.Errorf("EstimateGasPriceAndLimitAndSendTx: cannot create transactOpts: %w", err)
-	}
+	opts, err := c.signer.GetTransactOpts(tx.ChainId())
+
 	opts.Context = ctx
 	opts.Nonce = new(big.Int).SetUint64(tx.Nonce())
 	opts.GasTipCap = gasTipCap

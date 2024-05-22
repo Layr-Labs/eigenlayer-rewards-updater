@@ -7,6 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 )
 
 type Transactor interface {
@@ -19,9 +20,10 @@ type TransactorImpl struct {
 	ChainClient                  *chainClient.ChainClient
 	PaymentCoordinatorCaller     *paymentCoordinator.IPaymentCoordinatorCaller
 	PaymentCoordinatorTransactor *paymentCoordinator.IPaymentCoordinatorTransactor
+	logger                       *zap.Logger
 }
 
-func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddress gethcommon.Address) (Transactor, error) {
+func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddress gethcommon.Address, l *zap.Logger) (Transactor, error) {
 	paymentCoordinatorCaller, err := paymentCoordinator.NewIPaymentCoordinatorCaller(paymentCoordinatorAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
@@ -36,6 +38,7 @@ func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddre
 		ChainClient:                  chainClient,
 		PaymentCoordinatorCaller:     paymentCoordinatorCaller,
 		PaymentCoordinatorTransactor: paymentCoordinatorTransactor,
+		logger:                       l,
 	}, nil
 }
 
@@ -48,16 +51,24 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 }
 
 func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error {
-	// todo: params
-	tx, err := t.PaymentCoordinatorTransactor.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsUnixTimestamp)
+	noSendTxOpts, err := t.ChainClient.GetNoSendTransactOpts()
 	if err != nil {
+		return err
+	}
+
+	tx, err := t.PaymentCoordinatorTransactor.SubmitRoot(noSendTxOpts, root, paymentsUnixTimestamp)
+	if err != nil {
+		t.logger.Sugar().Error("Payment coordinator, failed to submit root",
+			zap.Error(err),
+			zap.Any("transaction", tx),
+		)
 		fmt.Printf("Payment coordinator, failed to submit root: %+v - %+v\n", err, tx)
 		return err
 	}
 
 	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(ctx, tx, "submitRoot")
 	if err != nil {
-		fmt.Printf("Failed to estimate gas: %+v\n", err)
+		t.logger.Sugar().Error("Failed to estimate gas", zap.Error(err))
 		return err
 	}
 
