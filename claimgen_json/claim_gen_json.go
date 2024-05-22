@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	paymentCoordinator "github.com/Layr-Labs/eigenlayer-contracts/pkg/bindings/IPaymentCoordinator"
 	claimProver "github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
-	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"io"
 	"os"

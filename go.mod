@@ -1,12 +1,12 @@
 module github.com/Layr-Labs/eigenlayer-payment-updater
 
-go 1.22
+go 1.22.2
 
 toolchain go1.22.3
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
-	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240510171113-d182b4b35eb3
+	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240516162452-b99f35e24ff6
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0
@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc1-holesky-preprod-payments // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/aws/aws-sdk-go v1.37.32 // indirect

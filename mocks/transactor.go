@@ -5,7 +5,6 @@ package mocks
 import (
 	context "context"
 
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/paymentCoordinator"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,26 +39,6 @@ func (_m *Transactor) CurrPaymentCalculationEndTimestamp() (uint32, error) {
 	}
 
 	return r0, r1
-}
-
-// GetPaymentCoordinator provides a mock function with given fields:
-func (_m *Transactor) GetPaymentCoordinator() *paymentCoordinator.ContractIPaymentCoordinator {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetPaymentCoordinator")
-	}
-
-	var r0 *paymentCoordinator.ContractIPaymentCoordinator
-	if rf, ok := ret.Get(0).(func() *paymentCoordinator.ContractIPaymentCoordinator); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*paymentCoordinator.ContractIPaymentCoordinator)
-		}
-	}
-
-	return r0
 }
 
 // GetRootIndex provides a mock function with given fields: root
