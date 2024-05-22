@@ -37,6 +37,9 @@ clean:
 test:
 	${GO} test ./...
 
+.PHONY: ci-test
+ci-test: deps test
+
 .PHONY: docker
 docker:
 	docker build -t payments-updater:latest .
