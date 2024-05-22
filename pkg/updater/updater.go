@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/transactor"
 	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
 	"time"
 )
 
 type Updater struct {
-	transactor       services.Transactor
-	logger           *zap.Logger
+	transactor transactor.Transactor
+	logger     *zap.Logger
 	proofDataFetcher proofDataFetcher.ProofDataFetcher
 }
 
 func NewUpdater(
-	transactor services.Transactor,
+	transactor transactor.Transactor,
 	fetcher proofDataFetcher.ProofDataFetcher,
 	logger *zap.Logger,
 ) (*Updater, error) {

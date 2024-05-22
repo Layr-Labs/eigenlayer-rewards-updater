@@ -1,4 +1,4 @@
-package services
+package transactor
 
 import (
 	"context"

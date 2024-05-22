@@ -8,7 +8,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/transactor"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func runClaimgen(
 
 	if cfg.ClaimTimestamp == "latest" {
 		l.Sugar().Info("Generating claim based on latest submitted payment")
-		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+		transactor, err := transactor.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
 		if err != nil {
 			l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 			return nil, err

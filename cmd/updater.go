@@ -7,7 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/transactor"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -38,7 +38,7 @@ func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, logger)
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+	transactor, err := transactor.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
 	if err != nil {
 		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return err
