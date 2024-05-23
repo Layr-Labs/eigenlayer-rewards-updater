@@ -38,6 +38,7 @@ func NewHttpProofDataFetcher(
 }
 
 func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.PaymentProofData, error) {
+	h.logger.Sugar().Debug(fmt.Sprintf("Fetching claim amounts for date '%s'", date), zap.String("date", date))
 	fullUrl := h.buildClaimAmountsUrl(date)
 
 	rawBody, err := h.handleRequest(fullUrl)

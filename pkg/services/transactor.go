@@ -7,10 +7,12 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
 type Transactor interface {
 	CurrPaymentCalculationEndTimestamp() (uint32, error)
+	GetNumberOfPublishedRoots() (*big.Int, error)
 	GetRootIndex(root [32]byte) (uint32, error)
 	SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error
 }
@@ -41,6 +43,10 @@ func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddre
 
 func (t *TransactorImpl) CurrPaymentCalculationEndTimestamp() (uint32, error) {
 	return t.PaymentCoordinatorCaller.CurrPaymentCalculationEndTimestamp(&bind.CallOpts{})
+}
+
+func (t *TransactorImpl) GetNumberOfPublishedRoots() (*big.Int, error) {
+	return t.PaymentCoordinatorCaller.GetDistributionRootsLength(&bind.CallOpts{})
 }
 
 func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
