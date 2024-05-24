@@ -7,7 +7,9 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/testData"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/tracer"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"io"
 	"net/http"
 	"regexp"
@@ -80,7 +82,11 @@ func TestUpdaterUpdate(t *testing.T) {
 	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(currentPaymentCalcEndTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, uint32(expectedPaymentTimestamp.Unix())).Return(nil)
 
-	accountTree, err := updater.Update(context.Background())
+	tracer.StartTracer()
+	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "test")
+	defer span.Finish()
+
+	accountTree, err := updater.Update(ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, rootBytes, accountTree.Root())
 }

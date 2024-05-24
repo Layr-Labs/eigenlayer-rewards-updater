@@ -5,12 +5,22 @@ metadata:
   name: {{ .Values.cronJob.name }}
   namespace: {{ .Values.cronJob.namespace }}
   labels:
+    tags.datadoghq.com/env: development
+    tags.datadoghq.com/version: "0.0.1"
+    tags.datadoghq.com/service: "{{ .Values.cronJob.name }}"
+    admission.datadoghq.com/config.mode: "socket"
     app: {{ .Values.cronJob.name }}
 spec:
   schedule: "{{ .Values.cronJob.schedule }}"
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            tags.datadoghq.com/env: development
+            tags.datadoghq.com/version: "0.0.1"
+            tags.datadoghq.com/service: "{{ .Values.cronJob.name }}"
+            admission.datadoghq.com/enabled: "true"
         spec:
           restartPolicy: Never
           containers:
@@ -23,6 +33,9 @@ spec:
                 - name: config-volume
                   mountPath: "/etc/eigenlayer-payment-updater/"
                   readOnly: true
+              env:
+                - name: DD_TRACE_SAMPLE_RATE
+                  value: "1.0"
           volumes:
             - name: config-volume
               secret:

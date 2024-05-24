@@ -8,6 +8,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/tracer"
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -15,16 +16,17 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"log"
 	"net/http"
 )
 
-func runUpdater(cfg *config.UpdaterConfig, logger *zap.Logger) error {
-	ctx := context.Background()
+func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logger) error {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "runUpdater")
+	defer span.Finish()
 
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
-		fmt.Println("Failed to create new eth client")
 		logger.Sugar().Errorf("Failed to create new eth client", zap.Error(err))
 		return err
 	}
@@ -66,6 +68,14 @@ var updaterCmd = &cobra.Command{
 	Short: "Generate and update payments merkle tree",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		tracer.StartTracer()
+		defer ddTracer.Stop()
+
+		ctx := context.Background()
+
+		span, ctx := ddTracer.StartSpanFromContext(ctx, "cmd::updater")
+		defer span.Finish()
+
 		cfg := config.NewUpdaterConfig()
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
@@ -76,7 +86,7 @@ var updaterCmd = &cobra.Command{
 		defer logger.Sync()
 		logger.Sugar().Debug(cfg)
 
-		err = runUpdater(cfg, logger)
+		err = runUpdater(ctx, cfg, logger)
 		if err != nil {
 			logger.Sugar().Error(err)
 		}

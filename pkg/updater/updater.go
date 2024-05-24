@@ -8,6 +8,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
 	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"time"
 )
 
@@ -31,6 +32,9 @@ func NewUpdater(
 
 // Update fetches the most recent snapshot and the most recent submitted timestamp from the chain.
 func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "updater::Update")
+	defer span.Finish()
+	//ctx = opentracing.ContextWithSpan(ctx, span)
 	/*
 		1. Fetch the list of most recently generated snapshots (list of timestamps)
 		2. Get the timestamp of the most recently submitted on-chain payment
