@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-mkdir -p /etc/payment-updater || true
-chown -R ubuntu:ubuntu /etc/payment-updater
-cp ./cron/payment-updater.sh /usr/local/bin
+mkdir -p /etc/eigenlayer-rewards-updater || true
+chown -R ubuntu:ubuntu /etc/eigenlayer-rewards-updater
+cp ./cron/eigenlayer-rewards-updater.sh /usr/local/bin
 
-cp ./cron/payment-updater.service /etc/systemd/system
-cp ./cron/payment-updater.timer /etc/systemd/system
+cp ./cron/eigenlayer-rewards-updater.service /etc/systemd/system
+cp ./cron/eigenlayer-rewards-updater.timer /etc/systemd/system
 
-systemctl enable payment-updater.timer
-systemctl start payment-updater.timer
+systemctl enable eigenlayer-rewards-updater.timer
+systemctl start eigenlayer-rewards-updater.timer
 
 cp config.yml.tpl ./config.yml
 

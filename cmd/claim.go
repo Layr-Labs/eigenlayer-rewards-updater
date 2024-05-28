@@ -3,12 +3,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/claimgen"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
@@ -25,7 +25,7 @@ func runClaimgen(
 	cfg *config.ClaimConfig,
 	l *zap.Logger,
 ) (
-	*claimgen.IPaymentCoordinatorPaymentMerkleClaimStrings,
+	*claimgen.IRewardsCoordinatorPaymentMerkleClaimStrings,
 	error,
 ) {
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
@@ -48,7 +48,7 @@ func runClaimgen(
 	var rootIndex uint32
 
 	if cfg.ClaimTimestamp == "latest" {
-		l.Sugar().Info("Generating claim based on latest submitted payment")
+		l.Sugar().Info("Generating claim based on latest submitted reward")
 		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
 		if err != nil {
 			l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
@@ -156,7 +156,7 @@ func init() {
 	claimCmd.Flags().String("earner-address", "", "Address of the earner")
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")
 	claimCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
-	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the payment root to claim against")
+	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the rewards root to claim against")
 
 	claimCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {

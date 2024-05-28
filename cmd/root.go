@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/spf13/pflag"
 	"os"
 	"strings"
@@ -14,7 +14,7 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "eigenlayer-payment-updater",
+	Use:   "eigenlayer-rewards-updater",
 	Short: "Proof generation for payments and claims",
 	Long:  ``,
 }
@@ -31,7 +31,7 @@ func init() {
 
 	})
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eigenlayer-payment-updater/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eigenlayer-rewards-updater/config.yaml)")
 	rootCmd.PersistentFlags().Bool("debug", false, "'true' or 'false'")
 
 	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
@@ -49,8 +49,8 @@ func initConfig(cmd *cobra.Command) {
 		// Search config in following directories
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
-		viper.AddConfigPath("$HOME/.eigenlayer-payment-updater/")
-		viper.AddConfigPath("/etc/eigenlayer-payment-updater/")
+		viper.AddConfigPath("$HOME/.eigenlayer-rewards-updater/")
+		viper.AddConfigPath("/etc/eigenlayer-rewards-updater/")
 		viper.AddConfigPath(".")
 	}
 

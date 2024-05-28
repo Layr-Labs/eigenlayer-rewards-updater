@@ -3,7 +3,7 @@
 GO = $(shell which go)
 BIN = ./bin/
 
-binary_name = payment-updater
+binary_name = eigenlayer-rewards-updater
 
 all: build
 
@@ -42,4 +42,4 @@ ci-test: deps test
 
 .PHONY: docker
 docker:
-	docker build -t payments-updater:latest .
+	docker build -t eigenlayer-rewards-updater:latest .

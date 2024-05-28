@@ -1,5 +1,5 @@
 apiVersion: v2
-name: eigenlayer-payment-updater
+name: eigenlayer-rewards-updater
 description: A deployable version of the EigenLayer Payment Updater service.
 
 # A chart can be either an 'application' or a 'library' chart.

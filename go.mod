@@ -1,12 +1,9 @@
-module github.com/Layr-Labs/eigenlayer-payment-updater
+module github.com/Layr-Labs/eigenlayer-rewards-updater
 
-go 1.22.2
-
-toolchain go1.22.3
+go 1.21
 
 require (
-	github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523170638-a2fb4c5444b1
-	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240528181028-91bbedf9e302
+	github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc2-holesky-preprod-rewards.0.20240528185507-d8ac41afbabc
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0
@@ -14,7 +11,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
-	github.com/wealdtech/go-merkletree/v2 v2.5.2-0.20240302222400-69219c450662
 	go.uber.org/zap v1.27.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.64.0
 )
@@ -27,11 +23,12 @@ require (
 	github.com/DataDog/go-libddwaf/v2 v2.4.2 // indirect
 	github.com/DataDog/go-tuf v1.0.2-0.5.2 // indirect
 	github.com/DataDog/sketches-go v1.4.2 // indirect
+	github.com/Layr-Labs/eigenlayer-rewards-proofs v0.0.0-20240528190410-9f391d5f5a9a
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
-	github.com/bits-and-blooms/bitset v1.13.0 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/bits-and-blooms/bitset v1.10.0 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
@@ -39,7 +36,7 @@ require (
 	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.6.0-alpha.5 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
@@ -76,11 +73,12 @@ require (
 	github.com/tinylib/msgp v1.1.8 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
+	github.com/wealdtech/go-merkletree/v2 v2.5.2-0.20240302222400-69219c450662 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect

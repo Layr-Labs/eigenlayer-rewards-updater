@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the rewards updater every hour
+Requires=eigenlayer-rewards-updater.service
+
+[Timer]
+Unit=eigenlayer-rewards-updater.service
+# hourly
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=timers.target

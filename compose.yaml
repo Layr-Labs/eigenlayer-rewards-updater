@@ -1,18 +1,18 @@
 services:
   updater:
-    image: payments-updater:latest
+    image: eigenlayer-rewards-updater:latest
     build:
       dockerfile: Dockerfile
     volumes:
-      - "$PWD:/etc/eigenlayer-payment-updater"
+      - "$PWD:/etc/eigenlayer-rewards-updater"
     command:
       - "updater"
   updater-cli-args:
-    image: payments-updater:latest
+    image: eigenlayer-rewards-updater:latest
     build:
       dockerfile: Dockerfile
     volumes:
-      - "$PWD:/etc/eigenlayer-payment-updater"
+      - "$PWD:/etc/eigenlayer-rewards-updater"
     command:
       - "updater"
       - "--debug=true"

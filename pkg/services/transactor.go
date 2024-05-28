@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
-	paymentCoordinator "github.com/Layr-Labs/eigenlayer-contracts/pkg/bindings/IPaymentCoordinator"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
+	rewardsCoordinator "github.com/Layr-Labs/eigenlayer-contracts/pkg/bindings/IRewardsCoordinator"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"math/big"
@@ -14,22 +14,22 @@ type Transactor interface {
 	CurrPaymentCalculationEndTimestamp() (uint32, error)
 	GetNumberOfPublishedRoots() (*big.Int, error)
 	GetRootIndex(root [32]byte) (uint32, error)
-	SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error
+	SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error
 }
 
 type TransactorImpl struct {
 	ChainClient                  *chainClient.ChainClient
-	PaymentCoordinatorCaller     *paymentCoordinator.IPaymentCoordinatorCaller
-	PaymentCoordinatorTransactor *paymentCoordinator.IPaymentCoordinatorTransactor
+	PaymentCoordinatorCaller     *rewardsCoordinator.IRewardsCoordinatorCaller
+	PaymentCoordinatorTransactor *rewardsCoordinator.IRewardsCoordinatorTransactor
 }
 
 func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddress gethcommon.Address) (Transactor, error) {
-	paymentCoordinatorCaller, err := paymentCoordinator.NewIPaymentCoordinatorCaller(paymentCoordinatorAddress, chainClient.Client)
+	paymentCoordinatorCaller, err := rewardsCoordinator.NewIRewardsCoordinatorCaller(paymentCoordinatorAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
 	}
 
-	paymentCoordinatorTransactor, err := paymentCoordinator.NewIPaymentCoordinatorTransactor(paymentCoordinatorAddress, chainClient.Client)
+	paymentCoordinatorTransactor, err := rewardsCoordinator.NewIRewardsCoordinatorTransactor(paymentCoordinatorAddress, chainClient.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func NewTransactor(chainClient *chainClient.ChainClient, paymentCoordinatorAddre
 }
 
 func (t *TransactorImpl) CurrPaymentCalculationEndTimestamp() (uint32, error) {
-	return t.PaymentCoordinatorCaller.CurrPaymentCalculationEndTimestamp(&bind.CallOpts{})
+	return t.PaymentCoordinatorCaller.CurrRewardsCalculationEndTimestamp(&bind.CallOpts{})
 }
 
 func (t *TransactorImpl) GetNumberOfPublishedRoots() (*big.Int, error) {
@@ -53,9 +53,9 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 	return s.PaymentCoordinatorCaller.GetRootIndexFromHash(&bind.CallOpts{}, root)
 }
 
-func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error {
+func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error {
 	// todo: params
-	tx, err := t.PaymentCoordinatorTransactor.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, paymentsUnixTimestamp)
+	tx, err := t.PaymentCoordinatorTransactor.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, rewardsUnixTimestamp)
 	if err != nil {
 		fmt.Printf("Payment coordinator, failed to submit root: %+v - %+v\n", err, tx)
 		return err

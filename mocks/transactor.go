@@ -101,8 +101,8 @@ func (_m *Transactor) GetRootIndex(root [32]byte) (uint32, error) {
 }
 
 // SubmitRoot provides a mock function with given fields: ctx, root, paymentsUnixTimestamp
-func (_m *Transactor) SubmitRoot(ctx context.Context, root [32]byte, paymentsUnixTimestamp uint32) error {
-	ret := _m.Called(ctx, root, paymentsUnixTimestamp)
+func (_m *Transactor) SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error {
+	ret := _m.Called(ctx, root, rewardsUnixTimestamp)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SubmitRoot")
@@ -110,7 +110,7 @@ func (_m *Transactor) SubmitRoot(ctx context.Context, root [32]byte, paymentsUni
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, [32]byte, uint32) error); ok {
-		r0 = rf(ctx, root, paymentsUnixTimestamp)
+		r0 = rf(ctx, root, rewardsUnixTimestamp)
 	} else {
 		r0 = ret.Error(0)
 	}

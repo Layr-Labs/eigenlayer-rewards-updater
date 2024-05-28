@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the rewards updater
+Wants=eigenlayer-rewards-updater.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/eigenlayer-rewards-updater.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
-# payment-updater
+# rewards-updater
 
-Generates proofs for posting payments to chain that stakers and operators can claim.
+Generates proofs for posting rewards to chain that stakers and operators can claim.
 
 ## Building
 
@@ -11,14 +11,14 @@ export GOPRIVATE=github.com/Layr-Labs/*
 ```
 
 ```bash
-git clone git@github.com:Layr-Labs/eigenlayer-payment-updater.git
+git clone git@github.com:Layr-Labs/eigenlayer-rewards-updater.git
 
-cd eigenlayer-payment-updater
+cd eigenlayer-rewards-updater
 
 # Download and install dependencies
 make deps
 
-# Build eigenlayer-payment-updater in your local OS/arch
+# Build eigenlayer-rewards-updater in your local OS/arch
 make
 
 # Run the test suite
@@ -30,21 +30,21 @@ make test
 ```bash
 make docker
 
-docker run payments-updater:latest [updater]
+docker run eigenlayer-rewards-updater:latest [updater]
 ```
 
 ## Running
 
 ### With config
 
-To run the `payment-updater` with a config file, copy the `config.yml.tpl` template to your desired location and fill in the specified fields.
+To run the `rewards-updater` with a config file, copy the `config.yml.tpl` template to your desired location and fill in the specified fields.
 
 Then, pass the path of the config file using the `--config=<path>` flag.
 
 ### Command line args
 
 ```bash
-./bin/payment-updater updater \
+./bin/eigenlayer-rewards-updater updater \
     --debug true \
     --environment "dev" \
     --network "devnet" \ 
@@ -126,7 +126,7 @@ _Example_
 
 ### `--proof-store-base-url`
 
-The base URL of where payments data is stored.
+The base URL of where rewards data is stored.
 
 e.g.
 
@@ -161,6 +161,6 @@ helm upgrade --install \
   --debug \
   --wait  \
   --version=$(date +%s) \
-  -f ./eigenlayer-payment-updater/values.yaml \
-  payment-updater ./eigenlayer-payment-updater
+  -f ./eigenlayer-rewards-updater/values.yaml \
+  eigenlayer-rewards-updater ./eigenlayer-rewards-updater
 ```

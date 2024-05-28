@@ -3,9 +3,9 @@ package updater
 import (
 	"context"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/utils"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
 	"github.com/wealdtech/go-merkletree/v2"
 	"go.uber.org/zap"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
@@ -37,8 +37,8 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	//ctx = opentracing.ContextWithSpan(ctx, span)
 	/*
 		1. Fetch the list of most recently generated snapshots (list of timestamps)
-		2. Get the timestamp of the most recently submitted on-chain payment
-		3. If the most recent snapshot is less than or equal to the latest on-chain payment, no new payment exists.
+		2. Get the timestamp of the most recently submitted on-chain rewards
+		3. If the most recent snapshot is less than or equal to the latest on-chain rewards, no new rewards exists.
 		4. Fetch the claim amounts generated for the new snapshot based on snapshot date
 		5. Generate Merkle tree from claim amounts
 		6. Submit the new Merkle root to the smart contract
@@ -60,7 +60,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 
 	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
 	if lst.Equal(latestSnapshot.SnapshotDate) {
-		return nil, fmt.Errorf("latest snapshot is the most recent payment")
+		return nil, fmt.Errorf("latest snapshot is the most recent reward")
 	}
 	// If the most recent snapshot timestamp is less than whats already on chain, we have a problem
 	if lst.After(latestSnapshot.SnapshotDate) {
@@ -68,24 +68,24 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	}
 
 	// Get the data for the latest snapshot and load it into a distribution instance
-	paymentProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(latestSnapshot.GetDateString())
+	rewardsProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(latestSnapshot.GetDateString())
 	if err != nil {
 		return nil, err
 	}
 
-	newRoot := paymentProofData.AccountTree.Root()
+	newRoot := rewardsProofData.AccountTree.Root()
 
 	calculatedUntilTimestamp := latestSnapshot.SnapshotDate.UTC().Unix()
 
 	// send the merkle root to the smart contract
-	u.logger.Sugar().Info("updating payments", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
+	u.logger.Sugar().Info("updating rewards", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
 
-	// return paymentProofData.AccountTree, nil
+	// return rewardsProofData.AccountTree, nil
 	fmt.Printf("Calculated timestamp: %+v\n", calculatedUntilTimestamp)
 	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), uint32(calculatedUntilTimestamp)); err != nil {
 		u.logger.Sugar().Error("Failed to submit root", zap.Error(err))
-		return paymentProofData.AccountTree, err
+		return rewardsProofData.AccountTree, err
 	}
 
-	return paymentProofData.AccountTree, nil
+	return rewardsProofData.AccountTree, nil
 }
