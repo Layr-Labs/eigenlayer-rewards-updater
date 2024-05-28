@@ -15,11 +15,11 @@ type Transactor struct {
 }
 
 // CurrPaymentCalculationEndTimestamp provides a mock function with given fields:
-func (_m *Transactor) CurrPaymentCalculationEndTimestamp() (uint32, error) {
+func (_m *Transactor) CurrRewardsCalculationEndTimestamp() (uint32, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for CurrPaymentCalculationEndTimestamp")
+		panic("no return value specified for CurrRewardsCalculationEndTimestamp")
 	}
 
 	var r0 uint32
@@ -100,7 +100,7 @@ func (_m *Transactor) GetRootIndex(root [32]byte) (uint32, error) {
 	return r0, r1
 }
 
-// SubmitRoot provides a mock function with given fields: ctx, root, paymentsUnixTimestamp
+// SubmitRoot provides a mock function with given fields: ctx, root, rewardsUnixTimestamp
 func (_m *Transactor) SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error {
 	ret := _m.Called(ctx, root, rewardsUnixTimestamp)
 

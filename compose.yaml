@@ -24,4 +24,4 @@ services:
       - "--aws-secret-access-key='<aws secret key>'"
       - "--aws-region='us-east-1'"
       - "--s3-output-bucket='s3://<url>'"
-      - "--payment-coordinator-address='<contract address>'"
+      - "--rewards-coordinator-address='<contract address>'"

@@ -79,7 +79,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	var root [32]byte
 	copy(root[:], rootBytes)
 
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(currentPaymentCalcEndTimestamp, nil)
+	mockTransactor.On("CurrRewardsCalculationEndTimestamp").Return(currentPaymentCalcEndTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, uint32(expectedPaymentTimestamp.Unix())).Return(nil)
 
 	tracer.StartTracer()

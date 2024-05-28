@@ -53,7 +53,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	u.logger.Sugar().Debugf("latest snapshot: %s", latestSnapshot.GetDateString())
 
 	// Grab latest submitted timestamp directly from chain
-	latestSubmittedTimestamp, err := u.transactor.CurrPaymentCalculationEndTimestamp()
+	latestSubmittedTimestamp, err := u.transactor.CurrRewardsCalculationEndTimestamp()
 	lst := time.Unix(int64(latestSubmittedTimestamp), 0).UTC()
 
 	u.logger.Sugar().Debugf("latest submitted timestamp: %s", lst.Format(time.DateOnly))

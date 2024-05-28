@@ -50,7 +50,7 @@ Then, pass the path of the config file using the `--config=<path>` flag.
     --network "devnet" \ 
     --rpc-url "http://...." \
     --private-key "<ethereum private key>" \
-    --payment-coordinator-address "<contract address>" \
+    --rewards-coordinator-address "<contract address>" \
     --proof-store-base-url "http://...."
 ```
 
@@ -114,9 +114,9 @@ https://ethereum-holesky-rpc.publicnode.com
 
 An Ethereum account private key, in hexidecimal form.
 
-### `--payment-coordinator-address`
+### `--rewards-coordinator-address`
 
-The contract address of the target payment coordinator contract used to post payment proofs
+The contract address of the target rewards coordinator contract used to post reward proofs
 
 _Example_
 

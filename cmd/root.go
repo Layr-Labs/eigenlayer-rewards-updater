@@ -15,7 +15,7 @@ var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "eigenlayer-rewards-updater",
-	Short: "Proof generation for payments and claims",
+	Short: "Proof generation for rewards and claims",
 	Long:  ``,
 }
 

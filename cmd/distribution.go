@@ -45,7 +45,7 @@ func run(
 		return nil, err
 	}
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
 	if err != nil {
 		l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return nil, err
@@ -61,7 +61,7 @@ func run(
 
 	l.Sugar().Debugf("latest snapshot: %s", latestSnapshot.GetDateString())
 
-	latestSubmittedTimestamp, err := transactor.CurrPaymentCalculationEndTimestamp()
+	latestSubmittedTimestamp, err := transactor.CurrRewardsCalculationEndTimestamp()
 	lst := time.Unix(int64(latestSubmittedTimestamp), 0).UTC()
 
 	l.Sugar().Debugf("latest submitted timestamp: %s", lst.Format(time.DateOnly))
@@ -123,7 +123,7 @@ func init() {
 	distributionCmd.Flags().String("network", "localnet", "Which network to use")
 	distributionCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	distributionCmd.Flags().String("private-key", "", "An ethereum private key")
-	distributionCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
+	distributionCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	distributionCmd.Flags().String("output", "", "File to write output json to")
 	distributionCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 

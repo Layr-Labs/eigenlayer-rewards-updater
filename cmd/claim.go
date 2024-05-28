@@ -49,13 +49,13 @@ func runClaimgen(
 
 	if cfg.ClaimTimestamp == "latest" {
 		l.Sugar().Info("Generating claim based on latest submitted reward")
-		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
 		if err != nil {
 			l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 			return nil, err
 		}
 
-		latestSubmittedTimestamp, err := transactor.CurrPaymentCalculationEndTimestamp()
+		latestSubmittedTimestamp, err := transactor.CurrRewardsCalculationEndTimestamp()
 		if err != nil {
 			l.Sugar().Errorf("Failed to get latest submitted timestamp", zap.Error(err))
 			return nil, err
@@ -151,7 +151,7 @@ func init() {
 	claimCmd.Flags().String("network", "localnet", "Which network to use")
 	claimCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	claimCmd.Flags().String("private-key", "", "An ethereum private key")
-	claimCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
+	claimCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	claimCmd.Flags().String("output", "", "File to write output json to")
 	claimCmd.Flags().String("earner-address", "", "Address of the earner")
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")

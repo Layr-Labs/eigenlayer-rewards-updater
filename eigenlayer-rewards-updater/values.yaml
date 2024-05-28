@@ -13,4 +13,4 @@ cronJob:
     network: ""
     rpc_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
     private_key: ""
-    payment_coordinator_address: ""
+    rewards_coordinator_address: ""
