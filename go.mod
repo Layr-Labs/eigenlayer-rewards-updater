@@ -5,8 +5,8 @@ go 1.22.2
 toolchain go1.22.3
 
 require (
-	github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523155341-ae95614b048a
-	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240523160126-3b2048925287
+	github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523170638-a2fb4c5444b1
+	github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240528181028-91bbedf9e302
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0

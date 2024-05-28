@@ -60,8 +60,8 @@ func runClaimgen(
 			l.Sugar().Errorf("Failed to get latest submitted timestamp", zap.Error(err))
 			return nil, err
 		}
-		l.Sugar().Debug("Latest submitted timestamp", zap.Uint32("timestamp", latestSubmittedTimestamp))
 		claimDate = time.Unix(int64(latestSubmittedTimestamp), 0).UTC().Format(time.DateOnly)
+		l.Sugar().Debug("Latest submitted timestamp", zap.String("claimDate", claimDate))
 
 		rootCount, err := transactor.GetNumberOfPublishedRoots()
 		if err != nil {

@@ -64,6 +64,7 @@ func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*
 		}
 		lines = append(lines, earner)
 	}
+
 	if err := distro.LoadLines(lines); err != nil {
 		h.logger.Sugar().Errorf("Failed to load lines: %s\n", err)
 		return nil, err

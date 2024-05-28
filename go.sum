@@ -16,12 +16,10 @@ github.com/DataDog/sketches-go v1.4.2 h1:gppNudE9d19cQ98RYABOetxIhpTCl4m7CnbRZjv
 github.com/DataDog/sketches-go v1.4.2/go.mod h1:xJIXldczJyyjnbDop7ZZcLxJdV3+7Kra7H1KMgpgkLk=
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
-github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523155341-ae95614b048a h1:ZGdezPCEGlE2j365mVkpCkueXrvOXbfl0intPfVoqY0=
-github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523155341-ae95614b048a/go.mod h1:+Ip6I5FpoU3tswZvpzafoURQGa5c2x0XqvD8y2+yWl0=
-github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc1-holesky-preprod-payments h1:0/83HlyTMRytyqYMBRY/MSzK8Ot819lX7stXPvZvWKk=
-github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc1-holesky-preprod-payments/go.mod h1:+Ip6I5FpoU3tswZvpzafoURQGa5c2x0XqvD8y2+yWl0=
-github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240523160126-3b2048925287 h1:t+KAMnSqdxEi4MsUzZOI4sGvfM3HBJSediXkCyKGup0=
-github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240523160126-3b2048925287/go.mod h1:EeICFfpqXmJqUMwYJ/yKUx9Fv1dxrS00oL1Nfae6CAY=
+github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523170638-a2fb4c5444b1 h1:7t2aFa4ulB0TqtW3YV/oiKAScREDF/xO8gikt9CGsYM=
+github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523170638-a2fb4c5444b1/go.mod h1:Ie8YE3EQkTHqG6/tnUS0He7/UPMkXPo/3OFXwSy0iRo=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240528181028-91bbedf9e302 h1:XqY8eApIpPcepIRBLqjVRFx6dB7n/Dr7mo+lHc1A6XI=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240528181028-91bbedf9e302/go.mod h1:1/MPdzWSfuTg712TlHD0Kq+XTQwJ5sTiwx4OH7WVi98=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
