@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	proofDataFetcher "github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher"
+	proofDataFetcher "github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher"
 	mock "github.com/stretchr/testify/mock"
 )
 

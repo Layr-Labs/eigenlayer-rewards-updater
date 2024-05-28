@@ -27,7 +27,7 @@ type UpdaterConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
+	RewardsCoordinatorAddress string      `mapstructure:"rewards_coordinator_address"`
 	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 }
 
@@ -37,7 +37,7 @@ type DistributionConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
+	RewardsCoordinatorAddress string      `mapstructure:"rewards_coordinator_address"`
 	Output                    string      `mapstructure:"output"`
 	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 }
@@ -47,7 +47,7 @@ type ClaimConfig struct {
 	Network                   string      `mapstructure:"network"`
 	RPCUrl                    string      `mapstructure:"rpc_url"`
 	PrivateKey                string      `mapstructure:"private_key"`
-	PaymentCoordinatorAddress string      `mapstructure:"payment_coordinator_address"`
+	RewardsCoordinatorAddress string      `mapstructure:"rewards_coordinator_address"`
 	Output                    string      `mapstructure:"output"`
 	EarnerAddress             string      `mapstructure:"earner_address"`
 	Tokens                    []string    `mapstructure:"tokens"`
@@ -100,7 +100,7 @@ func NewUpdaterConfig() *UpdaterConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
+		RewardsCoordinatorAddress: viper.GetString("rewards_coordinator_address"),
 		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 	}
 	return updaterConfig
@@ -116,7 +116,7 @@ func NewDistributionConfig() *DistributionConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
+		RewardsCoordinatorAddress: viper.GetString("rewards_coordinator_address"),
 		Output:                    viper.GetString("output"),
 		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 	}
@@ -132,7 +132,7 @@ func NewClaimConfig() *ClaimConfig {
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
-		PaymentCoordinatorAddress: viper.GetString("payment_coordinator_address"),
+		RewardsCoordinatorAddress: viper.GetString("rewards_coordinator_address"),
 		Output:                    viper.GetString("output"),
 		EarnerAddress:             viper.GetString("earner_address"),
 		Tokens:                    viper.GetStringSlice("tokens"),

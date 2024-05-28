@@ -1,8 +1,8 @@
 package httpProofDataFetcher
 
 import (
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/testData"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/testData"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"io"

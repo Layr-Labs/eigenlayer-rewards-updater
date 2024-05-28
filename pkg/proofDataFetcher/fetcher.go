@@ -2,7 +2,7 @@ package proofDataFetcher
 
 import (
 	"encoding/json"
-	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/distribution"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/distribution"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/wealdtech/go-merkletree/v2"
 	"net/http"

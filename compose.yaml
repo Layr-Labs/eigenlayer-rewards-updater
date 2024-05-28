@@ -1,18 +1,18 @@
 services:
   updater:
-    image: payments-updater:latest
+    image: eigenlayer-rewards-updater:latest
     build:
       dockerfile: Dockerfile
     volumes:
-      - "$PWD:/etc/eigenlayer-payment-updater"
+      - "$PWD:/etc/eigenlayer-rewards-updater"
     command:
       - "updater"
   updater-cli-args:
-    image: payments-updater:latest
+    image: eigenlayer-rewards-updater:latest
     build:
       dockerfile: Dockerfile
     volumes:
-      - "$PWD:/etc/eigenlayer-payment-updater"
+      - "$PWD:/etc/eigenlayer-rewards-updater"
     command:
       - "updater"
       - "--debug=true"
@@ -24,4 +24,4 @@ services:
       - "--aws-secret-access-key='<aws secret key>'"
       - "--aws-region='us-east-1'"
       - "--s3-output-bucket='s3://<url>'"
-      - "--payment-coordinator-address='<contract address>'"
+      - "--rewards-coordinator-address='<contract address>'"

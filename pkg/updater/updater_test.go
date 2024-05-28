@@ -3,12 +3,12 @@ package updater_test
 import (
 	"context"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/testData"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/mocks"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/tracer"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/testData"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/mocks"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/updater"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"io"
 	"net/http"
@@ -79,7 +79,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	var root [32]byte
 	copy(root[:], rootBytes)
 
-	mockTransactor.On("CurrPaymentCalculationEndTimestamp").Return(currentPaymentCalcEndTimestamp, nil)
+	mockTransactor.On("CurrRewardsCalculationEndTimestamp").Return(currentPaymentCalcEndTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, uint32(expectedPaymentTimestamp.Unix())).Return(nil)
 
 	tracer.StartTracer()

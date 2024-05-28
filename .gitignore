@@ -7,5 +7,5 @@ data
 *.idea
 /bin
 config.yml
-eigenlayer-payment-updater/values-preprodHolesky.yaml
+eigenlayer-rewards-updater/values-preprodHolesky.yaml
 

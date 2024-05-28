@@ -17,4 +17,4 @@ FROM golang:1.22-bullseye as run
 
 COPY --from=build /build/bin/* /bin
 
-ENTRYPOINT ["/bin/payment-updater"]
+ENTRYPOINT ["/bin/eigenlayer-rewards-updater"]

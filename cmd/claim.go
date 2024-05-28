@@ -3,12 +3,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-proofs/pkg/claimgen"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
@@ -25,7 +25,7 @@ func runClaimgen(
 	cfg *config.ClaimConfig,
 	l *zap.Logger,
 ) (
-	*claimgen.IPaymentCoordinatorPaymentMerkleClaimStrings,
+	*claimgen.IRewardsCoordinatorPaymentMerkleClaimStrings,
 	error,
 ) {
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
@@ -48,14 +48,14 @@ func runClaimgen(
 	var rootIndex uint32
 
 	if cfg.ClaimTimestamp == "latest" {
-		l.Sugar().Info("Generating claim based on latest submitted payment")
-		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+		l.Sugar().Info("Generating claim based on latest submitted reward")
+		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
 		if err != nil {
 			l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 			return nil, err
 		}
 
-		latestSubmittedTimestamp, err := transactor.CurrPaymentCalculationEndTimestamp()
+		latestSubmittedTimestamp, err := transactor.CurrRewardsCalculationEndTimestamp()
 		if err != nil {
 			l.Sugar().Errorf("Failed to get latest submitted timestamp", zap.Error(err))
 			return nil, err
@@ -151,12 +151,12 @@ func init() {
 	claimCmd.Flags().String("network", "localnet", "Which network to use")
 	claimCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	claimCmd.Flags().String("private-key", "", "An ethereum private key")
-	claimCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
+	claimCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	claimCmd.Flags().String("output", "", "File to write output json to")
 	claimCmd.Flags().String("earner-address", "", "Address of the earner")
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")
 	claimCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
-	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the payment root to claim against")
+	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the rewards root to claim against")
 
 	claimCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {

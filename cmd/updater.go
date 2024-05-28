@@ -3,13 +3,13 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/internal/logger"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/chainClient"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/config"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/services"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/tracer"
-	"github.com/Layr-Labs/eigenlayer-payment-updater/pkg/updater"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
@@ -40,7 +40,7 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, logger)
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.PaymentCoordinatorAddress))
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
 	if err != nil {
 		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return err
@@ -65,7 +65,7 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 // distribution represents the updater command
 var updaterCmd = &cobra.Command{
 	Use:   "updater",
-	Short: "Generate and update payments merkle tree",
+	Short: "Generate and update rewards merkle tree",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		tracer.StartTracer()
@@ -104,7 +104,7 @@ func init() {
 	updaterCmd.Flags().String("aws-secret-access-key", "", "AWS secret access key")
 	updaterCmd.Flags().String("aws-region", "us-east-1", "us-east-1")
 	updaterCmd.Flags().String("s3-output-bucket", "", "s3://<bucket name and path>")
-	updaterCmd.Flags().String("payment-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the payment coordinator contract")
+	updaterCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	updaterCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 
 	updaterCmd.Flags().VisitAll(func(f *pflag.Flag) {
