@@ -14,7 +14,7 @@ type Transactor struct {
 	mock.Mock
 }
 
-// CurrPaymentCalculationEndTimestamp provides a mock function with given fields:
+// CurrRewardsCalculationEndTimestamp provides a mock function with given fields:
 func (_m *Transactor) CurrRewardsCalculationEndTimestamp() (uint32, error) {
 	ret := _m.Called()
 
