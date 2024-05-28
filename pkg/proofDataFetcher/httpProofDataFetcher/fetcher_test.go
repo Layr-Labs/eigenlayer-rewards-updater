@@ -88,14 +88,14 @@ func TestHttpProofDataFetcher_FetchClaimAmountsForDate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, proofData)
 
-	earnerAddrString := "0x2222aac0c980cc029624b7ff55b88bc6f63c538f"
+	earnerAddrString := "0xd37f737629e0ddad7fc8adc7247d2e79c0296c35"
 	earnerAddr := gethcommon.HexToAddress(earnerAddrString)
 
-	tokenAddrString := "0x3f1c547b21f65e10480de3ad8e19faac46c95034"
+	tokenAddrString := "0xe1b7a1249c71b538cc183b0080ffc3efd02bffb9"
 	tokenAddr := gethcommon.HexToAddress(tokenAddrString)
 
 	amount, found := proofData.Distribution.Get(earnerAddr, tokenAddr)
 
 	assert.True(t, found)
-	assert.Equal(t, "1027015602000000000", amount.String())
+	assert.Equal(t, "2690822690822645700000000000", amount.String())
 }
