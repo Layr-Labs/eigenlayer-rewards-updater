@@ -16,10 +16,12 @@ github.com/DataDog/sketches-go v1.4.2 h1:gppNudE9d19cQ98RYABOetxIhpTCl4m7CnbRZjv
 github.com/DataDog/sketches-go v1.4.2/go.mod h1:xJIXldczJyyjnbDop7ZZcLxJdV3+7Kra7H1KMgpgkLk=
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
+github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523155341-ae95614b048a h1:ZGdezPCEGlE2j365mVkpCkueXrvOXbfl0intPfVoqY0=
+github.com/Layr-Labs/eigenlayer-contracts v0.2.5-mainnet-m2-minor-eigenpod-upgrade.0.20240523155341-ae95614b048a/go.mod h1:+Ip6I5FpoU3tswZvpzafoURQGa5c2x0XqvD8y2+yWl0=
 github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc1-holesky-preprod-payments h1:0/83HlyTMRytyqYMBRY/MSzK8Ot819lX7stXPvZvWKk=
 github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc1-holesky-preprod-payments/go.mod h1:+Ip6I5FpoU3tswZvpzafoURQGa5c2x0XqvD8y2+yWl0=
-github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240516162452-b99f35e24ff6 h1:ZSM8E4QwqB6GRCrUqDA9Wda228ABrjWjdEzntTJO4YQ=
-github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240516162452-b99f35e24ff6/go.mod h1:loHmnp5jHZifnG2t1KQq504MfIYoYgLdSELFJWCqv34=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240523160126-3b2048925287 h1:t+KAMnSqdxEi4MsUzZOI4sGvfM3HBJSediXkCyKGup0=
+github.com/Layr-Labs/eigenlayer-payment-proofs v0.0.0-20240523160126-3b2048925287/go.mod h1:EeICFfpqXmJqUMwYJ/yKUx9Fv1dxrS00oL1Nfae6CAY=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=

@@ -45,6 +45,7 @@ func runClaimgen(
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
 
 	claimDate := cfg.ClaimTimestamp
+	var rootIndex uint32
 
 	if cfg.ClaimTimestamp == "latest" {
 		l.Sugar().Info("Generating claim based on latest submitted payment")
@@ -55,7 +56,21 @@ func runClaimgen(
 		}
 
 		latestSubmittedTimestamp, err := transactor.CurrPaymentCalculationEndTimestamp()
+		if err != nil {
+			l.Sugar().Errorf("Failed to get latest submitted timestamp", zap.Error(err))
+			return nil, err
+		}
+		l.Sugar().Debug("Latest submitted timestamp", zap.Uint32("timestamp", latestSubmittedTimestamp))
 		claimDate = time.Unix(int64(latestSubmittedTimestamp), 0).UTC().Format(time.DateOnly)
+
+		rootCount, err := transactor.GetNumberOfPublishedRoots()
+		if err != nil {
+			l.Sugar().Errorf("Failed to get number of published roots", zap.Error(err))
+			return nil, err
+		}
+		rootIndex = uint32(rootCount.Uint64() - 1)
+	} else {
+		return nil, fmt.Errorf("Claim timestamp must be 'latest'")
 	}
 
 	proofData, err := dataFetcher.FetchClaimAmountsForDate(claimDate)
@@ -76,7 +91,7 @@ func runClaimgen(
 	accounts, claim, err := cg.GenerateClaimProofForEarner(
 		gethcommon.HexToAddress(cfg.EarnerAddress),
 		tokenAddresses,
-		0,
+		rootIndex,
 	)
 	if err != nil {
 		return nil, err

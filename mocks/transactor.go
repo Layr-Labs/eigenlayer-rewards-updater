@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+	big "math/big"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -30,6 +31,36 @@ func (_m *Transactor) CurrPaymentCalculationEndTimestamp() (uint32, error) {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(uint32)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNumberOfPublishedRoots provides a mock function with given fields:
+func (_m *Transactor) GetNumberOfPublishedRoots() (*big.Int, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNumberOfPublishedRoots")
+	}
+
+	var r0 *big.Int
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (*big.Int, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() *big.Int); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*big.Int)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func() error); ok {
