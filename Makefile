@@ -35,7 +35,7 @@ clean:
 
 .PHONY: test
 test:
-	${GO} test ./...
+	TESTING=true ${GO} test ./...
 
 .PHONY: ci-test
 ci-test: deps test
