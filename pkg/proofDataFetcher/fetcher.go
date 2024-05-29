@@ -10,7 +10,7 @@ import (
 )
 
 type ProofDataFetcher interface {
-	FetchClaimAmountsForDate(date string) (*PaymentProofData, error)
+	FetchClaimAmountsForDate(date string) (*RewardProofData, error)
 	FetchRecentSnapshotList() ([]*Snapshot, error)
 	FetchLatestSnapshot() (*Snapshot, error)
 }
@@ -44,7 +44,7 @@ func (s *Snapshot) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type PaymentProofData struct {
+type RewardProofData struct {
 	Distribution *distribution.Distribution
 	AccountTree  *merkletree.MerkleTree
 	TokenTree    map[common.Address]*merkletree.MerkleTree

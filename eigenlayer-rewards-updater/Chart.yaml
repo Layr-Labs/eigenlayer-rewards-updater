@@ -1,6 +1,6 @@
 apiVersion: v2
 name: eigenlayer-rewards-updater
-description: A deployable version of the EigenLayer Payment Updater service.
+description: A deployable version of the EigenLayer Rewards Updater service.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
