@@ -25,7 +25,7 @@ func runClaimgen(
 	cfg *config.ClaimConfig,
 	l *zap.Logger,
 ) (
-	*claimgen.IRewardsCoordinatorPaymentMerkleClaimStrings,
+	*claimgen.IRewardsCoordinatorRewardsMerkleClaimStrings,
 	error,
 ) {
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
