@@ -37,7 +37,7 @@ func NewHttpProofDataFetcher(
 	}
 }
 
-func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.PaymentProofData, error) {
+func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.RewardProofData, error) {
 	h.logger.Sugar().Debug(fmt.Sprintf("Fetching claim amounts for date '%s'", date), zap.String("date", date))
 	fullUrl := h.buildClaimAmountsUrl(date)
 
@@ -49,7 +49,7 @@ func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofData
 	return h.ProcessClaimAmountsFromRawBody(rawBody)
 }
 
-func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*proofDataFetcher.PaymentProofData, error) {
+func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*proofDataFetcher.RewardProofData, error) {
 	strLines := strings.Split(string(rawBody), "\n")
 	distro := distribution.NewDistribution()
 	lines := []*distribution.EarnerLine{}
@@ -75,7 +75,7 @@ func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*
 		return nil, err
 	}
 
-	proof := &proofDataFetcher.PaymentProofData{
+	proof := &proofDataFetcher.RewardProofData{
 		Distribution: distro,
 		AccountTree:  accountTree,
 		TokenTree:    tokenTree,

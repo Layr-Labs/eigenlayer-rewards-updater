@@ -54,10 +54,9 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 }
 
 func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error {
-	// todo: params
 	tx, err := t.CoordinatorTransactor.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, rewardsUnixTimestamp)
 	if err != nil {
-		fmt.Printf("Payment coordinator, failed to submit root: %+v - %+v\n", err, tx)
+		fmt.Printf("Rewards coordinator, failed to submit root: %+v - %+v\n", err, tx)
 		return err
 	}
 

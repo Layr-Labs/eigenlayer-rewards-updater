@@ -13,23 +13,23 @@ type ProofDataFetcher struct {
 }
 
 // FetchClaimAmountsForDate provides a mock function with given fields: date
-func (_m *ProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.PaymentProofData, error) {
+func (_m *ProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.RewardProofData, error) {
 	ret := _m.Called(date)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FetchClaimAmountsForDate")
 	}
 
-	var r0 *proofDataFetcher.PaymentProofData
+	var r0 *proofDataFetcher.RewardProofData
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*proofDataFetcher.PaymentProofData, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (*proofDataFetcher.RewardProofData, error)); ok {
 		return rf(date)
 	}
-	if rf, ok := ret.Get(0).(func(string) *proofDataFetcher.PaymentProofData); ok {
+	if rf, ok := ret.Get(0).(func(string) *proofDataFetcher.RewardProofData); ok {
 		r0 = rf(date)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*proofDataFetcher.PaymentProofData)
+			r0 = ret.Get(0).(*proofDataFetcher.RewardProofData)
 		}
 	}
 

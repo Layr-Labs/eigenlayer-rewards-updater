@@ -21,7 +21,8 @@ import (
 )
 
 type Result struct {
-	LatestPaymentDate      string `json:"latestPaymentDate"`
+	// TODO(seanmcgary): update json field name once pipeline is updated
+	LatestRewardDate       string `json:"latestPaymentDate"`
 	MostRecentSnapshotDate string `json:"mostRecentSnapshotDate"`
 }
 
@@ -67,7 +68,7 @@ func run(
 	l.Sugar().Debugf("latest submitted timestamp: %s", lst.Format(time.DateOnly))
 
 	return &Result{
-		LatestPaymentDate:      lst.Format(time.DateOnly),
+		LatestRewardDate:       lst.Format(time.DateOnly),
 		MostRecentSnapshotDate: latestSnapshot.GetDateString(),
 	}, nil
 

@@ -59,8 +59,8 @@ func TestUpdaterUpdate(t *testing.T) {
 		},
 	}
 	// 2024-05-06
-	currentPaymentCalcEndTimestamp := uint32(1714953600)
-	expectedPaymentTimestamp := time.Unix(int64(1715040000), 0).UTC()
+	currentRewardCalcEndTimestamp := uint32(1714953600)
+	expectedRewardTimestamp := time.Unix(int64(1715040000), 0).UTC()
 
 	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
 
@@ -79,8 +79,8 @@ func TestUpdaterUpdate(t *testing.T) {
 	var root [32]byte
 	copy(root[:], rootBytes)
 
-	mockTransactor.On("CurrRewardsCalculationEndTimestamp").Return(currentPaymentCalcEndTimestamp, nil)
-	mockTransactor.On("SubmitRoot", mock.Anything, root, uint32(expectedPaymentTimestamp.Unix())).Return(nil)
+	mockTransactor.On("CurrRewardsCalculationEndTimestamp").Return(currentRewardCalcEndTimestamp, nil)
+	mockTransactor.On("SubmitRoot", mock.Anything, root, uint32(expectedRewardTimestamp.Unix())).Return(nil)
 
 	tracer.StartTracer()
 	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "test")
