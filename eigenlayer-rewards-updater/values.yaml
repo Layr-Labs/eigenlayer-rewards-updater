@@ -11,6 +11,7 @@ cronJob:
   
     environment: ""
     network: ""
-    rpc_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+    rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
     private_key: ""
+    proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
     rewards_coordinator_address: ""
