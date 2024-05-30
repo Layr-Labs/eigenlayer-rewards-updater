@@ -97,6 +97,8 @@ helm upgrade --install \                                                        
 
 ### `--config`
 
+EnvVar: `EIGENLAYER_DEBUG`
+
 Optional, path to a file based config to use
 
 ### `--debug`
@@ -109,17 +111,23 @@ Enables debug logging
 
 ### `--environment`
 
+EnvVar: `EIGENLAYER_ENVIRONMENT`
+
 The target environment
 
-*Values:* `local, dev, preprod, prod`
+*Values:* `preprod, testnet, mainnet`
 
 ### `--network`
+
+EnvVar: `EIGENLAYER_NETWORK`
 
 The Ethereum network to target
 
 *Values:* `local, devnet, holesky, mainnet`
 
 ### `--rpc-url`
+
+EnvVar: `EIGENLAYER_RPC_URL`
 
 Fully qualified URL to an Ethereum RPC node.
 
@@ -131,9 +139,13 @@ https://ethereum-holesky-rpc.publicnode.com
 
 ### `--private-key`
 
+EnvVar: `EIGENLAYER_PRIVATE_KEY`
+
 An Ethereum account private key, in hexidecimal form.
 
 ### `--rewards-coordinator-address`
+
+EnvVar: `EIGENLAYER_REWARDS_COORDINATOR_ADDRESS`
 
 The contract address of the target rewards coordinator contract used to post reward proofs
 
