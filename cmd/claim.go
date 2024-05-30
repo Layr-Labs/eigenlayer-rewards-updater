@@ -110,7 +110,6 @@ var claimCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewClaimConfig()
-		fmt.Printf("Config: %+v\n", cfg)
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
 		})
@@ -162,6 +161,7 @@ func init() {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {
 			fmt.Printf("Failed to bind flag '%s' - %+v\n", f.Name, err)
 		}
+		viper.BindEnv(f.Name)
 	})
 
 }

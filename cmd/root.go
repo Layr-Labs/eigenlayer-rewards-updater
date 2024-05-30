@@ -36,12 +36,12 @@ func init() {
 
 	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		viper.BindPFlag(config.KebabToSnakeCase(f.Name), f)
+		viper.BindEnv(f.Name)
 	})
 	initConfig(rootCmd)
 }
 
 func initConfig(cmd *cobra.Command) {
-	fmt.Printf("cfgFile: %s\n", cfgFile)
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
