@@ -7,6 +7,6 @@ import (
 func StartTracer() {
 	ddTracer.Start(
 		ddTracer.WithGlobalServiceName(true),
-		ddTracer.WithDebugMode(true),
+		ddTracer.WithDebugMode(false),
 	)
 }

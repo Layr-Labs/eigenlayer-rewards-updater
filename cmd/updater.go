@@ -100,10 +100,6 @@ func init() {
 	updaterCmd.Flags().String("network", "localnet", "Which network to use")
 	updaterCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
 	updaterCmd.Flags().String("private-key", "", "An ethereum private key")
-	updaterCmd.Flags().String("aws-access-key-id", "", "AWS access key ID")
-	updaterCmd.Flags().String("aws-secret-access-key", "", "AWS secret access key")
-	updaterCmd.Flags().String("aws-region", "us-east-1", "us-east-1")
-	updaterCmd.Flags().String("s3-output-bucket", "", "s3://<bucket name and path>")
 	updaterCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	updaterCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 
@@ -111,6 +107,7 @@ func init() {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {
 			fmt.Printf("Failed to bind flag '%s' - %+v\n", f.Name, err)
 		}
+		viper.BindEnv(f.Name)
 	})
 
 }

@@ -14,9 +14,14 @@ func NewLogger(cfg *LoggerConfig, options ...zap.Option) (*zap.Logger, error) {
 	}
 	copy(mergedOptions, options)
 
-	if cfg.Debug == true {
-		return zap.NewDevelopment(options...)
+	c := zap.NewProductionConfig()
+	c.EncoderConfig = zap.NewProductionEncoderConfig()
+
+	if cfg.Debug {
+		c.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	} else {
-		return zap.NewProduction(options...)
+		c.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
+
+	return c.Build(mergedOptions...)
 }
