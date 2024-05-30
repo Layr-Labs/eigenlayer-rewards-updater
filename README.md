@@ -157,6 +157,8 @@ _Example_
 
 ### `--proof-store-base-url`
 
+EnvVar: `EIGENLAYER_PROOF_STORE_BASE_URL`
+
 The base URL of where rewards data is stored.
 
 e.g.
