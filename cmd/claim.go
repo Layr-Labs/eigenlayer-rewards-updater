@@ -149,6 +149,8 @@ var claimCmd = &cobra.Command{
 			if err != nil {
 				logger.Sugar().Fatal("Failed to write to output file", zap.Error(err))
 			}
+		} else {
+			fmt.Printf("%s\n", string(jsonString))
 		}
 	},
 }
