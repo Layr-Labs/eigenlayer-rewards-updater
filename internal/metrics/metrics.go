@@ -9,7 +9,7 @@ var statsdClient *statsd.Client
 
 func InitStatsdClient(addr string) (*statsd.Client, error) {
 	var err error
-	statsdClient, err = statsd.New(addr)
+	statsdClient, err = statsd.New(addr, statsd.WithNamespace("eigenlayer_rewards_updater."))
 	return statsdClient, err
 }
 

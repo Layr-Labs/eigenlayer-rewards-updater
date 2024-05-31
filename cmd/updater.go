@@ -84,6 +84,7 @@ var updaterCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalln(err)
 		}
+
 		s.Incr(metrics.Counter_UpdateRuns, nil, 1)
 
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
@@ -98,6 +99,9 @@ var updaterCmd = &cobra.Command{
 		err = runUpdater(ctx, cfg, logger)
 		if err != nil {
 			logger.Sugar().Error(err)
+		}
+		if err := s.Close(); err != nil {
+			logger.Sugar().Error("Failed to close statsd client", zap.Error(err))
 		}
 	},
 }
