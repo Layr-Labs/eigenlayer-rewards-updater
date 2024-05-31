@@ -1,10 +1,13 @@
 package httpProofDataFetcher
 
 import (
+	"context"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/testData"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/mocktracer"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"io"
 	"net/http"
 	"strings"
@@ -33,11 +36,17 @@ func TestHttpProofDataFetcher_FetchRecentSnapshotList(t *testing.T) {
 		},
 	}
 
+	mt := mocktracer.Start()
+	defer mt.Stop()
+
+	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "TestHttpProofDataFetcher_FetchRecentSnapshotList")
+	defer span.Finish()
+
 	l, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
 
 	fetcher := NewHttpProofDataFetcher(baseUrl, env, network, mockClient, l)
 
-	snapshots, err := fetcher.FetchRecentSnapshotList()
+	snapshots, err := fetcher.FetchRecentSnapshotList(ctx)
 	assert.Nil(t, err)
 	assert.Len(t, snapshots, 10)
 }
@@ -56,11 +65,17 @@ func TestHttpProofDataFetcher_FetchLatestSnapshot(t *testing.T) {
 		},
 	}
 
+	mt := mocktracer.Start()
+	defer mt.Stop()
+
+	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "TestHttpProofDataFetcher_FetchLatestSnapshot")
+	defer span.Finish()
+
 	l, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
 
 	fetcher := NewHttpProofDataFetcher(baseUrl, env, network, mockClient, l)
 
-	snapshot, err := fetcher.FetchLatestSnapshot()
+	snapshot, err := fetcher.FetchLatestSnapshot(ctx)
 	assert.Nil(t, err)
 	assert.NotNil(t, snapshot)
 }
@@ -79,11 +94,17 @@ func TestHttpProofDataFetcher_FetchClaimAmountsForDate(t *testing.T) {
 		},
 	}
 
+	mt := mocktracer.Start()
+	defer mt.Stop()
+
+	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "TestHttpProofDataFetcher_FetchClaimAmountsForDate")
+	defer span.Finish()
+
 	l, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
 
 	fetcher := NewHttpProofDataFetcher(baseUrl, env, network, mockClient, l)
 
-	proofData, err := fetcher.FetchClaimAmountsForDate("2024-05-07")
+	proofData, err := fetcher.FetchClaimAmountsForDate(ctx, "2024-05-07")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, proofData)

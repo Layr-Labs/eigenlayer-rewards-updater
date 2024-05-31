@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
@@ -9,12 +10,14 @@ import (
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"log"
 	"net/http"
 	"os"
@@ -22,12 +25,16 @@ import (
 )
 
 func runClaimgen(
+	ctx context.Context,
 	cfg *config.ClaimConfig,
 	l *zap.Logger,
 ) (
 	*claimgen.IRewardsCoordinatorRewardsMerkleClaimStrings,
 	error,
 ) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "runClaimgen")
+	defer span.Finish()
+
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
 		fmt.Println("Failed to create new eth client")
@@ -35,7 +42,7 @@ func runClaimgen(
 		return nil, err
 	}
 
-	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
+	chainClient, err := chainClient.NewChainClient(ctx, ethClient, cfg.PrivateKey)
 	if err != nil {
 		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return nil, err
@@ -73,7 +80,7 @@ func runClaimgen(
 		return nil, fmt.Errorf("Claim timestamp must be 'latest'")
 	}
 
-	proofData, err := dataFetcher.FetchClaimAmountsForDate(claimDate)
+	proofData, err := dataFetcher.FetchClaimAmountsForDate(ctx, claimDate)
 	if err != nil {
 		l.Sugar().Errorf("Failed to fetch proof data", zap.Error(err))
 		return nil, err
@@ -109,6 +116,12 @@ var claimCmd = &cobra.Command{
 	Short: "Generate claim",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		tracer.StartTracer()
+		defer ddTracer.Stop()
+
+		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::claim")
+		defer span.Finish()
+
 		cfg := config.NewClaimConfig()
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
@@ -119,7 +132,7 @@ var claimCmd = &cobra.Command{
 		defer logger.Sync()
 		logger.Sugar().Debug(cfg)
 
-		solidity, err := runClaimgen(cfg, logger)
+		solidity, err := runClaimgen(ctx, cfg, logger)
 
 		if err != nil {
 			logger.Sugar().Error(err)

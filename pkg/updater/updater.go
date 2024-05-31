@@ -45,7 +45,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	*/
 
 	// Get the most recent snapshot timestamp
-	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot()
+	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	}
 
 	// Get the data for the latest snapshot and load it into a distribution instance
-	rewardsProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(latestSnapshot.GetDateString())
+	rewardsProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(ctx, latestSnapshot.GetDateString())
 	if err != nil {
 		return nil, err
 	}

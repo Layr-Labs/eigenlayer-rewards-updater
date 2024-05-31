@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
@@ -8,12 +9,14 @@ import (
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"log"
 	"net/http"
 	"os"
@@ -26,7 +29,8 @@ type Result struct {
 	MostRecentSnapshotDate string `json:"mostRecentSnapshotDate"`
 }
 
-func run(
+func runDistribution(
+	ctx context.Context,
 	cfg *config.DistributionConfig,
 	l *zap.Logger,
 ) (
@@ -40,7 +44,7 @@ func run(
 		return nil, err
 	}
 
-	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
+	chainClient, err := chainClient.NewChainClient(ctx, ethClient, cfg.PrivateKey)
 	if err != nil {
 		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return nil, err
@@ -55,7 +59,7 @@ func run(
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
 
-	latestSnapshot, err := dataFetcher.FetchLatestSnapshot()
+	latestSnapshot, err := dataFetcher.FetchLatestSnapshot(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +84,12 @@ var distributionCmd = &cobra.Command{
 	Short: "Access distribution data",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		tracer.StartTracer()
+		defer ddTracer.Stop()
+
+		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::distribution")
+		defer span.Finish()
+
 		cfg := config.NewDistributionConfig()
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
@@ -90,7 +100,7 @@ var distributionCmd = &cobra.Command{
 		defer logger.Sync()
 		logger.Sugar().Debug(cfg)
 
-		res, err := run(cfg, logger)
+		res, err := runDistribution(ctx, cfg, logger)
 
 		if err != nil {
 			logger.Sugar().Error(err)

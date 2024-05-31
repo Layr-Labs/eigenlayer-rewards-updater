@@ -7,8 +7,8 @@ import (
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/testData"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
-	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/updater"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/mocktracer"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"io"
 	"net/http"
@@ -62,6 +62,12 @@ func TestUpdaterUpdate(t *testing.T) {
 	currentRewardCalcEndTimestamp := uint32(1714953600)
 	expectedRewardTimestamp := time.Unix(int64(1715040000), 0).UTC()
 
+	mt := mocktracer.Start()
+	defer mt.Stop()
+
+	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "TestUpdaterUpdate")
+	defer span.Finish()
+
 	logger, _ := logger.NewLogger(&logger.LoggerConfig{Debug: true})
 
 	mockTransactor := &mocks.Transactor{}
@@ -72,7 +78,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	assert.Nil(t, err)
 
 	// setup data
-	processedData, _ := fetcher.ProcessClaimAmountsFromRawBody([]byte(testData.GetFullTestEarnerLines()))
+	processedData, _ := fetcher.ProcessClaimAmountsFromRawBody(ctx, []byte(testData.GetFullTestEarnerLines()))
 
 	rootBytes := processedData.AccountTree.Root()
 
@@ -81,10 +87,6 @@ func TestUpdaterUpdate(t *testing.T) {
 
 	mockTransactor.On("CurrRewardsCalculationEndTimestamp").Return(currentRewardCalcEndTimestamp, nil)
 	mockTransactor.On("SubmitRoot", mock.Anything, root, uint32(expectedRewardTimestamp.Unix())).Return(nil)
-
-	tracer.StartTracer()
-	span, ctx := ddTracer.StartSpanFromContext(context.Background(), "test")
-	defer span.Finish()
 
 	accountTree, err := updater.Update(ctx)
 	assert.Nil(t, err)

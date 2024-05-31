@@ -31,7 +31,7 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 		return err
 	}
 
-	chainClient, err := chainClient.NewChainClient(ethClient, cfg.PrivateKey)
+	chainClient, err := chainClient.NewChainClient(ctx, ethClient, cfg.PrivateKey)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return err
@@ -71,9 +71,7 @@ var updaterCmd = &cobra.Command{
 		tracer.StartTracer()
 		defer ddTracer.Stop()
 
-		ctx := context.Background()
-
-		span, ctx := ddTracer.StartSpanFromContext(ctx, "cmd::updater")
+		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::updater")
 		defer span.Finish()
 
 		cfg := config.NewUpdaterConfig()
