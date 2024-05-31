@@ -1,6 +1,7 @@
 package httpProofDataFetcher
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher"
 	"go.uber.org/zap"
+	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"io"
 	"net/http"
 	"strings"
@@ -37,19 +39,25 @@ func NewHttpProofDataFetcher(
 	}
 }
 
-func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.RewardProofData, error) {
+func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(ctx context.Context, date string) (*proofDataFetcher.RewardProofData, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::FetchClaimAmountsForDate")
+	defer span.Finish()
+
 	h.logger.Sugar().Debug(fmt.Sprintf("Fetching claim amounts for date '%s'", date), zap.String("date", date))
 	fullUrl := h.buildClaimAmountsUrl(date)
 
-	rawBody, err := h.handleRequest(fullUrl)
+	rawBody, err := h.handleRequest(ctx, fullUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	return h.ProcessClaimAmountsFromRawBody(rawBody)
+	return h.ProcessClaimAmountsFromRawBody(ctx, rawBody)
 }
 
-func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*proofDataFetcher.RewardProofData, error) {
+func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(ctx context.Context, rawBody []byte) (*proofDataFetcher.RewardProofData, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::ProcessClaimAmountsFromRawBody")
+	defer span.Finish()
+
 	strLines := strings.Split(string(rawBody), "\n")
 	distro := distribution.NewDistribution()
 	lines := []*distribution.EarnerLine{}
@@ -85,10 +93,13 @@ func (h *HttpProofDataFetcher) ProcessClaimAmountsFromRawBody(rawBody []byte) (*
 	return proof, nil
 }
 
-func (h *HttpProofDataFetcher) FetchRecentSnapshotList() ([]*proofDataFetcher.Snapshot, error) {
+func (h *HttpProofDataFetcher) FetchRecentSnapshotList(ctx context.Context) ([]*proofDataFetcher.Snapshot, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::FetchRecentSnapshotList")
+	defer span.Finish()
+
 	fullUrl := h.buildRecentSnapshotsUrl()
 
-	rawBody, err := h.handleRequest(fullUrl)
+	rawBody, err := h.handleRequest(ctx, fullUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +112,12 @@ func (h *HttpProofDataFetcher) FetchRecentSnapshotList() ([]*proofDataFetcher.Sn
 	return snapshots, nil
 }
 
-func (h *HttpProofDataFetcher) FetchLatestSnapshot() (*proofDataFetcher.Snapshot, error) {
-	snapshots, err := h.FetchRecentSnapshotList()
+func (h *HttpProofDataFetcher) FetchLatestSnapshot(ctx context.Context) (*proofDataFetcher.Snapshot, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::FetchLatestSnapshot")
+	defer span.Finish()
+
+	snapshots, err := h.FetchRecentSnapshotList(ctx)
+
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +127,11 @@ func (h *HttpProofDataFetcher) FetchLatestSnapshot() (*proofDataFetcher.Snapshot
 	return snapshots[0], nil
 }
 
-func (h *HttpProofDataFetcher) handleRequest(fullUrl string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, fullUrl, nil)
+func (h *HttpProofDataFetcher) handleRequest(ctx context.Context, fullUrl string) ([]byte, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::handleRequest")
+	defer span.Finish()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullUrl, nil)
 	if err != nil {
 		h.logger.Sugar().Error("Failed to form request", zap.Error(err))
 	}

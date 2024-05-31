@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	proofDataFetcher "github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,9 +14,9 @@ type ProofDataFetcher struct {
 	mock.Mock
 }
 
-// FetchClaimAmountsForDate provides a mock function with given fields: date
-func (_m *ProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFetcher.RewardProofData, error) {
-	ret := _m.Called(date)
+// FetchClaimAmountsForDate provides a mock function with given fields: ctx, date
+func (_m *ProofDataFetcher) FetchClaimAmountsForDate(ctx context.Context, date string) (*proofDataFetcher.RewardProofData, error) {
+	ret := _m.Called(ctx, date)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FetchClaimAmountsForDate")
@@ -22,19 +24,19 @@ func (_m *ProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFet
 
 	var r0 *proofDataFetcher.RewardProofData
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*proofDataFetcher.RewardProofData, error)); ok {
-		return rf(date)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*proofDataFetcher.RewardProofData, error)); ok {
+		return rf(ctx, date)
 	}
-	if rf, ok := ret.Get(0).(func(string) *proofDataFetcher.RewardProofData); ok {
-		r0 = rf(date)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *proofDataFetcher.RewardProofData); ok {
+		r0 = rf(ctx, date)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proofDataFetcher.RewardProofData)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(date)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, date)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -42,9 +44,9 @@ func (_m *ProofDataFetcher) FetchClaimAmountsForDate(date string) (*proofDataFet
 	return r0, r1
 }
 
-// FetchLatestSnapshot provides a mock function with given fields:
-func (_m *ProofDataFetcher) FetchLatestSnapshot() (*proofDataFetcher.Snapshot, error) {
-	ret := _m.Called()
+// FetchLatestSnapshot provides a mock function with given fields: ctx
+func (_m *ProofDataFetcher) FetchLatestSnapshot(ctx context.Context) (*proofDataFetcher.Snapshot, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FetchLatestSnapshot")
@@ -52,19 +54,19 @@ func (_m *ProofDataFetcher) FetchLatestSnapshot() (*proofDataFetcher.Snapshot, e
 
 	var r0 *proofDataFetcher.Snapshot
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (*proofDataFetcher.Snapshot, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (*proofDataFetcher.Snapshot, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() *proofDataFetcher.Snapshot); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) *proofDataFetcher.Snapshot); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proofDataFetcher.Snapshot)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -72,9 +74,9 @@ func (_m *ProofDataFetcher) FetchLatestSnapshot() (*proofDataFetcher.Snapshot, e
 	return r0, r1
 }
 
-// FetchRecentSnapshotList provides a mock function with given fields:
-func (_m *ProofDataFetcher) FetchRecentSnapshotList() ([]*proofDataFetcher.Snapshot, error) {
-	ret := _m.Called()
+// FetchRecentSnapshotList provides a mock function with given fields: ctx
+func (_m *ProofDataFetcher) FetchRecentSnapshotList(ctx context.Context) ([]*proofDataFetcher.Snapshot, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FetchRecentSnapshotList")
@@ -82,19 +84,19 @@ func (_m *ProofDataFetcher) FetchRecentSnapshotList() ([]*proofDataFetcher.Snaps
 
 	var r0 []*proofDataFetcher.Snapshot
 	var r1 error
-	if rf, ok := ret.Get(0).(func() ([]*proofDataFetcher.Snapshot, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*proofDataFetcher.Snapshot, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() []*proofDataFetcher.Snapshot); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) []*proofDataFetcher.Snapshot); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*proofDataFetcher.Snapshot)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

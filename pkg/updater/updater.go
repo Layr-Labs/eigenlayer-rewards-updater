@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
 	"github.com/wealdtech/go-merkletree/v2"
@@ -45,7 +46,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	*/
 
 	// Get the most recent snapshot timestamp
-	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot()
+	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,9 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 
 	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
 	if lst.Equal(latestSnapshot.SnapshotDate) {
-		return nil, fmt.Errorf("latest snapshot is the most recent reward")
+		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateNoUpdate, nil, 1)
+		u.logger.Sugar().Info("latest snapshot is the most recent reward")
+		return nil, nil
 	}
 	// If the most recent snapshot timestamp is less than whats already on chain, we have a problem
 	if lst.After(latestSnapshot.SnapshotDate) {
@@ -68,7 +71,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	}
 
 	// Get the data for the latest snapshot and load it into a distribution instance
-	rewardsProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(latestSnapshot.GetDateString())
+	rewardsProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(ctx, latestSnapshot.GetDateString())
 	if err != nil {
 		return nil, err
 	}
@@ -81,10 +84,13 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	u.logger.Sugar().Info("updating rewards", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
 
 	// return rewardsProofData.AccountTree, nil
-	fmt.Printf("Calculated timestamp: %+v\n", calculatedUntilTimestamp)
+	u.logger.Sugar().Info("Calculated timestamp", zap.Int64("calculated_until_timestamp", calculatedUntilTimestamp))
 	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), uint32(calculatedUntilTimestamp)); err != nil {
+		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateFails, nil, 1)
 		u.logger.Sugar().Error("Failed to submit root", zap.Error(err))
 		return rewardsProofData.AccountTree, err
+	} else {
+		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateSuccess, nil, 1)
 	}
 
 	return rewardsProofData.AccountTree, nil

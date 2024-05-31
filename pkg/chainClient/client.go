@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -31,7 +32,10 @@ type ChainClient struct {
 	Contracts          map[common.Address]*bind.BoundContract
 }
 
-func NewChainClient(ethClient *ethclient.Client, privateKeyString string) (*ChainClient, error) {
+func NewChainClient(ctx context.Context, ethClient *ethclient.Client, privateKeyString string) (*ChainClient, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "chainClient::NewChainClient")
+	defer span.Finish()
+
 	var accountAddress common.Address
 	var privateKey *ecdsa.PrivateKey
 	var opts *bind.TransactOpts
@@ -51,7 +55,7 @@ func NewChainClient(ethClient *ethclient.Client, privateKeyString string) (*Chai
 		}
 		accountAddress = crypto.PubkeyToAddress(*publicKeyECDSA)
 
-		chainIDBigInt, err := ethClient.ChainID(context.Background())
+		chainIDBigInt, err := ethClient.ChainID(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("NewClient: cannot get chainId: %w", err)
 		}
@@ -101,6 +105,9 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 	tx *types.Transaction,
 	tag string,
 ) (*types.Receipt, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "chainClient::EstimateGasPriceAndLimitAndSendTx")
+	defer span.Finish()
+
 	gasTipCap, err := c.SuggestGasTipCap(ctx)
 	if err != nil {
 		// If the transaction failed because the backend does not support
@@ -167,10 +174,7 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 
 	log.Info().Msgf("EstimateGasPriceAndLimitAndSendTx: sent txn (%s) with hash=%s", tag, tx.Hash().Hex())
 
-	receipt, err := c.EnsureTransactionEvaled(
-		tx,
-		tag,
-	)
+	receipt, err := c.EnsureTransactionEvaled(ctx, tx, tag)
 	if err != nil {
 		return nil, err
 	}
@@ -178,10 +182,13 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 	return receipt, err
 }
 
-func (c *ChainClient) EnsureTransactionEvaled(tx *types.Transaction, tag string) (*types.Receipt, error) {
+func (c *ChainClient) EnsureTransactionEvaled(ctx context.Context, tx *types.Transaction, tag string) (*types.Receipt, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "chainClient::EnsureTransactionEvaled")
+	defer span.Finish()
+
 	log.Info().Msgf("EnsureTransactionEvaled entered")
 
-	receipt, err := bind.WaitMined(context.Background(), c.Client, tx)
+	receipt, err := bind.WaitMined(ctx, c.Client, tx)
 	if err != nil {
 		return nil, fmt.Errorf("EnsureTransactionEvaled: failed to wait for transaction (%s) to mine: %w", tag, err)
 	}

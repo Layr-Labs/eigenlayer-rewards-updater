@@ -1,6 +1,7 @@
 package proofDataFetcher
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/distribution"
 	"github.com/ethereum/go-ethereum/common"
@@ -10,9 +11,9 @@ import (
 )
 
 type ProofDataFetcher interface {
-	FetchClaimAmountsForDate(date string) (*RewardProofData, error)
-	FetchRecentSnapshotList() ([]*Snapshot, error)
-	FetchLatestSnapshot() (*Snapshot, error)
+	FetchClaimAmountsForDate(ctx context.Context, date string) (*RewardProofData, error)
+	FetchRecentSnapshotList(ctx context.Context) ([]*Snapshot, error)
+	FetchLatestSnapshot(ctx context.Context) (*Snapshot, error)
 }
 
 type HTTPClient interface {
