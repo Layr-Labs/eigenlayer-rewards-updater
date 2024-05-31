@@ -8,8 +8,9 @@ import (
 )
 
 type GlobalConfig struct {
-	Config string `mapstructure:"config"`
-	Debug  bool   `mapstructure:"debug"`
+	Config      string `mapstructure:"config"`
+	Debug       bool   `mapstructure:"debug"`
+	DDStatsdUrl string `mapstructure:"dd_statsd_url"`
 }
 
 type Environment int
@@ -93,8 +94,9 @@ func StringEnvironmentFromEnum(env Environment) (string, error) {
 func NewUpdaterConfig() *UpdaterConfig {
 	updaterConfig = &UpdaterConfig{
 		GlobalConfig: GlobalConfig{
-			Config: viper.GetString("config"),
-			Debug:  viper.GetBool("debug"),
+			Config:      viper.GetString("config"),
+			Debug:       viper.GetBool("debug"),
+			DDStatsdUrl: viper.GetString("dd_statsd_url"),
 		},
 		Environment:               parseEnvironment(viper.GetString("environment")),
 		Network:                   viper.GetString("network"),
