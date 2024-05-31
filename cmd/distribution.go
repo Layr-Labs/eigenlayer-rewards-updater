@@ -106,8 +106,6 @@ var distributionCmd = &cobra.Command{
 			logger.Sugar().Error(err)
 		}
 
-		fmt.Printf("result: %+v\n", res)
-
 		jsonRes, err := json.MarshalIndent(res, "", "  ")
 
 		if err != nil {
@@ -120,8 +118,6 @@ var distributionCmd = &cobra.Command{
 			if err != nil {
 				logger.Sugar().Fatal("Failed to write to output file", zap.Error(err))
 			}
-		} else {
-			fmt.Printf("distribution: %+v\n", string(jsonRes))
 		}
 	},
 }

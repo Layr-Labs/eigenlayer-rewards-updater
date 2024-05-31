@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
@@ -53,12 +54,15 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 	}
 
 	tree, err := u.Update(ctx)
-	fmt.Printf("tree: %+v\n", tree)
 	if err != nil {
 		logger.Sugar().Info("Failed to update", zap.Error(err))
 		return nil
 	}
-	logger.Sugar().Info("Update successful")
+	// Since the updater can run on a cron job checking for new roots, its possible for it to run and not have any new
+	// roots to update. This isnt a success or a failure, so we just log it and return nil
+	if tree != nil {
+		logger.Sugar().Info("Update successful")
+	}
 	return nil
 }
 
@@ -68,13 +72,20 @@ var updaterCmd = &cobra.Command{
 	Short: "Generate and update rewards merkle tree",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := config.NewUpdaterConfig()
+
 		tracer.StartTracer()
 		defer ddTracer.Stop()
 
 		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::updater")
 		defer span.Finish()
 
-		cfg := config.NewUpdaterConfig()
+		s, err := metrics.InitStatsdClient(cfg.DDStatsdUrl)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		s.Incr(metrics.Counter_UpdateRuns, nil, 1)
+
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
 		})

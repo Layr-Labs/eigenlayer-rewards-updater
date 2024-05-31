@@ -56,14 +56,12 @@ func (s *TransactorImpl) GetRootIndex(root [32]byte) (uint32, error) {
 func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error {
 	tx, err := t.CoordinatorTransactor.SubmitRoot(t.ChainClient.NoSendTransactOpts, root, rewardsUnixTimestamp)
 	if err != nil {
-		fmt.Printf("Rewards coordinator, failed to submit root: %+v - %+v\n", err, tx)
-		return err
+		return fmt.Errorf("Rewards coordinator, failed to submit root: %+v - %+v", err, tx)
 	}
 
 	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(ctx, tx, "submitRoot")
 	if err != nil {
-		fmt.Printf("Failed to estimate gas: %+v\n", err)
-		return err
+		return fmt.Errorf("Failed to estimate gas: %+v\n", err)
 	}
 
 	if receipt.Status != 1 {

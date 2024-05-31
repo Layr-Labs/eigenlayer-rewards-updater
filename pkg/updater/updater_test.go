@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/testData"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
@@ -26,7 +27,6 @@ type mockHttpClient struct {
 }
 
 func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
-	fmt.Printf("DO request url: %s\n", req.URL.String())
 	return m.mockDo(req), nil
 }
 
@@ -61,6 +61,9 @@ func TestUpdaterUpdate(t *testing.T) {
 	// 2024-05-06
 	currentRewardCalcEndTimestamp := uint32(1714953600)
 	expectedRewardTimestamp := time.Unix(int64(1715040000), 0).UTC()
+
+	_, err := metrics.InitStatsdClient("10.10.10.10")
+	fmt.Printf("err: %v\n", err)
 
 	mt := mocktracer.Start()
 	defer mt.Stop()

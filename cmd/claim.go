@@ -93,7 +93,6 @@ func runClaimgen(
 		t = t
 		tokenAddresses = append(tokenAddresses, gethcommon.HexToAddress(t))
 	}
-	fmt.Printf("Tokens: %+v\n", tokenAddresses)
 
 	accounts, claim, err := cg.GenerateClaimProofForEarner(
 		gethcommon.HexToAddress(cfg.EarnerAddress),
@@ -150,8 +149,6 @@ var claimCmd = &cobra.Command{
 			if err != nil {
 				logger.Sugar().Fatal("Failed to write to output file", zap.Error(err))
 			}
-		} else {
-			fmt.Printf("distribution: %+v\n", string(jsonString))
 		}
 	},
 }
