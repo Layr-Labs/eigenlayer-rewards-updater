@@ -34,6 +34,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eigenlayer-rewards-updater/config.yaml)")
 	rootCmd.PersistentFlags().Bool("debug", false, "'true' or 'false'")
 	rootCmd.PersistentFlags().String("dd-statsd-url", "", "URL to use for DataDog StatsD. If empty, DD_DOGSTATSD_URL will be used")
+	rootCmd.PersistentFlags().Bool("enable-statsd", true, "Enable/disable statsd metrics collection")
 
 	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		viper.BindPFlag(config.KebabToSnakeCase(f.Name), f)

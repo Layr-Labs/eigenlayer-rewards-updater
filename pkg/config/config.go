@@ -8,9 +8,10 @@ import (
 )
 
 type GlobalConfig struct {
-	Config      string `mapstructure:"config"`
-	Debug       bool   `mapstructure:"debug"`
-	DDStatsdUrl string `mapstructure:"dd_statsd_url"`
+	Config       string `mapstructure:"config"`
+	Debug        bool   `mapstructure:"debug"`
+	DDStatsdUrl  string `mapstructure:"dd_statsd_url"`
+	EnableStatsd bool   `mapstructure:"enable_statsd"`
 }
 
 type Environment int
