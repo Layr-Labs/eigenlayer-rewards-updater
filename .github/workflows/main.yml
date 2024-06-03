@@ -36,10 +36,10 @@ jobs:
           REGISTRY: "public.ecr.aws/z6g0f8n7"
           REPOSITORY: ${{ github.event.repository.name }}
           IMAGE_TAG: ${{ github.sha }}
+          PLATFORMS: "linux/amd64,linux/arm64"
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           if [[ $GITHUB_REF == refs/heads/master ]]; then
-            docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
-            docker push $REGISTRY/$REPOSITORY:latest
+            docker-buildx build --platform $PLATFORMS -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest --push .
+          else
+            docker-buildx build --platform $PLATFORMS -t $REGISTRY/$REPOSITORY:$IMAGE_TAG --push .
           fi
