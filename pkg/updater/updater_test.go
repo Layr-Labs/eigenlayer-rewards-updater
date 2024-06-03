@@ -62,7 +62,7 @@ func TestUpdaterUpdate(t *testing.T) {
 	currentRewardCalcEndTimestamp := uint32(1714953600)
 	expectedRewardTimestamp := time.Unix(int64(1715040000), 0).UTC()
 
-	_, err := metrics.InitStatsdClient("10.10.10.10")
+	_, err := metrics.InitStatsdClient("", false)
 	fmt.Printf("err: %v\n", err)
 
 	mt := mocktracer.Start()

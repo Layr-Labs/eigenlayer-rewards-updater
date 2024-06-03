@@ -5,15 +5,19 @@ import (
 	"github.com/DataDog/datadog-go/v5/statsd"
 )
 
-var statsdClient *statsd.Client
+var statsdClient statsd.ClientInterface
 
-func InitStatsdClient(addr string) (*statsd.Client, error) {
+func InitStatsdClient(addr string, enabled bool) (statsd.ClientInterface, error) {
+	if !enabled {
+		statsdClient = &statsd.NoOpClient{}
+		return statsdClient, nil
+	}
 	var err error
 	statsdClient, err = statsd.New(addr, statsd.WithNamespace("eigenlayer_rewards_updater."))
 	return statsdClient, err
 }
 
-func GetStatsdClient() *statsd.Client {
+func GetStatsdClient() statsd.ClientInterface {
 	if statsdClient == nil {
 		panic(errors.New("statsd client not initialized"))
 	}

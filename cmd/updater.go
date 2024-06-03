@@ -80,7 +80,7 @@ var updaterCmd = &cobra.Command{
 		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::updater")
 		defer span.Finish()
 
-		s, err := metrics.InitStatsdClient(cfg.DDStatsdUrl)
+		s, err := metrics.InitStatsdClient(cfg.DDStatsdUrl, cfg.EnableStatsd)
 		if err != nil {
 			log.Fatalln(err)
 		}
