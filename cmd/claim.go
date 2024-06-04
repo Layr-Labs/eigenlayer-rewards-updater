@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
@@ -112,9 +113,13 @@ func runClaimgen(
 	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
 
 	if cfg.SubmitClaim {
+		metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsGenerated, nil, 1)
 		err := transactor.SubmitRewardClaim(ctx, *claim, gethcommon.HexToAddress(cfg.EarnerAddress))
 		if err != nil {
+			metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsSubmittedFail, nil, 1)
 			l.Sugar().Errorf("Failed to submit claim", zap.Error(err))
+		} else {
+			metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsSubmittedSuccess, nil, 1)
 		}
 	}
 
@@ -129,6 +134,8 @@ var claimCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewClaimConfig()
+
+		metrics.InitStatsdClient("", cfg.EnableStatsd)
 
 		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()

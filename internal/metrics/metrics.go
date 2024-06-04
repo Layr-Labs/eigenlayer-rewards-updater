@@ -32,4 +32,8 @@ const (
 	Counter_UpdateFails    = "update_fails"
 	Counter_UpdateSuccess  = "update_success"
 	Counter_UpdateNoUpdate = "update_no_update"
+
+	Counter_ClaimsGenerated        = "claims_generated"
+	Counter_ClaimsSubmittedSuccess = "claims_submitted_success"
+	Counter_ClaimsSubmittedFail    = "claims_submitted_fail"
 )
