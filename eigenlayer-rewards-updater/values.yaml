@@ -15,3 +15,24 @@ cronJob:
     private_key: ""
     proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
     rewards_coordinator_address: ""
+
+claimJob:
+  enabled: false
+  schedule: "35 13 * * *"
+  image:
+    repository: public.ecr.aws/z6g0f8n7/eigenlayer-rewards-updater
+    tag: latest
+    pullPolicy: Always
+  config: |
+    debug: true
+  
+    environment: ""
+    network: ""
+    rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
+    proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+    rewards_coordinator_address: ""
+    private_key: ""
+    earner_address: ""
+    tokens: []
+    claim_timestamp: 'latest'
+    submit_claim: true
