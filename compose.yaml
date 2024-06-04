@@ -16,8 +16,8 @@ services:
     command:
       - "updater"
       - "--debug=true"
-      - "--environment='dev'"
-      - "--network='devnet'"
+      - "--environment='preprod'"
+      - "--network='holesky'"
       - "--rpc-url='http://....'"
       - "--proof-store-url='https://eigenpayments-dev.s3.us-east-2.amazonaws.com'"
       - "--private-key='<ethereum private key>'"

@@ -13,7 +13,10 @@ func InitStatsdClient(addr string, enabled bool) (statsd.ClientInterface, error)
 		return statsdClient, nil
 	}
 	var err error
-	statsdClient, err = statsd.New(addr, statsd.WithNamespace("eigenlayer_rewards_updater."))
+	statsdClient, err = statsd.New(addr,
+		statsd.WithNamespace("eigenlayer_rewards_updater."),
+		statsd.WithMaxMessagesPerPayload(1),
+	)
 	return statsdClient, err
 }
 

@@ -33,6 +33,16 @@ docker run eigenlayer-rewards-updater:latest [updater]
 
 ## Running
 
+### Public docker image
+
+A publicly hosted Docker image can be found at:
+
+```bash
+public.ecr.aws/z6g0f8n7/eigenlayer-rewards-updater:latest
+```
+
+This image is a multi-arch capable image, currently built for `linux/amd64` and `linux/arm64`. `latest` is the only tag available at the moment with plans to ship versioned images soon.
+
 ### With config
 
 To run the `rewards-updater` with a config file, copy the `config.yml.tpl` template to your desired location and fill in the specified fields.
@@ -103,9 +113,23 @@ Optional, path to a file based config to use
 
 ### `--debug`
 
+EnvVar: `EIGENLAYER_DEBUG`
+
 *Values:* `true, false`
 
 Enables debug logging
+
+### --enable-statsd
+
+EnvVar: `EIGENLAYER_ENABLE_STATSD`
+
+Enable/disable statsd metrics collection. Defaults to `true` and will attempt to auto-detect the DataDog statsd collection agent from the environment.
+
+### --enable-tracing
+
+EnvVar: `EIGENLAYER_ENABLE_TRACING`
+
+Enable/disable tracing. Defaults to `true` and will attempt to auto-detect the DataDog tracing agent from the environment.
 
 ## Updater
 

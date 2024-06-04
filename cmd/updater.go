@@ -74,7 +74,7 @@ var updaterCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewUpdaterConfig()
 
-		tracer.StartTracer()
+		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()
 
 		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::updater")

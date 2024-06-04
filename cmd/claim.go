@@ -115,13 +115,14 @@ var claimCmd = &cobra.Command{
 	Short: "Generate claim",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		tracer.StartTracer()
+		cfg := config.NewClaimConfig()
+
+		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()
 
 		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::claim")
 		defer span.Finish()
 
-		cfg := config.NewClaimConfig()
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
 		})
@@ -149,6 +150,8 @@ var claimCmd = &cobra.Command{
 			if err != nil {
 				logger.Sugar().Fatal("Failed to write to output file", zap.Error(err))
 			}
+		} else {
+			fmt.Printf("%s\n", string(jsonString))
 		}
 	},
 }
