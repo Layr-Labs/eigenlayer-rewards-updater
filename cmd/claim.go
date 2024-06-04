@@ -135,7 +135,7 @@ var claimCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewClaimConfig()
 
-		metrics.InitStatsdClient("", cfg.EnableStatsd)
+		metrics.InitStatsdClient(cfg.DDStatsdUrl, cfg.EnableStatsd)
 
 		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()
