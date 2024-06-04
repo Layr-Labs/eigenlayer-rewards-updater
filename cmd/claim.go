@@ -51,6 +51,12 @@ func runClaimgen(
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
 
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
+	if err != nil {
+		l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
+		return nil, err
+	}
+
 	claimDate := cfg.ClaimTimestamp
 	var rootIndex uint32
 
@@ -104,6 +110,13 @@ func runClaimgen(
 	}
 
 	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
+
+	if cfg.SubmitClaim {
+		err := transactor.SubmitRewardClaim(ctx, *claim, gethcommon.HexToAddress(cfg.EarnerAddress))
+		if err != nil {
+			l.Sugar().Errorf("Failed to submit claim", zap.Error(err))
+		}
+	}
 
 	return solidity, nil
 
@@ -169,6 +182,7 @@ func init() {
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")
 	claimCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the rewards root to claim against")
+	claimCmd.Flags().Bool("submit-claim", false, "Post the claim to the rewards coordinator")
 
 	claimCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {
