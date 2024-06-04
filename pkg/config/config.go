@@ -56,6 +56,7 @@ type ClaimConfig struct {
 	Tokens                    []string    `mapstructure:"tokens"`
 	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 	ClaimTimestamp            string      `mapstructure:"claim_timestamp"`
+	SubmitClaim               bool        `mapstructure:"submit_claim"`
 }
 
 var updaterConfig *UpdaterConfig
@@ -141,6 +142,7 @@ func NewClaimConfig() *ClaimConfig {
 		Tokens:                    viper.GetStringSlice("tokens"),
 		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 		ClaimTimestamp:            viper.GetString("claim_timestamp"),
+		SubmitClaim:               viper.GetBool("submit_claim"),
 	}
 	return claimConfig
 }

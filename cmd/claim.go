@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
@@ -50,6 +51,12 @@ func runClaimgen(
 
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
+
+	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
+	if err != nil {
+		l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
+		return nil, err
+	}
 
 	claimDate := cfg.ClaimTimestamp
 	var rootIndex uint32
@@ -105,6 +112,17 @@ func runClaimgen(
 
 	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
 
+	if cfg.SubmitClaim {
+		metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsGenerated, nil, 1)
+		err := transactor.SubmitRewardClaim(ctx, *claim, gethcommon.HexToAddress(cfg.EarnerAddress))
+		if err != nil {
+			metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsSubmittedFail, nil, 1)
+			l.Sugar().Errorf("Failed to submit claim", zap.Error(err))
+		} else {
+			metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsSubmittedSuccess, nil, 1)
+		}
+	}
+
 	return solidity, nil
 
 }
@@ -116,6 +134,8 @@ var claimCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewClaimConfig()
+
+		metrics.InitStatsdClient(cfg.DDStatsdUrl, cfg.EnableStatsd)
 
 		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()
@@ -169,6 +189,7 @@ func init() {
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")
 	claimCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the rewards root to claim against")
+	claimCmd.Flags().Bool("submit-claim", false, "Post the claim to the rewards coordinator")
 
 	claimCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {

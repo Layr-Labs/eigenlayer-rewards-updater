@@ -15,6 +15,7 @@ type Transactor interface {
 	GetNumberOfPublishedRoots() (*big.Int, error)
 	GetRootIndex(root [32]byte) (uint32, error)
 	SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error
+	SubmitRewardClaim(ctx context.Context, claim rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim, earnerAddress gethcommon.Address) error
 }
 
 type TransactorImpl struct {
@@ -60,6 +61,24 @@ func (t *TransactorImpl) SubmitRoot(ctx context.Context, root [32]byte, rewardsU
 	}
 
 	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(ctx, tx, "submitRoot")
+	if err != nil {
+		return fmt.Errorf("Failed to estimate gas: %+v\n", err)
+	}
+
+	if receipt.Status != 1 {
+		return chainClient.ErrTransactionFailed
+	}
+
+	return nil
+}
+
+func (t *TransactorImpl) SubmitRewardClaim(ctx context.Context, claim rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim, earnerAddress gethcommon.Address) error {
+	tx, err := t.CoordinatorTransactor.ProcessClaim(t.ChainClient.NoSendTransactOpts, claim, earnerAddress)
+	if err != nil {
+		return fmt.Errorf("Rewards coordinator, failed to submit reward claim: %+v - %+v", err, tx)
+	}
+
+	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(ctx, tx, "submitRewardClaim")
 	if err != nil {
 		return fmt.Errorf("Failed to estimate gas: %+v\n", err)
 	}
