@@ -84,13 +84,14 @@ var distributionCmd = &cobra.Command{
 	Short: "Access distribution data",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		tracer.StartTracer()
+		cfg := config.NewDistributionConfig()
+
+		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()
 
 		span, ctx := ddTracer.StartSpanFromContext(context.Background(), "cmd::distribution")
 		defer span.Finish()
 
-		cfg := config.NewDistributionConfig()
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
 		})

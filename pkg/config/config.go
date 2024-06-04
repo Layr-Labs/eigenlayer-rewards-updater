@@ -8,10 +8,11 @@ import (
 )
 
 type GlobalConfig struct {
-	Config       string `mapstructure:"config"`
-	Debug        bool   `mapstructure:"debug"`
-	DDStatsdUrl  string `mapstructure:"dd_statsd_url"`
-	EnableStatsd bool   `mapstructure:"enable_statsd"`
+	Config        string `mapstructure:"config"`
+	Debug         bool   `mapstructure:"debug"`
+	DDStatsdUrl   string `mapstructure:"dd_statsd_url"`
+	EnableStatsd  bool   `mapstructure:"enable_statsd"`
+	EnableTracing bool   `mapstructure:"enable_tracing"`
 }
 
 type Environment int
@@ -90,15 +91,20 @@ func StringEnvironmentFromEnum(env Environment) (string, error) {
 	return "", errors.New(fmt.Sprintf("String env not found for '%d'", env))
 }
 
+func GetGlobalConfig() GlobalConfig {
+	return GlobalConfig{
+		Config:        viper.GetString("config"),
+		Debug:         viper.GetBool("debug"),
+		DDStatsdUrl:   viper.GetString("dd_statsd_url"),
+		EnableTracing: viper.GetBool("enable_tracing"),
+	}
+}
+
 // NewUpdaterConfig reads config values from viper and returns
 // them in a struct
 func NewUpdaterConfig() *UpdaterConfig {
 	updaterConfig = &UpdaterConfig{
-		GlobalConfig: GlobalConfig{
-			Config:      viper.GetString("config"),
-			Debug:       viper.GetBool("debug"),
-			DDStatsdUrl: viper.GetString("dd_statsd_url"),
-		},
+		GlobalConfig:              GetGlobalConfig(),
 		Environment:               parseEnvironment(viper.GetString("environment")),
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
@@ -111,10 +117,7 @@ func NewUpdaterConfig() *UpdaterConfig {
 
 func NewDistributionConfig() *DistributionConfig {
 	distributionConfig = &DistributionConfig{
-		GlobalConfig: GlobalConfig{
-			Config: viper.GetString("config"),
-			Debug:  viper.GetBool("debug"),
-		},
+		GlobalConfig:              GetGlobalConfig(),
 		Environment:               parseEnvironment(viper.GetString("environment")),
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
@@ -127,10 +130,7 @@ func NewDistributionConfig() *DistributionConfig {
 }
 func NewClaimConfig() *ClaimConfig {
 	claimConfig = &ClaimConfig{
-		GlobalConfig: GlobalConfig{
-			Config: viper.GetString("config"),
-			Debug:  viper.GetBool("debug"),
-		},
+		GlobalConfig:              GetGlobalConfig(),
 		Environment:               parseEnvironment(viper.GetString("environment")),
 		Network:                   viper.GetString("network"),
 		RPCUrl:                    viper.GetString("rpc_url"),
