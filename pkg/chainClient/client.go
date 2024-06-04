@@ -44,7 +44,7 @@ func NewChainClient(ctx context.Context, ethClient *ethclient.Client, privateKey
 	if len(privateKeyString) != 0 {
 		privateKey, err = crypto.HexToECDSA(privateKeyString)
 		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot parse private key: %w", err)
+			return nil, fmt.Errorf("NewClient: cannot parse private key")
 		}
 		publicKey := privateKey.Public()
 		publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
