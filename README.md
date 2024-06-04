@@ -107,7 +107,7 @@ helm upgrade --install \                                                        
 
 ### `--config`
 
-EnvVar: `EIGENLAYER_DEBUG`
+EnvVar: `EIGENLAYER_CONFIG`
 
 Optional, path to a file based config to use
 
