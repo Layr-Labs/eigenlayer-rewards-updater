@@ -3,8 +3,13 @@
 package mocks
 
 import (
-	context "context"
 	big "math/big"
+
+	IRewardsCoordinator "github.com/Layr-Labs/eigenlayer-contracts/pkg/bindings/IRewardsCoordinator"
+
+	common "github.com/ethereum/go-ethereum/common"
+
+	context "context"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -98,6 +103,24 @@ func (_m *Transactor) GetRootIndex(root [32]byte) (uint32, error) {
 	}
 
 	return r0, r1
+}
+
+// SubmitRewardClaim provides a mock function with given fields: ctx, claim, earnerAddress
+func (_m *Transactor) SubmitRewardClaim(ctx context.Context, claim IRewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim, earnerAddress common.Address) error {
+	ret := _m.Called(ctx, claim, earnerAddress)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SubmitRewardClaim")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, IRewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim, common.Address) error); ok {
+		r0 = rf(ctx, claim, earnerAddress)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // SubmitRoot provides a mock function with given fields: ctx, root, rewardsUnixTimestamp
