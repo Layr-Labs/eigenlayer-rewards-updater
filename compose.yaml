@@ -11,14 +11,19 @@ services:
     image: eigenlayer-rewards-updater:latest
     build:
       dockerfile: Dockerfile
-    volumes:
-      - "$PWD:/etc/eigenlayer-rewards-updater"
+    # ----
+    # Volume mount is only required if you wish to provide a custom config file
+    # ----
+    # volumes:
+    #   - "$PWD:/etc/eigenlayer-rewards-updater"
     command:
       - "updater"
       - "--debug=true"
+      - "--enable-statsd=false"
+      - "--enable-tracing=false"
       - "--environment='preprod'"
       - "--network='holesky'"
-      - "--rpc-url='http://....'"
+      - "--rpc-url='https://ethereum-holesky-rpc.publicnode.com'"
       - "--proof-store-url='https://eigenpayments-dev.s3.us-east-2.amazonaws.com'"
-      - "--private-key='<ethereum private key>'"
+      - "--private-key='<ethereum private key (hex string, not prefixed with 0x)>'"
       - "--rewards-coordinator-address='<contract address>'"

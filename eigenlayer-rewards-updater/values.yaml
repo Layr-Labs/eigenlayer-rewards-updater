@@ -17,6 +17,7 @@ cronJob:
     rewards_coordinator_address: ""
 
 claimJob:
+  name: eigenlayer-rewards-updater-claimer
   enabled: false
   schedule: "35 13 * * *"
   image:
