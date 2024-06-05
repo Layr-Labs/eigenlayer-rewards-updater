@@ -32,6 +32,6 @@ func TestGetEnvNetwork_ValidNetworkPreDev(t *testing.T) {
 }
 
 func TestGetEnvNetwork_InvalidNetwork(t *testing.T) {
-	_, err := StringEnvironmentFromEnum(4)
+	_, err := StringEnvironmentFromEnum(5)
 	assert.NotNil(t, err)
 }

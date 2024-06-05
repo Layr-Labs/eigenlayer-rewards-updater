@@ -22,6 +22,7 @@ var (
 	Environment_DEV      Environment = 1
 	Environment_PRE_PROD Environment = 2
 	Environment_PROD     Environment = 3
+	Environment_TESTNET  Environment = 4
 )
 
 type UpdaterConfig struct {
@@ -72,6 +73,8 @@ func parseEnvironment(env string) Environment {
 		return Environment_PROD
 	case "local", "localnet":
 		return Environment_LOCAL
+	case "testnet":
+		return Environment_TESTNET
 	default:
 		return Environment_DEV
 	}
@@ -84,6 +87,8 @@ func StringEnvironmentFromEnum(env Environment) (string, error) {
 		return "prod", nil
 	case Environment_PRE_PROD:
 		return "preprod", nil
+	case Environment_TESTNET:
+		return "testnet", nil
 	case Environment_DEV:
 		return "dev", nil
 	case Environment_LOCAL:

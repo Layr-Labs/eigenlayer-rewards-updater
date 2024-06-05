@@ -8,4 +8,5 @@ data
 /bin
 config.yml
 eigenlayer-rewards-updater/values-preprodHolesky.yaml
+eigenlayer-rewards-updater/values-testnetHolesky.yaml
 
