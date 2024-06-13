@@ -127,6 +127,26 @@ func (h *HttpProofDataFetcher) FetchLatestSnapshot(ctx context.Context) (*proofD
 	return snapshots[0], nil
 }
 
+func (h *HttpProofDataFetcher) FetchPostedRewards(ctx context.Context) ([]*proofDataFetcher.SubmittedRewardRoot, error) {
+	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::FetchPostedRewards")
+	defer span.Finish()
+
+	fullUrl := h.buildPostedRewardsUrl()
+
+	rawBody, err := h.handleRequest(ctx, fullUrl)
+	if err != nil {
+		h.logger.Sugar().Error("Failed to fetch posted rewards", zap.Error(err))
+		return nil, err
+	}
+
+	rewards := make([]*proofDataFetcher.SubmittedRewardRoot, 0)
+	if err := json.Unmarshal(rawBody, &rewards); err != nil {
+		h.logger.Sugar().Error("Failed to unmarshal rewards", zap.Error(err))
+		return nil, err
+	}
+	return rewards, nil
+}
+
 func (h *HttpProofDataFetcher) handleRequest(ctx context.Context, fullUrl string) ([]byte, error) {
 	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::handleRequest")
 	defer span.Finish()
@@ -179,5 +199,14 @@ func (h *HttpProofDataFetcher) buildClaimAmountsUrl(snapshotDate string) string 
 		h.Environment,
 		h.Network,
 		snapshotDate,
+	)
+}
+
+func (h *HttpProofDataFetcher) buildPostedRewardsUrl() string {
+	// <baseurl>/<env>/<network>/submitted-payments.json
+	return fmt.Sprintf("%s/%s/%s/submitted-payments.json",
+		h.BaseUrl,
+		h.Environment,
+		h.Network,
 	)
 }

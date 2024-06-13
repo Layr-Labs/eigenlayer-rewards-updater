@@ -14,6 +14,7 @@ type ProofDataFetcher interface {
 	FetchClaimAmountsForDate(ctx context.Context, date string) (*RewardProofData, error)
 	FetchRecentSnapshotList(ctx context.Context) ([]*Snapshot, error)
 	FetchLatestSnapshot(ctx context.Context) (*Snapshot, error)
+	FetchPostedRewards(ctx context.Context) ([]*SubmittedRewardRoot, error)
 }
 
 type HTTPClient interface {
@@ -50,4 +51,13 @@ type RewardProofData struct {
 	AccountTree  *merkletree.MerkleTree
 	TokenTree    map[common.Address]*merkletree.MerkleTree
 	Hash         string
+}
+
+type SubmittedRewardRoot struct {
+	RootIndex        uint32    `json:"root_index"`
+	Root             string    `json:"root"`
+	CalcEndTimestamp time.Time `json:"calc_end_timestamp"`
+	ActivatedAt      time.Time `json:"activated_at"`
+	BlockDate        time.Time `json:"block_date"`
+	BlockNumber      uint64    `json:"block_number"`
 }
