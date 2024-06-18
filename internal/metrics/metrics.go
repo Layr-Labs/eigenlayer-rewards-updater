@@ -36,4 +36,7 @@ const (
 	Counter_ClaimsGenerated        = "claims_generated"
 	Counter_ClaimsSubmittedSuccess = "claims_submitted_success"
 	Counter_ClaimsSubmittedFail    = "claims_submitted_fail"
+
+	Counter_RootsMatch     = "roots_match"
+	Counter_RootsDontMatch = "roots_dont_match"
 )

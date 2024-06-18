@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
@@ -53,11 +54,25 @@ func runValidator(
 	}
 
 	v := validator.NewValidator(transactor, dataFetcher, l)
+	_, matches, err := v.ValidatePostedRoot(ctx)
 
-	v.ValidatePostedRoot(ctx)
+	if err == nil {
+		if matches {
+			metrics.GetStatsdClient().Event(&statsd.Event{
+				Title:     "root-validator",
+				Text:      "valid",
+				AlertType: statsd.Success,
+			})
+		} else {
+			metrics.GetStatsdClient().Event(&statsd.Event{
+				Title:     "root-validator",
+				Text:      "invalid",
+				AlertType: statsd.Error,
+			})
+		}
+	}
 
 	return nil
-
 }
 
 // distribution represents the updater command
@@ -68,7 +83,7 @@ var validateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewClaimConfig()
 
-		metrics.InitStatsdClient(cfg.DDStatsdUrl, cfg.EnableStatsd)
+		statsdClient, err := metrics.InitStatsdClient(cfg.DDStatsdUrl, cfg.EnableStatsd)
 
 		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()
@@ -83,13 +98,14 @@ var validateCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		defer logger.Sync()
-		logger.Sugar().Debug(cfg)
 
 		err = runValidator(ctx, cfg, logger)
 
 		if err != nil {
 			logger.Sugar().Error(err)
 		}
+
+		statsdClient.Flush()
 	},
 }
 

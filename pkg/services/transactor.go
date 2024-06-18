@@ -115,10 +115,9 @@ func (t *TransactorImpl) GetRootByIndex(index uint64) (*rewardsCoordinator.IRewa
 }
 
 func (t *TransactorImpl) GetCurrentRoot() (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error) {
-	len, err := t.CoordinatorCaller.GetDistributionRootsLength(&bind.CallOpts{})
-	fmt.Printf("Roots length: %+v\n", len.String())
+	root, err := t.CoordinatorCaller.GetCurrentDistributionRoot(&bind.CallOpts{})
 	if err != nil {
 		return nil, err
 	}
-	return t.GetRootByIndex(len.Uint64() - 1)
+	return &root, nil
 }

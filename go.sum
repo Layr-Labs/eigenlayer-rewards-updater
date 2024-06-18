@@ -4,8 +4,6 @@ github.com/DataDog/datadog-agent/pkg/obfuscate v0.48.0 h1:bUMSNsw1iofWiju9yc1f+k
 github.com/DataDog/datadog-agent/pkg/obfuscate v0.48.0/go.mod h1:HzySONXnAgSmIQfL6gOv9hWprKJkx8CicuXuUbmgWfo=
 github.com/DataDog/datadog-agent/pkg/remoteconfig/state v0.48.1 h1:5nE6N3JSs2IG3xzMthNFhXfOaXlrsdgqmJ73lndFf8c=
 github.com/DataDog/datadog-agent/pkg/remoteconfig/state v0.48.1/go.mod h1:Vc+snp0Bey4MrrJyiV2tVxxJb6BmLomPvN1RgAvjGaQ=
-github.com/DataDog/datadog-go/v5 v5.3.0 h1:2q2qjFOb3RwAZNU+ez27ZVDwErJv5/VpbBPprz7Z+s8=
-github.com/DataDog/datadog-go/v5 v5.3.0/go.mod h1:XRDJk1pTc00gm+ZDiBKsjh7oOOtJfYfglVCmFb8C2+Q=
 github.com/DataDog/datadog-go/v5 v5.5.0 h1:G5KHeB8pWBNXT4Jtw0zAkhdxEAWSpWH00geHI6LDrKU=
 github.com/DataDog/datadog-go/v5 v5.5.0/go.mod h1:K9kcYBlxkcPP8tvvjZZKs/m1edNAUFzBbdpTUKfCsuw=
 github.com/DataDog/go-libddwaf/v2 v2.4.2 h1:ilquGKUmN9/Ty0sIxiEyznVRxP3hKfmH15Y1SMq5gjA=
@@ -18,18 +16,8 @@ github.com/DataDog/sketches-go v1.4.2 h1:gppNudE9d19cQ98RYABOetxIhpTCl4m7CnbRZjv
 github.com/DataDog/sketches-go v1.4.2/go.mod h1:xJIXldczJyyjnbDop7ZZcLxJdV3+7Kra7H1KMgpgkLk=
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
-github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc2-holesky-preprod-rewards.0.20240528185507-d8ac41afbabc h1:DQ44QsjMQYHEvfhSyLNQaqXSbvlQw4GnWxMndkjm1TI=
-github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc2-holesky-preprod-rewards.0.20240528185507-d8ac41afbabc/go.mod h1:Ie8YE3EQkTHqG6/tnUS0He7/UPMkXPo/3OFXwSy0iRo=
-github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc3-holesky-preprod-rewards.0.20240617160929-ac26a1ddbf8b h1:3OSK/qn+Wci2jpG1l60PBeyT5z5T4+gJtnCyxqeuBYc=
-github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc3-holesky-preprod-rewards.0.20240617160929-ac26a1ddbf8b/go.mod h1:Ie8YE3EQkTHqG6/tnUS0He7/UPMkXPo/3OFXwSy0iRo=
 github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc3-holesky-preprod-rewards.0.20240618161038-04a0176562a0 h1:lnG8PqYWtbjRg3duimXD8eyOcIJ7qGeo91kJLvn8r1A=
 github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc3-holesky-preprod-rewards.0.20240618161038-04a0176562a0/go.mod h1:Ie8YE3EQkTHqG6/tnUS0He7/UPMkXPo/3OFXwSy0iRo=
-github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.0 h1:nyGMO2qsrYkt93QxBkAgf8TSMRzdw8fd1p4l/JSdD1E=
-github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.0/go.mod h1:npDZ1HxRFkpcOZAVbvth1TverVibudHpr/JShkV5elQ=
-github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.1-0.20240617161457-1cb9a5e176ba h1:5Yp1cdSTX4jf1RBVe6aIpEz5kEGmW55veJLnWCqottM=
-github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.1-0.20240617161457-1cb9a5e176ba/go.mod h1:4G+8F9o6eNM3aSiCNW6w9oKK1ITJpOubrLT5HSrdbsQ=
-github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.1 h1:vCrnLUEVdwSMJbG9z8yYIzXl54FuAwurCVlmo9GL6pM=
-github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.1/go.mod h1:4G+8F9o6eNM3aSiCNW6w9oKK1ITJpOubrLT5HSrdbsQ=
 github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.2 h1:ylepkAqepQogGRuG2lRQq+NRb5GvSrz47JXyVHweAzE=
 github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.2/go.mod h1:W2a9mERHznfIU+jD1FUaZjdUAfx+9lwbZ0tYQaF+Vhc=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
@@ -319,6 +307,8 @@ golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v
 golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4/go.mod h1:p54w0d4576C0XHj96bSt6lcn1PtDYWL6XObtHCRCNQM=
 golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/net v0.3.0/go.mod h1:MBQ8lrhLObU/6UmLb4fmbmk5OcyYmqtbGd/9yIeKjEE=
+golang.org/x/net v0.24.0 h1:1PcaxkF854Fu3+lvBIx5SYn9wRlBzzcnHZSiaFFAb0w=
+golang.org/x/net v0.24.0/go.mod h1:2Q7sJY5mzlzWjKtYUEXSlBWCdyaioyXzRB2RtU8KVE8=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
