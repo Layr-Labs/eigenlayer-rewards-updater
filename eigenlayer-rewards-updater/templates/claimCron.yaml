@@ -1,0 +1,45 @@
+{{- if eq .Values.claimJob.enabled true -}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.claimJob.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    tags.datadoghq.com/env: {{ .Values.environment }}
+    tags.datadoghq.com/version: {{ .Values.version }}
+    tags.datadoghq.com/service: "{{ .Values.claimJob.name }}"
+    admission.datadoghq.com/config.mode: "socket"
+    app: {{ .Values.claimJob.name }}
+spec:
+  schedule: "{{ .Values.claimJob.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            tags.datadoghq.com/env: {{ .Values.environment }}
+            tags.datadoghq.com/version: {{ .Values.version }}
+            tags.datadoghq.com/service: "{{ .Values.claimJob.name }}"
+            admission.datadoghq.com/enabled: "true"
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: rewards-updater
+              image: {{ .Values.claimJob.image.repository }}:{{ .Values.claimJob.image.tag }}
+              imagePullPolicy: {{ .Values.claimJob.image.pullPolicy }}
+              args:
+                - "claim"
+              volumeMounts:
+                - name: config-volume
+                  mountPath: "/etc/eigenlayer-rewards-updater/"
+                  readOnly: true
+              env:
+                - name: DD_TRACE_SAMPLE_RATE
+                  value: "1.0"
+          volumes:
+            - name: config-volume
+              secret:
+                secretName: {{ .Values.claimJob.name }}-secret
+
+{{- end -}}
