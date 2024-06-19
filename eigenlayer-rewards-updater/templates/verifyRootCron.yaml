@@ -29,7 +29,7 @@ spec:
               image: {{ .Values.verifyRootJob.image.repository }}:{{ .Values.verifyRootJob.image.tag }}
               imagePullPolicy: {{ .Values.verifyRootJob.image.pullPolicy }}
               args:
-                - "claim"
+                - "validate"
               volumeMounts:
                 - name: config-volume
                   mountPath: "/etc/eigenlayer-rewards-updater/"
