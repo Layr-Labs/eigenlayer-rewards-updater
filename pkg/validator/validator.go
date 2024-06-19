@@ -38,32 +38,32 @@ func (v *Validator) ValidatePostedRoot(ctx context.Context) (string, bool, error
 
 	lst := time.Unix(int64(retrievedRoot.RewardsCalculationEndTimestamp), 0).UTC().Format(time.DateOnly)
 
-	v.logger.Sugar().Info(fmt.Sprintf("Retrieved root has timestamp of '%v'", lst))
+	v.logger.Sugar().Infow(fmt.Sprintf("Retrieved root has timestamp of '%v'", lst))
 
 	// Get the data for the latest snapshot and load it into a distribution instance
 	rewardsProofData, err := v.proofDataFetcher.FetchClaimAmountsForDate(ctx, lst)
 	if err != nil {
-		v.logger.Sugar().Error(fmt.Sprintf("Failed to fetch claim amounts for date '%s'", lst), zap.Error(err))
+		v.logger.Sugar().Errorw(fmt.Sprintf("Failed to fetch claim amounts for date '%s'", lst), zap.Error(err))
 		return lst, false, err
 	}
 
 	root := rewardsProofData.AccountTree.Root()
 
 	if err != nil {
-		v.logger.Sugar().Error("Failed to get root by index", zap.Error(err))
+		v.logger.Sugar().Errorw("Failed to get root by index", zap.Error(err))
 		return lst, false, err
 	}
 
 	postedRoot := hexutil.Encode(retrievedRoot.Root[:])
 	computedRoot := hexutil.Encode(root[:])
 
-	if !cmp.Equal(postedRoot, computedRoot) {
-		v.logger.Sugar().Error("Roots do not match",
-			zap.String("postedRoot", postedRoot),
-			zap.String("computedRoot", computedRoot),
-		)
-		return lst, false, nil
-	}
-	v.logger.Sugar().Info("Roots match")
-	return lst, true, nil
+	matchFound := cmp.Equal(postedRoot, computedRoot)
+
+	v.logger.Sugar().Infow("root match result",
+		zap.Bool("matchFound", matchFound),
+		zap.String("postedRoot", postedRoot),
+		zap.String("computedRoot", computedRoot),
+	)
+
+	return lst, matchFound, nil
 }

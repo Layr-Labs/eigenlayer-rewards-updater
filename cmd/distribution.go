@@ -99,7 +99,6 @@ var distributionCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		defer logger.Sync()
-		logger.Sugar().Debug(cfg)
 
 		res, err := runDistribution(ctx, cfg, logger)
 

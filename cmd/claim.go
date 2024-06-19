@@ -62,7 +62,7 @@ func runClaimgen(
 	var rootIndex uint32
 
 	if cfg.ClaimTimestamp == "latest" {
-		l.Sugar().Info("Generating claim based on latest submitted reward")
+		l.Sugar().Infow("Generating claim based on latest submitted reward")
 		transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
 		if err != nil {
 			l.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
@@ -75,7 +75,7 @@ func runClaimgen(
 			return nil, err
 		}
 		claimDate = time.Unix(int64(latestSubmittedTimestamp), 0).UTC().Format(time.DateOnly)
-		l.Sugar().Debug("Latest submitted timestamp", zap.String("claimDate", claimDate))
+		l.Sugar().Debugw("Latest submitted timestamp", zap.String("claimDate", claimDate))
 
 		rootCount, err := transactor.GetNumberOfPublishedRoots()
 		if err != nil {
@@ -150,7 +150,6 @@ var claimCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		defer logger.Sync()
-		logger.Sugar().Debug(cfg)
 
 		solidity, err := runClaimgen(ctx, cfg, logger)
 

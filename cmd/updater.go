@@ -55,13 +55,13 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 
 	tree, err := u.Update(ctx)
 	if err != nil {
-		logger.Sugar().Info("Failed to update", zap.Error(err))
+		logger.Sugar().Infow("Failed to update", zap.Error(err))
 		return nil
 	}
 	// Since the updater can run on a cron job checking for new roots, its possible for it to run and not have any new
 	// roots to update. This isnt a success or a failure, so we just log it and return nil
 	if tree != nil {
-		logger.Sugar().Info("Update successful")
+		logger.Sugar().Infow("Update successful")
 	}
 	return nil
 }
@@ -94,14 +94,13 @@ var updaterCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		defer logger.Sync()
-		logger.Sugar().Debug(cfg)
 
 		err = runUpdater(ctx, cfg, logger)
 		if err != nil {
 			logger.Sugar().Error(err)
 		}
 		if err := s.Close(); err != nil {
-			logger.Sugar().Error("Failed to close statsd client", zap.Error(err))
+			logger.Sugar().Errorw("Failed to close statsd client", zap.Error(err))
 		}
 	},
 }

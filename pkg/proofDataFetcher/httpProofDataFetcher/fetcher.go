@@ -43,7 +43,7 @@ func (h *HttpProofDataFetcher) FetchClaimAmountsForDate(ctx context.Context, dat
 	span, ctx := ddTracer.StartSpanFromContext(ctx, "httpProofDataFetcher::FetchClaimAmountsForDate")
 	defer span.Finish()
 
-	h.logger.Sugar().Debug(fmt.Sprintf("Fetching claim amounts for date '%s'", date), zap.String("date", date))
+	h.logger.Sugar().Debugw(fmt.Sprintf("Fetching claim amounts for date '%s'", date), zap.String("date", date))
 	fullUrl := h.buildClaimAmountsUrl(date)
 
 	rawBody, err := h.handleRequest(ctx, fullUrl)
@@ -106,7 +106,7 @@ func (h *HttpProofDataFetcher) FetchRecentSnapshotList(ctx context.Context) ([]*
 
 	snapshots := make([]*proofDataFetcher.Snapshot, 0)
 	if err := json.Unmarshal(rawBody, &snapshots); err != nil {
-		h.logger.Sugar().Error("Failed to unmarshal snapshots", zap.Error(err))
+		h.logger.Sugar().Errorw("Failed to unmarshal snapshots", zap.Error(err))
 		return nil, err
 	}
 	return snapshots, nil
@@ -135,13 +135,13 @@ func (h *HttpProofDataFetcher) FetchPostedRewards(ctx context.Context) ([]*proof
 
 	rawBody, err := h.handleRequest(ctx, fullUrl)
 	if err != nil {
-		h.logger.Sugar().Error("Failed to fetch posted rewards", zap.Error(err))
+		h.logger.Sugar().Errorw("Failed to fetch posted rewards", zap.Error(err))
 		return nil, err
 	}
 
 	rewards := make([]*proofDataFetcher.SubmittedRewardRoot, 0)
 	if err := json.Unmarshal(rawBody, &rewards); err != nil {
-		h.logger.Sugar().Error("Failed to unmarshal rewards", zap.Error(err))
+		h.logger.Sugar().Errorw("Failed to unmarshal rewards", zap.Error(err))
 		return nil, err
 	}
 	return rewards, nil
@@ -153,12 +153,12 @@ func (h *HttpProofDataFetcher) handleRequest(ctx context.Context, fullUrl string
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullUrl, nil)
 	if err != nil {
-		h.logger.Sugar().Error("Failed to form request", zap.Error(err))
+		h.logger.Sugar().Errorw("Failed to form request", zap.Error(err))
 	}
 
 	res, err := h.Client.Do(req)
 	if err != nil {
-		h.logger.Sugar().Error("Request failed", zap.Error(err))
+		h.logger.Sugar().Errorw("Request failed", zap.Error(err))
 		return nil, err
 	}
 	defer res.Body.Close()
@@ -173,7 +173,7 @@ func (h *HttpProofDataFetcher) handleRequest(ctx context.Context, fullUrl string
 
 	if res.StatusCode >= 400 {
 		errMsg := fmt.Sprintf("Received error code '%d'", res.StatusCode)
-		h.logger.Sugar().Error(errMsg,
+		h.logger.Sugar().Errorw(errMsg,
 			zap.String("url", fullUrl),
 			zap.String("body", string(rawBody)),
 		)
