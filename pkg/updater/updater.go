@@ -62,7 +62,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
 	if lst.Equal(latestSnapshot.SnapshotDate) {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateNoUpdate, nil, 1)
-		u.logger.Sugar().Info("latest snapshot is the most recent reward")
+		u.logger.Sugar().Infow("latest snapshot is the most recent reward")
 		return nil, nil
 	}
 	// If the most recent snapshot timestamp is less than whats already on chain, we have a problem
@@ -81,13 +81,13 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	calculatedUntilTimestamp := latestSnapshot.SnapshotDate.UTC().Unix()
 
 	// send the merkle root to the smart contract
-	u.logger.Sugar().Info("updating rewards", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
+	u.logger.Sugar().Infow("updating rewards", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
 
 	// return rewardsProofData.AccountTree, nil
-	u.logger.Sugar().Info("Calculated timestamp", zap.Int64("calculated_until_timestamp", calculatedUntilTimestamp))
+	u.logger.Sugar().Infow("Calculated timestamp", zap.Int64("calculated_until_timestamp", calculatedUntilTimestamp))
 	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), uint32(calculatedUntilTimestamp)); err != nil {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateFails, nil, 1)
-		u.logger.Sugar().Error("Failed to submit root", zap.Error(err))
+		u.logger.Sugar().Errorw("Failed to submit root", zap.Error(err))
 		return rewardsProofData.AccountTree, err
 	} else {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateSuccess, nil, 1)
