@@ -60,9 +60,20 @@ type ClaimConfig struct {
 	SubmitClaim               bool        `mapstructure:"submit_claim"`
 }
 
+type ValidateConfig struct {
+	GlobalConfig
+	Environment               Environment `mapstructure:"environment"`
+	Network                   string      `mapstructure:"network"`
+	RPCUrl                    string      `mapstructure:"rpc_url"`
+	PrivateKey                string      `mapstructure:"private_key"`
+	RewardsCoordinatorAddress string      `mapstructure:"rewards_coordinator_address"`
+	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
+}
+
 var updaterConfig *UpdaterConfig
 var distributionConfig *DistributionConfig
 var claimConfig *ClaimConfig
+var validateConfig *ValidateConfig
 
 // parseEnvironment normalizes environment names to an enum value
 func parseEnvironment(env string) Environment {
@@ -150,6 +161,18 @@ func NewClaimConfig() *ClaimConfig {
 		SubmitClaim:               viper.GetBool("submit_claim"),
 	}
 	return claimConfig
+}
+func NewValidateConfig() *ValidateConfig {
+	validateConfig = &ValidateConfig{
+		GlobalConfig:              GetGlobalConfig(),
+		Environment:               parseEnvironment(viper.GetString("environment")),
+		Network:                   viper.GetString("network"),
+		RPCUrl:                    viper.GetString("rpc_url"),
+		PrivateKey:                viper.GetString("private_key"),
+		RewardsCoordinatorAddress: viper.GetString("rewards_coordinator_address"),
+		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
+	}
+	return validateConfig
 }
 
 func getEnvNetwork(environment Environment, network string) (string, error) {

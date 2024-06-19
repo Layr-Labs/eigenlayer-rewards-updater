@@ -1,6 +1,9 @@
+environment: preprod
+network: holesky
+version: ""
 cronJob:
-  name: eigenlayer-rewards-updater
-  namespace: default
+  name: rewards-updater
+  enabled: true
   schedule: "*/15 * * * *"    # Runs every 15 minutes looking for new roots to post
   image:
     repository: public.ecr.aws/z6g0f8n7/eigenlayer-rewards-updater
@@ -17,7 +20,7 @@ cronJob:
     rewards_coordinator_address: ""
 
 claimJob:
-  name: eigenlayer-rewards-updater-claimer
+  name: rewards-claimer
   enabled: false
   schedule: "35 13 * * *"
   image:
@@ -37,3 +40,21 @@ claimJob:
     tokens: []
     claim_timestamp: 'latest'
     submit_claim: true
+
+verifyRootJob:
+  name: rewards-validator
+  enabled: true
+  schedule: "*/15 * * * *"
+  image:
+    repository: public.ecr.aws/z6g0f8n7/eigenlayer-rewards-updater
+    tag: latest
+    pullPolicy: Always
+  config: |
+    debug: true
+    
+    environment: ""
+    network: ""
+    rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
+    private_key: ""
+    proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+    rewards_coordinator_address: ""

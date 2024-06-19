@@ -1,12 +1,13 @@
+{{- if eq .Values.cronJob.enabled true -}}
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ .Values.cronJob.name }}
-  namespace: {{ .Values.cronJob.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    tags.datadoghq.com/env: development
-    tags.datadoghq.com/version: "0.0.1"
+    tags.datadoghq.com/env: {{ .Values.environment }}
+    tags.datadoghq.com/version: {{ .Values.version }}
     tags.datadoghq.com/service: "{{ .Values.cronJob.name }}"
     admission.datadoghq.com/config.mode: "socket"
     app: {{ .Values.cronJob.name }}
@@ -17,8 +18,8 @@ spec:
       template:
         metadata:
           labels:
-            tags.datadoghq.com/env: development
-            tags.datadoghq.com/version: "0.0.1"
+            tags.datadoghq.com/env: {{ .Values.environment }}
+            tags.datadoghq.com/version: {{ .Values.version }}
             tags.datadoghq.com/service: "{{ .Values.cronJob.name }}"
             admission.datadoghq.com/enabled: "true"
         spec:
@@ -40,3 +41,4 @@ spec:
             - name: config-volume
               secret:
                 secretName: {{ .Values.cronJob.name }}-secret
+{{- end -}}

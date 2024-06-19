@@ -3,8 +3,9 @@ module github.com/Layr-Labs/eigenlayer-rewards-updater
 go 1.21
 
 require (
-	github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc2-holesky-preprod-rewards.0.20240528185507-d8ac41afbabc
+	github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc3-holesky-preprod-rewards.0.20240618161038-04a0176562a0
 	github.com/ethereum/go-ethereum v1.14.0
+	github.com/google/go-cmp v0.6.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.8.0
@@ -19,11 +20,11 @@ require (
 	github.com/DataDog/appsec-internal-go v1.5.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.48.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/remoteconfig/state v0.48.1 // indirect
-	github.com/DataDog/datadog-go/v5 v5.5.0 // indirect
+	github.com/DataDog/datadog-go/v5 v5.5.0
 	github.com/DataDog/go-libddwaf/v2 v2.4.2 // indirect
 	github.com/DataDog/go-tuf v1.0.2-0.5.2 // indirect
 	github.com/DataDog/sketches-go v1.4.2 // indirect
-	github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.0
+	github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.2
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect

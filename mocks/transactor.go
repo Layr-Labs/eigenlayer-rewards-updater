@@ -47,6 +47,36 @@ func (_m *Transactor) CurrRewardsCalculationEndTimestamp() (uint32, error) {
 	return r0, r1
 }
 
+// GetCurrentRoot provides a mock function with given fields:
+func (_m *Transactor) GetCurrentRoot() (*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCurrentRoot")
+	}
+
+	var r0 *IRewardsCoordinator.IRewardsCoordinatorDistributionRoot
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() *IRewardsCoordinator.IRewardsCoordinatorDistributionRoot); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetNumberOfPublishedRoots provides a mock function with given fields:
 func (_m *Transactor) GetNumberOfPublishedRoots() (*big.Int, error) {
 	ret := _m.Called()
@@ -70,6 +100,36 @@ func (_m *Transactor) GetNumberOfPublishedRoots() (*big.Int, error) {
 
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetRootByIndex provides a mock function with given fields: index
+func (_m *Transactor) GetRootByIndex(index uint64) (*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot, error) {
+	ret := _m.Called(index)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRootByIndex")
+	}
+
+	var r0 *IRewardsCoordinator.IRewardsCoordinatorDistributionRoot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(uint64) (*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot, error)); ok {
+		return rf(index)
+	}
+	if rf, ok := ret.Get(0).(func(uint64) *IRewardsCoordinator.IRewardsCoordinatorDistributionRoot); ok {
+		r0 = rf(index)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(uint64) error); ok {
+		r1 = rf(index)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -16,12 +16,25 @@ type Transactor interface {
 	GetRootIndex(root [32]byte) (uint32, error)
 	SubmitRoot(ctx context.Context, root [32]byte, rewardsUnixTimestamp uint32) error
 	SubmitRewardClaim(ctx context.Context, claim rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim, earnerAddress gethcommon.Address) error
+	GetRootByIndex(index uint64) (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error)
+	GetCurrentRoot() (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error)
 }
 
 type TransactorImpl struct {
 	ChainClient           *chainClient.ChainClient
 	CoordinatorCaller     *rewardsCoordinator.IRewardsCoordinatorCaller
 	CoordinatorTransactor *rewardsCoordinator.IRewardsCoordinatorTransactor
+	RawContract           *bind.BoundContract
+}
+
+func getRawRewardsCoordinator(address gethcommon.Address, chainClient *chainClient.ChainClient) (*bind.BoundContract, error) {
+	parsed, err := rewardsCoordinator.IRewardsCoordinatorMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+	boundContract := bind.NewBoundContract(address, *parsed, chainClient, nil, nil)
+
+	return boundContract, nil
 }
 
 func NewTransactor(chainClient *chainClient.ChainClient, coordinatorAddress gethcommon.Address) (Transactor, error) {
@@ -35,10 +48,16 @@ func NewTransactor(chainClient *chainClient.ChainClient, coordinatorAddress geth
 		return nil, err
 	}
 
+	boundContract, err := getRawRewardsCoordinator(coordinatorAddress, chainClient)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TransactorImpl{
 		ChainClient:           chainClient,
 		CoordinatorCaller:     coordinatorCaller,
 		CoordinatorTransactor: coordinatorTransactor,
+		RawContract:           boundContract,
 	}, nil
 }
 
@@ -88,4 +107,17 @@ func (t *TransactorImpl) SubmitRewardClaim(ctx context.Context, claim rewardsCoo
 	}
 
 	return nil
+}
+
+func (t *TransactorImpl) GetRootByIndex(index uint64) (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error) {
+	root, err := t.CoordinatorCaller.GetDistributionRootAtIndex(&bind.CallOpts{}, big.NewInt(int64(index)))
+	return &root, err
+}
+
+func (t *TransactorImpl) GetCurrentRoot() (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error) {
+	root, err := t.CoordinatorCaller.GetCurrentDistributionRoot(&bind.CallOpts{})
+	if err != nil {
+		return nil, err
+	}
+	return &root, nil
 }
