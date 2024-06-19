@@ -16,7 +16,7 @@ cronJob:
     network: ""
     rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
     private_key: ""
-    proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+    proof_store_base_url: "https://eigenlabs-rewards-preprod-holesky.s3.amazonaws.com"
     rewards_coordinator_address: ""
 
 claimJob:
@@ -33,7 +33,7 @@ claimJob:
     environment: ""
     network: ""
     rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
-    proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+    proof_store_base_url: "https://eigenlabs-rewards-preprod-holesky.s3.amazonaws.com"
     rewards_coordinator_address: ""
     private_key: ""
     earner_address: ""
@@ -56,5 +56,5 @@ verifyRootJob:
     network: ""
     rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
     private_key: ""
-    proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+    proof_store_base_url: "https://eigenlabs-rewards-preprod-holesky.s3.amazonaws.com"
     rewards_coordinator_address: ""
