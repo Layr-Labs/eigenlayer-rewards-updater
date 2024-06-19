@@ -20,7 +20,7 @@ cronJob:
     rewards_coordinator_address: ""
 
 claimJob:
-  name: rewards-updater-claimer
+  name: rewards-claimer
   enabled: false
   schedule: "35 13 * * *"
   image:
@@ -42,7 +42,7 @@ claimJob:
     submit_claim: true
 
 verifyRootJob:
-  name: rewards-updater-root-verifier
+  name: rewards-validator
   enabled: true
   schedule: "*/15 * * * *"
   image:
