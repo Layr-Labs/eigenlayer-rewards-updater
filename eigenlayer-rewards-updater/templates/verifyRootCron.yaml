@@ -3,16 +3,16 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Values.claimJob.name }}
+  name: {{ .Values.verifyRootJob.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     tags.datadoghq.com/env: {{ .Values.environment }}
     tags.datadoghq.com/version: {{ .Values.version }}
-    tags.datadoghq.com/service: "{{ .Values.claimJob.name }}"
+    tags.datadoghq.com/service: "{{ .Values.verifyRootJob.name }}"
     admission.datadoghq.com/config.mode: "socket"
-    app: {{ .Values.claimJob.name }}
+    app: {{ .Values.verifyRootJob.name }}
 spec:
-  schedule: "{{ .Values.claimJob.schedule }}"
+  schedule: "{{ .Values.verifyRootJob.schedule }}"
   jobTemplate:
     spec:
       template:
@@ -20,14 +20,14 @@ spec:
           labels:
             tags.datadoghq.com/env: {{ .Values.environment }}
             tags.datadoghq.com/version: {{ .Values.version }}
-            tags.datadoghq.com/service: "{{ .Values.claimJob.name }}"
+            tags.datadoghq.com/service: "{{ .Values.verifyRootJob.name }}"
             admission.datadoghq.com/enabled: "true"
         spec:
           restartPolicy: Never
           containers:
             - name: rewards-updater
-              image: {{ .Values.claimJob.image.repository }}:{{ .Values.claimJob.image.tag }}
-              imagePullPolicy: {{ .Values.claimJob.image.pullPolicy }}
+              image: {{ .Values.verifyRootJob.image.repository }}:{{ .Values.verifyRootJob.image.tag }}
+              imagePullPolicy: {{ .Values.verifyRootJob.image.pullPolicy }}
               args:
                 - "claim"
               volumeMounts:
@@ -40,6 +40,6 @@ spec:
           volumes:
             - name: config-volume
               secret:
-                secretName: {{ .Values.claimJob.name }}-secret
+                secretName: {{ .Values.verifyRootJob.name }}-secret
 
 {{- end -}}
