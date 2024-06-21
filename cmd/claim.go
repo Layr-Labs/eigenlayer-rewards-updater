@@ -178,15 +178,9 @@ var claimCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(claimCmd)
 
-	claimCmd.Flags().String("environment", "dev", "The environment to use")
-	claimCmd.Flags().String("network", "localnet", "Which network to use")
-	claimCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
-	claimCmd.Flags().String("private-key", "", "An ethereum private key")
-	claimCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	claimCmd.Flags().String("output", "", "File to write output json to")
 	claimCmd.Flags().String("earner-address", "", "Address of the earner")
 	claimCmd.Flags().StringSlice("tokens", []string{}, "List of token addresses")
-	claimCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 	claimCmd.Flags().String("claim-timestamp", "", "YYYY-MM-DD - Timestamp of the rewards root to claim against")
 	claimCmd.Flags().Bool("submit-claim", false, "Post the claim to the rewards coordinator")
 

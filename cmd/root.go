@@ -36,6 +36,12 @@ func init() {
 	rootCmd.PersistentFlags().String("dd-statsd-url", "", "URL to use for DataDog StatsD. If empty, DD_DOGSTATSD_URL will be used")
 	rootCmd.PersistentFlags().Bool("enable-statsd", true, "Enable/disable statsd metrics collection")
 	rootCmd.PersistentFlags().Bool("enable-tracing", true, "Enable/disable tracing")
+	rootCmd.PersistentFlags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
+	rootCmd.PersistentFlags().String("environment", "dev", "The environment to use")
+	rootCmd.PersistentFlags().String("network", "localnet", "Which network to use")
+	rootCmd.PersistentFlags().String("private-key", "", "An ethereum private key")
+	rootCmd.PersistentFlags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
+	rootCmd.PersistentFlags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 
 	rootCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		viper.BindPFlag(config.KebabToSnakeCase(f.Name), f)
