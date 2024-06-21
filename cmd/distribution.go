@@ -125,13 +125,7 @@ var distributionCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(distributionCmd)
 
-	distributionCmd.Flags().String("environment", "dev", "The environment to use")
-	distributionCmd.Flags().String("network", "localnet", "Which network to use")
-	distributionCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
-	distributionCmd.Flags().String("private-key", "", "An ethereum private key")
-	distributionCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	distributionCmd.Flags().String("output", "", "File to write output json to")
-	distributionCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 
 	distributionCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {

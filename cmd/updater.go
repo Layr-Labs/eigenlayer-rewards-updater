@@ -108,13 +108,6 @@ var updaterCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(updaterCmd)
 
-	updaterCmd.Flags().String("environment", "dev", "The environment to use")
-	updaterCmd.Flags().String("network", "localnet", "Which network to use")
-	updaterCmd.Flags().String("rpc-url", "", "https://ethereum-holesky-rpc.publicnode.com")
-	updaterCmd.Flags().String("private-key", "", "An ethereum private key")
-	updaterCmd.Flags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
-	updaterCmd.Flags().String("proof-store-base-url", "", "HTTP base url where data is stored")
-
 	updaterCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if err := viper.BindPFlag(config.KebabToSnakeCase(f.Name), f); err != nil {
 			fmt.Printf("Failed to bind flag '%s' - %+v\n", f.Name, err)
