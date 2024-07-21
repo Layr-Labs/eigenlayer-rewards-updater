@@ -165,7 +165,7 @@ https://ethereum-holesky-rpc.publicnode.com
 
 EnvVar: `EIGENLAYER_PRIVATE_KEY`
 
-An Ethereum account private key, in hexidecimal form.
+An Ethereum account private key, in hexadecimal form.
 
 ### `--rewards-coordinator-address`
 
