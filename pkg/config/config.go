@@ -18,11 +18,9 @@ type GlobalConfig struct {
 type Environment int
 
 var (
-	Environment_LOCAL    Environment = 0
-	Environment_DEV      Environment = 1
-	Environment_PRE_PROD Environment = 2
-	Environment_PROD     Environment = 3
-	Environment_TESTNET  Environment = 4
+	Environment_PRE_PROD Environment = 0
+	Environment_TESTNET  Environment = 1
+	Environment_MAINNET  Environment = 2
 )
 
 type UpdaterConfig struct {
@@ -78,32 +76,26 @@ var validateConfig *ValidateConfig
 // parseEnvironment normalizes environment names to an enum value
 func parseEnvironment(env string) Environment {
 	switch env {
-	case "pre-prod", "preprod":
+	case "preprod":
 		return Environment_PRE_PROD
-	case "prod", "production":
-		return Environment_PROD
-	case "local", "localnet":
-		return Environment_LOCAL
 	case "testnet":
 		return Environment_TESTNET
+	case "mainnet":
+		return Environment_MAINNET
 	default:
-		return Environment_DEV
+		return Environment_PRE_PROD
 	}
 }
 
 // StringEnvironmentFromEnum gets a string environment value from the enum
 func StringEnvironmentFromEnum(env Environment) (string, error) {
 	switch env {
-	case Environment_PROD:
-		return "prod", nil
 	case Environment_PRE_PROD:
 		return "preprod", nil
 	case Environment_TESTNET:
 		return "testnet", nil
-	case Environment_DEV:
-		return "dev", nil
-	case Environment_LOCAL:
-		return "local", nil
+	case Environment_MAINNET:
+		return "mainnet", nil
 	}
 	return "", errors.New(fmt.Sprintf("String env not found for '%d'", env))
 }
