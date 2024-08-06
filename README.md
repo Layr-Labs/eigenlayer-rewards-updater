@@ -147,7 +147,7 @@ EnvVar: `EIGENLAYER_NETWORK`
 
 The Ethereum network to target
 
-*Values:* `local, devnet, holesky, mainnet`
+*Values:* `holesky, ethereum`
 
 ### `--rpc-url`
 
