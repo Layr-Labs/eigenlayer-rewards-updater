@@ -131,6 +131,18 @@ EnvVar: `EIGENLAYER_ENABLE_TRACING`
 
 Enable/disable tracing. Defaults to `true` and will attempt to auto-detect the DataDog tracing agent from the environment.
 
+### `--pushgateway-enabled`
+
+EnvVar: `EIGENLAYER_PUSHGATEWAY_ENABLED`
+
+Enable/disable pushgateway metrics collection. Defaults to `false`.
+
+### `--pushgateway-url`
+
+EnvVar: `EIGENLAYER_PUSHGATEWAY_URL`
+
+The URL of the pushgateway to send metrics to.
+
 ## Updater
 
 ### `--environment`
