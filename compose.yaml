@@ -3,6 +3,8 @@ services:
     image: eigenlayer-rewards-updater:latest
     build:
       dockerfile: Dockerfile
+    networks:
+      - eigenlabs-rewards-updater
     command:
       - "updater"
       - "--debug=true"
@@ -14,3 +16,16 @@ services:
       - "--proof-store-base-url=https://eigenlabs-rewards-testnet-holesky.s3.amazonaws.com"
       - "--private-key=<ethereum private key (hex string, not prefixed with 0x)>"
       - "--rewards-coordinator-address=0xAcc1fb458a1317E886dB376Fc8141540537E68fE"
+      - "--pushgateway-enabled=true"
+      - "--pushgateway-url=http://pushgateway:9091"
+  pushgateway:
+    image: prom/pushgateway:latest
+    networks:
+      - eigenlabs-rewards-updater
+    expose:
+      - "9091"
+    ports:
+      - "9091:9091"
+
+networks:
+  eigenlabs-rewards-updater:

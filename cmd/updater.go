@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
@@ -18,8 +21,6 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"log"
-	"net/http"
 )
 
 func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logger) error {
@@ -87,6 +88,16 @@ var updaterCmd = &cobra.Command{
 
 		s.Incr(metrics.Counter_UpdateRuns, nil, 1)
 
+		if cfg.PushgatewayEnabled {
+			// Init Pushgateway prometheusPusher client
+			err = metrics.InitPrometheusPusherClient(cfg.PushgatewayUrl, "updater")
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+
+		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsInvoked)
+
 		logger, err := logger.NewLogger(&logger.LoggerConfig{
 			Debug: cfg.Debug,
 		})
@@ -101,6 +112,10 @@ var updaterCmd = &cobra.Command{
 		}
 		if err := s.Close(); err != nil {
 			logger.Sugar().Errorw("Failed to close statsd client", zap.Error(err))
+		}
+		// Push metrics to pushgateway at the end of the run
+		if err := metrics.PushToPushgateway(); err != nil {
+			logger.Sugar().Errorw("Failed to push metrics to pushgateway", zap.Error(err))
 		}
 	},
 }

@@ -62,6 +62,7 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
 	if lst.Equal(latestSnapshot.SnapshotDate) {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateNoUpdate, nil, 1)
+		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsNoUpdate)
 		u.logger.Sugar().Infow("latest snapshot is the most recent reward")
 		return nil, nil
 	}
@@ -87,10 +88,12 @@ func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
 	u.logger.Sugar().Infow("Calculated timestamp", zap.Int64("calculated_until_timestamp", calculatedUntilTimestamp))
 	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), uint32(calculatedUntilTimestamp)); err != nil {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateFails, nil, 1)
+		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsFailed)
 		u.logger.Sugar().Errorw("Failed to submit root", zap.Error(err))
 		return rewardsProofData.AccountTree, err
 	} else {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateSuccess, nil, 1)
+		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsSuccess)
 	}
 
 	return rewardsProofData.AccountTree, nil

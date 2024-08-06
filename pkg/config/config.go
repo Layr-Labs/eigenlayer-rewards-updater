@@ -2,17 +2,20 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 type GlobalConfig struct {
-	Config        string `mapstructure:"config"`
-	Debug         bool   `mapstructure:"debug"`
-	DDStatsdUrl   string `mapstructure:"dd_statsd_url"`
-	EnableStatsd  bool   `mapstructure:"enable_statsd"`
-	EnableTracing bool   `mapstructure:"enable_tracing"`
+	Config             string `mapstructure:"config"`
+	Debug              bool   `mapstructure:"debug"`
+	DDStatsdUrl        string `mapstructure:"dd_statsd_url"`
+	EnableStatsd       bool   `mapstructure:"enable_statsd"`
+	PushgatewayUrl     string `mapstructure:"pushgateway_url"`
+	PushgatewayEnabled bool   `mapstructure:"pushgateway_enabled"`
+	EnableTracing      bool   `mapstructure:"enable_tracing"`
 }
 
 type Environment int
@@ -102,10 +105,12 @@ func StringEnvironmentFromEnum(env Environment) (string, error) {
 
 func GetGlobalConfig() GlobalConfig {
 	return GlobalConfig{
-		Config:        viper.GetString("config"),
-		Debug:         viper.GetBool("debug"),
-		DDStatsdUrl:   viper.GetString("dd_statsd_url"),
-		EnableTracing: viper.GetBool("enable_tracing"),
+		Config:             viper.GetString("config"),
+		Debug:              viper.GetBool("debug"),
+		DDStatsdUrl:        viper.GetString("dd_statsd_url"),
+		EnableTracing:      viper.GetBool("enable_tracing"),
+		PushgatewayEnabled: viper.GetBool("pushgateway_enabled"),
+		PushgatewayUrl:     viper.GetString("pushgateway_url"),
 	}
 }
 
