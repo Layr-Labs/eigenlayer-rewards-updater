@@ -221,3 +221,26 @@ helm upgrade --install \
   -f ./eigenlayer-rewards-updater/values.yaml \
   eigenlayer-rewards-updater ./eigenlayer-rewards-updater
 ```
+
+# Environment-specific values
+
+### `testnet-holesky`
+
+```yaml
+environment: testnet
+network: holesky
+rpc_url: https://ethereum-holesky-rpc.publicnode.com
+proof_store_base_url: https://eigenlabs-rewards-testnet-holesky.s3.amazonaws.com
+rewards_coordinator_address: 0xAcc1fb458a1317E886dB376Fc8141540537E68fE
+```
+
+### `mainnet-ethereum`
+
+```yaml
+environment: mainnet
+network: ethereum
+rpc_url: https://ethereum-rpc.publicnode.com
+proof_store_base_url: https://eigenlabs-rewards-mainnet-ethereum.s3.amazonaws.com
+rewards_coordinator_address: 0x7750d328b314effa365a0402ccfd489b80b0adda
+```
+
