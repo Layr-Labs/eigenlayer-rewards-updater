@@ -5,7 +5,7 @@ environment: ""
 network: ""
 rpc_url: ""
 private_key: ""
-proof_store_base_url: "https://eigenpayments-dev.s3.us-east-2.amazonaws.com"
+proof_store_base_url: "https://eigenlabs-rewards-testnet-holesky.s3.amazonaws.com"
 rewards_coordinator_address: ""
 
 # claim/distribution fields
