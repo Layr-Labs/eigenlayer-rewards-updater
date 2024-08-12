@@ -200,7 +200,7 @@ The base URL of where rewards data is stored.
 e.g.
 
 ```bash
-https://eigenpayments-dev.s3.us-east-2.amazonaws.com
+https://eigenlabs-rewards-testnet-holesky.s3.amazonaws.com
 ```
 
 The proof store will fetch two files from this URL with the following paths:

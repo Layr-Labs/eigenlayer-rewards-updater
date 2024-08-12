@@ -9,4 +9,5 @@ data
 config.yml
 eigenlayer-rewards-updater/values-preprodHolesky.yaml
 eigenlayer-rewards-updater/values-testnetHolesky.yaml
+eigenlayer-rewards-updater/values-mainnetEthereum.yaml
 
