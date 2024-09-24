@@ -3,7 +3,7 @@ module github.com/Layr-Labs/eigenlayer-rewards-updater
 go 1.21
 
 require (
-	github.com/Layr-Labs/eigenlayer-contracts v0.3.0-rc3-holesky-preprod-rewards.0.20240618161038-04a0176562a0
+	github.com/Layr-Labs/eigenlayer-contracts v0.4.1-holesky-pepe.0.20240813143901-00fc4b95e9c1
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/google/go-cmp v0.6.0
 	github.com/pkg/errors v0.9.1
