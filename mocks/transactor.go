@@ -47,6 +47,24 @@ func (_m *Transactor) CurrRewardsCalculationEndTimestamp() (uint32, error) {
 	return r0, r1
 }
 
+// DisableRoot provides a mock function with given fields: rootIndex
+func (_m *Transactor) DisableRoot(rootIndex uint32) error {
+	ret := _m.Called(rootIndex)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DisableRoot")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(uint32) error); ok {
+		r0 = rf(rootIndex)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetCurrentRoot provides a mock function with given fields:
 func (_m *Transactor) GetCurrentRoot() (*IRewardsCoordinator.IRewardsCoordinatorDistributionRoot, error) {
 	ret := _m.Called()

@@ -203,6 +203,19 @@ e.g.
 https://eigenlabs-rewards-testnet-holesky.s3.amazonaws.com
 ```
 
+### `--root-index`
+
+EnvVar: `EIGENLAYER_ROOT_INDEX`
+
+The index of the root to disable
+
+e.g.
+
+```bash
+10
+```
+
+
 The proof store will fetch two files from this URL with the following paths:
 
 ```bash
@@ -256,3 +269,16 @@ proof_store_base_url: https://eigenlabs-rewards-mainnet-ethereum.s3.amazonaws.co
 rewards_coordinator_address: 0x7750d328b314effa365a0402ccfd489b80b0adda
 ```
 
+## CLI Examples
+
+### Disable root
+
+```bash
+eigenlayer-rewards-updater disable-root \
+    --environment testnet \
+    --network  holesky \
+    --rpc-url https://ethereum-holesky-rpc.publicnode.com \
+    --rewards-coordinator-address "0xAcc1fb458a1317E886dB376Fc8141540537E68fE" \
+    --private-key "<ethereum private key>" \
+    --root-index 10
+```

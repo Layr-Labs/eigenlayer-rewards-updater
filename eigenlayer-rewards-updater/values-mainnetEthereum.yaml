@@ -1,0 +1,19 @@
+environment: mainnet
+network: ethereum
+cronJob:
+  namespace: mainnet-ethereum
+  enabled: false
+claimJob:
+  namespace: testnet-holesky
+  enabled: false
+verifyRootJob:
+  enabled: true
+  config: |
+    debug: true
+    
+    environment: "mainnet"
+    network: "ethereum"
+    rpc_url: "https://ethereum-rpc.publicnode.com"
+    proof_store_base_url: "https://eigenlabs-rewards-mainnet-ethereum.s3.amazonaws.com"
+    private_key: "..."
+    rewards_coordinator_address: "0x7750d328b314effa365a0402ccfd489b80b0adda"

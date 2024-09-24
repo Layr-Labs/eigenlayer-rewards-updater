@@ -18,6 +18,7 @@ type Transactor interface {
 	SubmitRewardClaim(ctx context.Context, claim rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim, earnerAddress gethcommon.Address) error
 	GetRootByIndex(index uint64) (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error)
 	GetCurrentRoot() (*rewardsCoordinator.IRewardsCoordinatorDistributionRoot, error)
+	DisableRoot(rootIndex uint32) error
 }
 
 type TransactorImpl struct {
@@ -120,4 +121,21 @@ func (t *TransactorImpl) GetCurrentRoot() (*rewardsCoordinator.IRewardsCoordinat
 		return nil, err
 	}
 	return &root, nil
+}
+
+func (t *TransactorImpl) DisableRoot(rootIndex uint32) error {
+	tx, err := t.CoordinatorTransactor.DisableRoot(t.ChainClient.NoSendTransactOpts, rootIndex)
+
+	if err != nil {
+		return fmt.Errorf("Rewards coordinator, failed to disable root: %+v - %+v", err, tx)
+	}
+
+	receipt, err := t.ChainClient.EstimateGasPriceAndLimitAndSendTx(context.Background(), tx, "disableRoot")
+	if err != nil {
+		return fmt.Errorf("Failed to estimate gas: %+v\n", err)
+	}
+	if receipt.Status != 1 {
+		return chainClient.ErrTransactionFailed
+	}
+	return nil
 }
