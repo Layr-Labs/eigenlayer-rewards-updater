@@ -3,15 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
-	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/sidecar"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/updater"
 	gethcommon "github.com/ethereum/go-ethereum/common"
@@ -21,6 +18,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"log"
 )
 
 func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logger) error {
@@ -33,37 +31,36 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 		return err
 	}
 
-	chainClient, err := chainClient.NewChainClient(ctx, ethClient, cfg.PrivateKey)
+	cc, err := chainClient.NewChainClient(ctx, ethClient, cfg.PrivateKey)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
 		return err
 	}
 
-	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
-	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, logger)
+	sidecarClient, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl)
+	if err != nil {
+		logger.Sugar().Errorf("Failed to create sidecar client", zap.Error(err))
+		return err
+	}
 
-	transactor, err := services.NewTransactor(chainClient, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
+	transactor, err := services.NewTransactor(cc, gethcommon.HexToAddress(cfg.RewardsCoordinatorAddress))
 	if err != nil {
 		logger.Sugar().Errorf("Failed to initialize transactor", zap.Error(err))
 		return err
 	}
 
-	u, err := updater.NewUpdater(transactor, dataFetcher, logger)
+	u, err := updater.NewUpdater(transactor, sidecarClient, logger)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create updater", zap.Error(err))
 		return err
 	}
 
-	tree, err := u.Update(ctx)
+	_, err = u.Update(ctx)
 	if err != nil {
 		logger.Sugar().Infow("Failed to update", zap.Error(err))
 		return nil
 	}
-	// Since the updater can run on a cron job checking for new roots, its possible for it to run and not have any new
-	// roots to update. This isnt a success or a failure, so we just log it and return nil
-	if tree != nil {
-		logger.Sugar().Infow("Update successful")
-	}
+	logger.Sugar().Infow("Update successful")
 	return nil
 }
 
