@@ -19,9 +19,9 @@ type SidecarClient struct {
 	Rewards IRewardsClient
 }
 
-func NewSidecarClient(url string) (*SidecarClient, error) {
+func NewSidecarClient(url string, insecureConn bool) (*SidecarClient, error) {
 	var creds grpc.DialOption
-	if strings.Contains(url, "localhost:") || strings.Contains(url, "127.0.0.1:") {
+	if strings.Contains(url, "localhost:") || strings.Contains(url, "127.0.0.1:") || insecureConn {
 		creds = grpc.WithTransportCredentials(insecure.NewCredentials())
 	} else {
 		creds = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: false}))

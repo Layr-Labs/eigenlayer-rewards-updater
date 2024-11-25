@@ -37,7 +37,7 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 		return err
 	}
 
-	sidecarClient, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl)
+	sidecarClient, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl, cfg.SidecarInsecureRpc)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create sidecar client", zap.Error(err))
 		return err

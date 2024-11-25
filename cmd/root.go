@@ -43,6 +43,7 @@ func init() {
 	rootCmd.PersistentFlags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
 	rootCmd.PersistentFlags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 	rootCmd.PersistentFlags().String("sidecar-rpc-url", "", "Sidecar RPC URL")
+	rootCmd.PersistentFlags().Bool("sidecar-insecure-rpc", false, "Use insecure gRPC connection to sidecar")
 	rootCmd.PersistentFlags().Bool("pushgateway-enabled", false, "Enable/disable pushgateway metrics collection")
 	rootCmd.PersistentFlags().String("pushgateway-url", "", "URL to use for Pushgateway. This option is ignored if pushgateway-enable is not set.")
 
