@@ -55,6 +55,8 @@ github.com/Layr-Labs/eigenlayer-contracts v0.4.1-holesky-pepe.0.20240813143901-0
 github.com/Layr-Labs/eigenlayer-contracts v0.4.1-holesky-pepe.0.20240813143901-00fc4b95e9c1/go.mod h1:Ie8YE3EQkTHqG6/tnUS0He7/UPMkXPo/3OFXwSy0iRo=
 github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.13 h1:Blb4AE+jC/vddV71w4/MQAPooM+8EVqv9w2bL4OytgY=
 github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.13/go.mod h1:PD/HoyzZjxDw1tAcZw3yD0yGddo+yhmwQAi+lk298r4=
+github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.14-0.20241125201443-e68b50c3a470 h1:xLZ56DyrFy4CpjM9wHR4gOxxbSn1F9qYrZRkfV2V3Ic=
+github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.14-0.20241125201443-e68b50c3a470/go.mod h1:szcJU28Y/X8EPCsPesY06Z3Bx7eUagwEEogLiqqxo38=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.1.0.20241031143701-1007e0c3775c h1:jgImTwABd+bgblTHy4J/nqwE2cDIAHZ3zGNgFpS9P6s=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.1.0.20241031143701-1007e0c3775c/go.mod h1:prNA2/mLO5vpMZ2q78Nsn0m97wm28uiRnwO+/yOxigk=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.3.0.20241122223729-1734c60ac737 h1:I/0YAw2ue150YuLNavErIQ4t7yoTDuH3nqZkOS7RTjg=

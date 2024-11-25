@@ -3,6 +3,7 @@ package updater
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/sidecar"
@@ -65,14 +66,16 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 		return nil, fmt.Errorf("failed to parse snapshot date: %w", err)
 	}
 
-	rootBytes := [32]byte{}
-	copy(rootBytes[:], []byte(rootRes.RewardsRoot))
+	rootBytes, err := utils.ConvertStringToBytes(rootRes.RewardsRoot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert root to bytes: %w", err)
+	}
 
 	// send the merkle root to the smart contract
 	u.logger.Sugar().Infow("updating rewards", zap.String("new_root", rootRes.RewardsRoot))
 
 	u.logger.Sugar().Infow("Calculated timestamp", zap.Int64("calculated_until_timestamp", rewardsCalcEnd.Unix()))
-	if err := u.transactor.SubmitRoot(ctx, rootBytes, uint32(rewardsCalcEnd.Unix())); err != nil {
+	if err := u.transactor.SubmitRoot(ctx, [32]byte(rootBytes), uint32(rewardsCalcEnd.Unix())); err != nil {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateFails, nil, 1)
 		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsFailed)
 		u.logger.Sugar().Errorw("Failed to submit root", zap.Error(err))
