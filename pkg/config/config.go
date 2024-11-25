@@ -34,6 +34,7 @@ type UpdaterConfig struct {
 	PrivateKey                string      `mapstructure:"private_key"`
 	RewardsCoordinatorAddress string      `mapstructure:"rewards_coordinator_address"`
 	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
+	SidecarRpcUrl             string      `mapstructure:"sidecar_rpc_url"`
 }
 
 type DistributionConfig struct {
@@ -136,7 +137,7 @@ func NewUpdaterConfig() *UpdaterConfig {
 		RPCUrl:                    viper.GetString("rpc_url"),
 		PrivateKey:                viper.GetString("private_key"),
 		RewardsCoordinatorAddress: viper.GetString("rewards_coordinator_address"),
-		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
+		SidecarRpcUrl:             viper.GetString("sidecar_rpc_url"),
 	}
 	return updaterConfig
 }

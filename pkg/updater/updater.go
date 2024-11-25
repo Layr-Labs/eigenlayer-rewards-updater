@@ -3,98 +3,87 @@ package updater
 import (
 	"context"
 	"fmt"
-	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
-	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
-	"github.com/wealdtech/go-merkletree/v2"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/sidecar"
+	v1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1"
 	"go.uber.org/zap"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"time"
 )
 
 type Updater struct {
-	transactor       services.Transactor
-	logger           *zap.Logger
-	proofDataFetcher proofDataFetcher.ProofDataFetcher
+	transactor    services.Transactor
+	logger        *zap.Logger
+	sidecarClient *sidecar.SidecarClient
 }
 
 func NewUpdater(
 	transactor services.Transactor,
-	fetcher proofDataFetcher.ProofDataFetcher,
+	sc *sidecar.SidecarClient,
 	logger *zap.Logger,
 ) (*Updater, error) {
 	return &Updater{
-		transactor:       transactor,
-		logger:           logger,
-		proofDataFetcher: fetcher,
+		transactor:    transactor,
+		logger:        logger,
+		sidecarClient: sc,
 	}, nil
 }
 
+type UpdatedRoot struct {
+	SnapshotDate string
+	Root         string
+}
+
 // Update fetches the most recent snapshot and the most recent submitted timestamp from the chain.
-func (u *Updater) Update(ctx context.Context) (*merkletree.MerkleTree, error) {
+func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	span, ctx := ddTracer.StartSpanFromContext(ctx, "updater::Update")
 	defer span.Finish()
-	//ctx = opentracing.ContextWithSpan(ctx, span)
-	/*
-		1. Fetch the list of most recently generated snapshots (list of timestamps)
-		2. Get the timestamp of the most recently submitted on-chain rewards
-		3. If the most recent snapshot is less than or equal to the latest on-chain rewards, no new rewards exists.
-		4. Fetch the claim amounts generated for the new snapshot based on snapshot date
-		5. Generate Merkle tree from claim amounts
-		6. Submit the new Merkle root to the smart contract
-	*/
 
-	// Get the most recent snapshot timestamp
-	latestSnapshot, err := u.proofDataFetcher.FetchLatestSnapshot(ctx)
+	u.logger.Sugar().Debug("Generating a new rewards snapshot (this may take a while, please wait)")
+	res, err := u.sidecarClient.Rewards.GenerateRewards(ctx, &v1.GenerateRewardsRequest{
+		RespondWithRewardsData: false,
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate rewards: %w", err)
 	}
 
-	u.logger.Sugar().Debugf("latest snapshot: %s", latestSnapshot.GetDateString())
-
-	// Grab latest submitted timestamp directly from chain
-	latestSubmittedTimestamp, err := u.transactor.CurrRewardsCalculationEndTimestamp()
-	lst := time.Unix(int64(latestSubmittedTimestamp), 0).UTC()
-
-	u.logger.Sugar().Debugf("latest submitted timestamp: %s", lst.Format(time.DateOnly))
-
-	// If most recent snapshot's timestamp is equal to the latest submitted timestamp, then we don't need to update
-	if lst.Equal(latestSnapshot.SnapshotDate) {
-		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateNoUpdate, nil, 1)
-		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsNoUpdate)
-		u.logger.Sugar().Infow("latest snapshot is the most recent reward")
-		return nil, nil
-	}
-	// If the most recent snapshot timestamp is less than whats already on chain, we have a problem
-	if lst.After(latestSnapshot.SnapshotDate) {
-		return nil, fmt.Errorf("recent snapshot occurs before latest submitted timestamp")
-	}
-
-	// Get the data for the latest snapshot and load it into a distribution instance
-	rewardsProofData, err := u.proofDataFetcher.FetchClaimAmountsForDate(ctx, latestSnapshot.GetDateString())
+	rootRes, err := u.sidecarClient.Rewards.GenerateRewardsRoot(ctx, &v1.GenerateRewardsRootRequest{
+		CutoffDate: res.CutoffDate,
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate rewards root: %w", err)
 	}
 
-	newRoot := rewardsProofData.AccountTree.Root()
+	u.logger.Sugar().Debugw("Rewards snapshot generated",
+		zap.String("snapshot_date", rootRes.RewardsCalcEndDate),
+		zap.String("root", rootRes.RewardsRoot),
+	)
 
-	calculatedUntilTimestamp := latestSnapshot.SnapshotDate.UTC().Unix()
+	rewardsCalcEnd, err := time.Parse(time.DateOnly, rootRes.RewardsCalcEndDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse snapshot date: %w", err)
+	}
+
+	rootBytes := [32]byte{}
+	copy(rootBytes[:], []byte(rootRes.RewardsRoot))
 
 	// send the merkle root to the smart contract
-	u.logger.Sugar().Infow("updating rewards", zap.String("new_root", utils.ConvertBytesToString(newRoot)))
+	u.logger.Sugar().Infow("updating rewards", zap.String("new_root", rootRes.RewardsRoot))
 
-	// return rewardsProofData.AccountTree, nil
-	u.logger.Sugar().Infow("Calculated timestamp", zap.Int64("calculated_until_timestamp", calculatedUntilTimestamp))
-	if err := u.transactor.SubmitRoot(ctx, [32]byte(newRoot), uint32(calculatedUntilTimestamp)); err != nil {
+	u.logger.Sugar().Infow("Calculated timestamp", zap.Int64("calculated_until_timestamp", rewardsCalcEnd.Unix()))
+	if err := u.transactor.SubmitRoot(ctx, rootBytes, uint32(rewardsCalcEnd.Unix())); err != nil {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateFails, nil, 1)
 		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsFailed)
 		u.logger.Sugar().Errorw("Failed to submit root", zap.Error(err))
-		return rewardsProofData.AccountTree, err
+		return nil, err
 	} else {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateSuccess, nil, 1)
 		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsSuccess)
 	}
 
-	return rewardsProofData.AccountTree, nil
+	return &UpdatedRoot{
+		SnapshotDate: rootRes.RewardsCalcEndDate,
+		Root:         rootRes.RewardsRoot,
+	}, nil
 }
