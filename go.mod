@@ -39,7 +39,7 @@ require (
 	github.com/DataDog/go-libddwaf/v2 v2.4.2 // indirect
 	github.com/DataDog/go-tuf v1.0.2-0.5.2 // indirect
 	github.com/DataDog/sketches-go v1.4.2 // indirect
-	github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.13
+	github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.14-0.20241125201443-e68b50c3a470
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect

@@ -3,6 +3,7 @@ package updater_test
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/mocks"
@@ -69,10 +70,9 @@ func TestUpdaterUpdate(t *testing.T) {
 
 	expectedSnapshotDateTime, _ := time.Parse(time.DateOnly, expectedSnapshotDate)
 
-	expectedRootBytes := [32]byte{}
-	copy(expectedRootBytes[:], []byte(expectedRoot))
+	expectedRootBytes, _ := utils.ConvertStringToBytes(expectedRoot)
 
-	mockTransactor.On("SubmitRoot", mock.Anything, expectedRootBytes, uint32(expectedSnapshotDateTime.Unix())).Return(nil)
+	mockTransactor.On("SubmitRoot", mock.Anything, [32]byte(expectedRootBytes), uint32(expectedSnapshotDateTime.Unix())).Return(nil)
 
 	updatedRoot, err := updater.Update(ctx)
 	assert.Nil(t, err)
