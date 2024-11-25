@@ -33,11 +33,14 @@ type mockRewardsClient struct {
 }
 
 func (m *mockRewardsClient) GenerateRewards(ctx context.Context, req *v1.GenerateRewardsRequest, opts ...grpc.CallOption) (*v1.GenerateRewardsResponse, error) {
-	return &v1.GenerateRewardsResponse{Snapshot: "2024-10-31"}, nil
+	return &v1.GenerateRewardsResponse{CutoffDate: "2024-10-31"}, nil
 }
 
 func (m *mockRewardsClient) GenerateRewardsRoot(ctx context.Context, req *v1.GenerateRewardsRootRequest, opts ...grpc.CallOption) (*v1.GenerateRewardsRootResponse, error) {
-	return &v1.GenerateRewardsRootResponse{RewardsRoot: "0xb4a614cc0bf38dff74822a0744aab5b8897a6868c3b612980436be219a25be21"}, nil
+	return &v1.GenerateRewardsRootResponse{
+		RewardsRoot:        "0xb4a614cc0bf38dff74822a0744aab5b8897a6868c3b612980436be219a25be21",
+		RewardsCalcEndDate: "2024-10-31",
+	}, nil
 }
 
 func TestUpdaterUpdate(t *testing.T) {

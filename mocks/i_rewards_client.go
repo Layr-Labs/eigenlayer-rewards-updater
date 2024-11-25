@@ -54,6 +54,43 @@ func (_m *IRewardsClient) GenerateRewards(ctx context.Context, req *v1.GenerateR
 	return r0, r1
 }
 
+// GenerateRewardsRoot provides a mock function with given fields: ctx, req, opts
+func (_m *IRewardsClient) GenerateRewardsRoot(ctx context.Context, req *v1.GenerateRewardsRootRequest, opts ...grpc.CallOption) (*v1.GenerateRewardsRootResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, req)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GenerateRewardsRoot")
+	}
+
+	var r0 *v1.GenerateRewardsRootResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *v1.GenerateRewardsRootRequest, ...grpc.CallOption) (*v1.GenerateRewardsRootResponse, error)); ok {
+		return rf(ctx, req, opts...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *v1.GenerateRewardsRootRequest, ...grpc.CallOption) *v1.GenerateRewardsRootResponse); ok {
+		r0 = rf(ctx, req, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*v1.GenerateRewardsRootResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *v1.GenerateRewardsRootRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, req, opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewIRewardsClient creates a new instance of IRewardsClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewIRewardsClient(t interface {
