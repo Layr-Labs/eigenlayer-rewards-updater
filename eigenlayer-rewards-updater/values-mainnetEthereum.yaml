@@ -3,11 +3,17 @@ network: ethereum
 cronJob:
   namespace: mainnet-ethereum
   enabled: false
+  image:
+    tag: ffcfb90e5d3d23156acc7a33d7d8070a91a87bea
 claimJob:
   namespace: testnet-holesky
   enabled: false
+  image:
+    tag: ffcfb90e5d3d23156acc7a33d7d8070a91a87bea
 verifyRootJob:
   enabled: true
+  image:
+    tag: ffcfb90e5d3d23156acc7a33d7d8070a91a87bea
   config: |
     debug: true
     
