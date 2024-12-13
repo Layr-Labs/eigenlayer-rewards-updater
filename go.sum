@@ -59,8 +59,14 @@ github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.14-0.20241125201443-e68b50c3
 github.com/Layr-Labs/eigenlayer-rewards-proofs v0.2.14-0.20241125201443-e68b50c3a470/go.mod h1:szcJU28Y/X8EPCsPesY06Z3Bx7eUagwEEogLiqqxo38=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.1.0.20241031143701-1007e0c3775c h1:jgImTwABd+bgblTHy4J/nqwE2cDIAHZ3zGNgFpS9P6s=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.1.0.20241031143701-1007e0c3775c/go.mod h1:prNA2/mLO5vpMZ2q78Nsn0m97wm28uiRnwO+/yOxigk=
+github.com/Layr-Labs/protocol-apis v0.1.0-beta.3 h1:bOBGVb/qcoI9hkJFWGqqhd1fm88GgN3MI9EBqTFhOic=
+github.com/Layr-Labs/protocol-apis v0.1.0-beta.3/go.mod h1:prNA2/mLO5vpMZ2q78Nsn0m97wm28uiRnwO+/yOxigk=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.3.0.20241122223729-1734c60ac737 h1:I/0YAw2ue150YuLNavErIQ4t7yoTDuH3nqZkOS7RTjg=
 github.com/Layr-Labs/protocol-apis v0.1.0-beta.3.0.20241122223729-1734c60ac737/go.mod h1:prNA2/mLO5vpMZ2q78Nsn0m97wm28uiRnwO+/yOxigk=
+github.com/Layr-Labs/protocol-apis v1.0.0-rc.1.0.20241206170022-23e33e5880e8 h1:4B9lMZyiWXrPsrFzU3g/PhW23GdEtVi8t47KF/S53Bo=
+github.com/Layr-Labs/protocol-apis v1.0.0-rc.1.0.20241206170022-23e33e5880e8/go.mod h1:prNA2/mLO5vpMZ2q78Nsn0m97wm28uiRnwO+/yOxigk=
+github.com/Layr-Labs/protocol-apis v1.0.0-rc.1.0.20241206171209-6484d433345c h1:m9xRDJR9ItBQmiOBhsx64Bemi4W5/2pkXru75evpEGI=
+github.com/Layr-Labs/protocol-apis v1.0.0-rc.1.0.20241206171209-6484d433345c/go.mod h1:prNA2/mLO5vpMZ2q78Nsn0m97wm28uiRnwO+/yOxigk=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=

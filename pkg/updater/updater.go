@@ -44,6 +44,7 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	u.logger.Sugar().Debug("Generating a new rewards snapshot (this may take a while, please wait)")
 	res, err := u.sidecarClient.Rewards.GenerateRewards(ctx, &v1.GenerateRewardsRequest{
 		RespondWithRewardsData: false,
+		WaitForComplete:        true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate rewards: %w", err)
