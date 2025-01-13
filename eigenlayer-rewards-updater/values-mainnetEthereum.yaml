@@ -4,16 +4,16 @@ cronJob:
   namespace: mainnet-ethereum
   enabled: false
   image:
-    tag: v1.0.0-rc.3
+    tag: 1fc3b047031fd898b81e62e2d29a465df4cf3cf1
 claimJob:
   namespace: testnet-holesky
   enabled: false
   image:
-    tag: v1.0.0-rc.3
+    tag: 1fc3b047031fd898b81e62e2d29a465df4cf3cf1
 verifyRootJob:
   enabled: true
   image:
-    tag: v1.0.0-rc.3
+    tag: 1fc3b047031fd898b81e62e2d29a465df4cf3cf1
   config: |
     debug: true
     

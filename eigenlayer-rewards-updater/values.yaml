@@ -63,6 +63,6 @@ rewardsDataJob:
   enabled: true
   schedule: "0 6 * * *" # run daily at 6am UTC
   image:
-    repository: docker pull fullstorydev/grpcurl
+    repository: fullstorydev/grpcurl
     tag: latest
   sidecarUrl: ""
