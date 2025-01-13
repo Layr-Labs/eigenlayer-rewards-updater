@@ -34,16 +34,8 @@ spec:
                 - '{ "cutoff_date": "latest", "wait_for_complete": false }'
                 - {{ .Values.rewardsDataJob.sidecarUrl }}
                 - eigenlayer.sidecar.rewards.v1.Rewards/GenerateRewards
-              volumeMounts:
-                - name: config-volume
-                  mountPath: "/etc/eigenlayer-rewards-updater/"
-                  readOnly: true
               env:
                 - name: DD_TRACE_SAMPLE_RATE
                   value: "1.0"
-          volumes:
-            - name: config-volume
-              secret:
-                secretName: {{ .Values.rewardsDataJob.name }}-secret
 
 {{- end -}}
