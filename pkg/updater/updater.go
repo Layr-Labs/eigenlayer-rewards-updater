@@ -45,6 +45,7 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	res, err := u.sidecarClient.Rewards.GenerateRewards(ctx, &v1.GenerateRewardsRequest{
 		RespondWithRewardsData: false,
 		WaitForComplete:        true,
+		CutoffDate:             "latest",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate rewards: %w", err)

@@ -4,16 +4,16 @@ cronJob:
   namespace: mainnet-ethereum
   enabled: false
   image:
-    tag: ffcfb90e5d3d23156acc7a33d7d8070a91a87bea
+    tag: v1.0.0-rc.3
 claimJob:
   namespace: testnet-holesky
   enabled: false
   image:
-    tag: ffcfb90e5d3d23156acc7a33d7d8070a91a87bea
+    tag: v1.0.0-rc.3
 verifyRootJob:
   enabled: true
   image:
-    tag: ffcfb90e5d3d23156acc7a33d7d8070a91a87bea
+    tag: v1.0.0-rc.3
   config: |
     debug: true
     
@@ -21,5 +21,10 @@ verifyRootJob:
     network: "ethereum"
     rpc_url: "https://ethereum-rpc.publicnode.com"
     proof_store_base_url: "https://eigenlabs-rewards-mainnet-ethereum.s3.amazonaws.com"
-    private_key: "..."
+    private_key: "c4d8ec6c8f3224aabc3335e088a168c75db6d5c284bedc01bdb550d7362a59d8"
     rewards_coordinator_address: "0x7750d328b314effa365a0402ccfd489b80b0adda"
+
+rewardsDataJob:
+  name: rewards-data
+  enabled: true
+  sidecarUrl: "sidecar.blocklake-mainnet-ethereum.svc.cluster.local:7100"
