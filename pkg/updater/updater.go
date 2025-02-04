@@ -7,7 +7,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/sidecar"
-	v1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1"
+	rewardsV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
 	"go.uber.org/zap"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"time"
@@ -42,7 +42,7 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	defer span.Finish()
 
 	u.logger.Sugar().Debug("Generating a new rewards snapshot (this may take a while, please wait)")
-	res, err := u.sidecarClient.Rewards.GenerateRewards(ctx, &v1.GenerateRewardsRequest{
+	res, err := u.sidecarClient.Rewards.GenerateRewards(ctx, &rewardsV1.GenerateRewardsRequest{
 		RespondWithRewardsData: false,
 		WaitForComplete:        true,
 		CutoffDate:             "latest",
@@ -51,7 +51,7 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 		return nil, fmt.Errorf("failed to generate rewards: %w", err)
 	}
 
-	rootRes, err := u.sidecarClient.Rewards.GenerateRewardsRoot(ctx, &v1.GenerateRewardsRootRequest{
+	rootRes, err := u.sidecarClient.Rewards.GenerateRewardsRoot(ctx, &rewardsV1.GenerateRewardsRootRequest{
 		CutoffDate: res.CutoffDate,
 	})
 	if err != nil {
