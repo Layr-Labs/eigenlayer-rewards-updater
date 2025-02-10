@@ -33,7 +33,7 @@ spec:
                 - -d
                 - '{ "cutoff_date": "latest", "wait_for_complete": false }'
                 - {{ .Values.rewardsDataJob.sidecarUrl }}
-                - eigenlayer.sidecar.rewards.v1.Rewards/GenerateRewards
+                - eigenlayer.sidecar.v1.rewards.Rewards/GenerateRewards
               env:
                 - name: DD_TRACE_SAMPLE_RATE
                   value: "1.0"
