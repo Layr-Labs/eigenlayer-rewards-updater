@@ -3,6 +3,7 @@ package sidecar
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	rewardsV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -13,6 +14,7 @@ import (
 type IRewardsClient interface {
 	GenerateRewards(ctx context.Context, req *rewardsV1.GenerateRewardsRequest, opts ...grpc.CallOption) (*rewardsV1.GenerateRewardsResponse, error)
 	GenerateRewardsRoot(ctx context.Context, req *rewardsV1.GenerateRewardsRootRequest, opts ...grpc.CallOption) (*rewardsV1.GenerateRewardsRootResponse, error)
+	GenerateClaimProof(ctx context.Context, in *rewardsV1.GenerateClaimProofRequest, opts ...grpc.CallOption) (*rewardsV1.GenerateClaimProofResponse, error)
 }
 
 type SidecarClient struct {
@@ -20,6 +22,7 @@ type SidecarClient struct {
 }
 
 func NewSidecarClient(url string, insecureConn bool) (*SidecarClient, error) {
+	fmt.Printf("url: %s - insecure %+v\n", url, insecureConn)
 	var creds grpc.DialOption
 	if strings.Contains(url, "localhost:") || strings.Contains(url, "127.0.0.1:") || insecureConn {
 		creds = grpc.WithTransportCredentials(insecure.NewCredentials())

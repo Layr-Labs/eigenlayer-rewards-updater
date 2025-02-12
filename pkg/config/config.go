@@ -60,6 +60,8 @@ type ClaimConfig struct {
 	ProofStoreBaseUrl         string      `mapstructure:"proof_store_base_url"`
 	ClaimTimestamp            string      `mapstructure:"claim_timestamp"`
 	SubmitClaim               bool        `mapstructure:"submit_claim"`
+	SidecarRpcUrl             string      `mapstructure:"sidecar_rpc_url"`
+	SidecarInsecureRpc        bool        `mapstructure:"sidecar_insecure_rpc"`
 }
 
 type ValidateConfig struct {
@@ -170,6 +172,8 @@ func NewClaimConfig() *ClaimConfig {
 		ProofStoreBaseUrl:         viper.GetString("proof_store_base_url"),
 		ClaimTimestamp:            viper.GetString("claim_timestamp"),
 		SubmitClaim:               viper.GetBool("submit_claim"),
+		SidecarRpcUrl:             viper.GetString("sidecar_rpc_url"),
+		SidecarInsecureRpc:        viper.GetBool("sidecar_insecure_rpc"),
 	}
 	return claimConfig
 }

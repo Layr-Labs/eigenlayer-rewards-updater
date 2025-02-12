@@ -5,25 +5,58 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
+	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/metrics"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/chainClient"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/config"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/proofDataFetcher/httpProofDataFetcher"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/services"
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/sidecar"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/tracer"
+	rewardsV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"log"
 	"net/http"
 	"os"
 	"time"
 )
+
+func FormatProofForSolidity(accountTreeRoot []byte, proof *rewardsV1.Proof) *claimgen.IRewardsCoordinatorRewardsMerkleClaimStrings {
+	leaves := make([]claimgen.IRewardsCoordinatorTokenTreeMerkleLeafStrings, 0)
+	for _, leaf := range proof.TokenLeaves {
+		leaves = append(leaves, claimgen.IRewardsCoordinatorTokenTreeMerkleLeafStrings{
+			Token:              gethcommon.HexToAddress(leaf.Token),
+			CumulativeEarnings: leaf.CumulativeEarnings,
+		})
+	}
+
+	var earnerTokenRoot [32]byte
+	copy(earnerTokenRoot[:], proof.EarnerLeaf.EarnerTokenRoot)
+
+	return &claimgen.IRewardsCoordinatorRewardsMerkleClaimStrings{
+		Root:            utils.ConvertBytesToString(accountTreeRoot),
+		RootIndex:       proof.RootIndex,
+		EarnerIndex:     proof.EarnerIndex,
+		EarnerTreeProof: utils.ConvertBytesToString(proof.EarnerTreeProof),
+		EarnerLeaf: claimgen.IRewardsCoordinatorEarnerTreeMerkleLeafStrings{
+			Earner:          gethcommon.HexToAddress(proof.EarnerLeaf.Earner),
+			EarnerTokenRoot: utils.ConvertBytes32ToString(earnerTokenRoot),
+		},
+		TokenIndices:       proof.TokenIndices,
+		TokenTreeProofs:    utils.ConvertBytesToStrings(proof.TokenTreeProofs),
+		TokenLeaves:        leaves,
+		TokenTreeProofsNum: uint32(len(proof.TokenTreeProofs)),
+		TokenLeavesNum:     uint32(len(proof.TokenLeaves)),
+	}
+}
 
 func runClaimgen(
 	ctx context.Context,
@@ -36,6 +69,8 @@ func runClaimgen(
 	span, ctx := ddTracer.StartSpanFromContext(ctx, "runClaimgen")
 	defer span.Finish()
 
+	fmt.Printf("cfg: %+v\n", cfg)
+
 	ethClient, err := ethclient.Dial(cfg.RPCUrl)
 	if err != nil {
 		fmt.Println("Failed to create new eth client")
@@ -46,6 +81,12 @@ func runClaimgen(
 	chainClient, err := chainClient.NewChainClient(ctx, ethClient, cfg.PrivateKey)
 	if err != nil {
 		l.Sugar().Errorf("Failed to create new chain client with private key", zap.Error(err))
+		return nil, err
+	}
+
+	sidecarClient, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl, cfg.SidecarInsecureRpc)
+	if err != nil {
+		l.Sugar().Errorf("Failed to create sidecar client", zap.Error(err))
 		return nil, err
 	}
 
@@ -86,6 +127,23 @@ func runClaimgen(
 	} else {
 		return nil, fmt.Errorf("Claim timestamp must be 'latest'")
 	}
+	sidecarProofData, err := sidecarClient.Rewards.GenerateClaimProof(ctx, &rewardsV1.GenerateClaimProofRequest{
+		EarnerAddress: cfg.EarnerAddress,
+		Tokens:        cfg.Tokens,
+		RootIndex:     wrapperspb.Int64(int64(rootIndex)),
+	})
+	if err != nil {
+		l.Sugar().Errorf("Failed to generate claim proof", zap.Error(err))
+		return nil, err
+	}
+
+	sidecarSolidity := FormatProofForSolidity(sidecarProofData.Proof.Root, sidecarProofData.Proof)
+	// spd, err := json.MarshalIndent(sidecarProofData, "", "  ")
+	// if err != nil {
+	// 	l.Sugar().Errorf("Failed to marshal sidecar proof data", zap.Error(err))
+	// 	return nil, err
+	// }
+	fmt.Printf("sidecarProofData: %+v\n", sidecarSolidity)
 
 	proofData, err := dataFetcher.FetchClaimAmountsForDate(ctx, claimDate)
 	if err != nil {
@@ -112,6 +170,8 @@ func runClaimgen(
 
 	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
 
+	fmt.Printf("solidity: %+v\n", solidity)
+
 	if cfg.SubmitClaim {
 		metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsGenerated, nil, 1)
 		err := transactor.SubmitRewardClaim(ctx, *claim, gethcommon.HexToAddress(cfg.EarnerAddress))
@@ -123,9 +183,31 @@ func runClaimgen(
 		}
 	}
 
-	return solidity, nil
+	return sidecarSolidity, nil
 
 }
+
+/*
+func mapSidecarProofToMerkelClaim(proof rewardsV1.Proof) rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim {
+	earnerTreeProof, _ := hexutil.Decode(strings.TrimPrefix(proof.EarnerTreeProof, "0x"))
+	earnerRoot, _ := hexutil.Decode(strings.TrimPrefix(proof.EarnerLeaf.EarnerTokenRoot, "0x"))
+
+	var earnerRoot32 [32]byte
+	copy(earnerRoot32[:], earnerRoot[:32])
+
+	return rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim{
+		RootIndex:       proof.RootIndex,
+		EarnerIndex:     proof.EarnerIndex,
+		EarnerTreeProof: earnerTreeProof,
+		EarnerLeaf: rewardsCoordinator.IRewardsCoordinatorEarnerTreeMerkleLeaf{
+			Earner:          gethcommon.HexToAddress(proof.EarnerLeaf.Earner),
+			EarnerTokenRoot: earnerRoot32,
+		},
+		TokenIndices:    proof.LeafIndices,
+		TokenTreeProofs: proof.TokenTreeProofs,
+		TokenLeaves:     proof.TokenLeaves,
+	}
+}*/
 
 // distribution represents the updater command
 var claimCmd = &cobra.Command{
