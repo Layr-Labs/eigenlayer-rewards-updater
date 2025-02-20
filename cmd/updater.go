@@ -57,8 +57,8 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 
 	_, err = u.Update(ctx)
 	if err != nil {
-		logger.Sugar().Infow("Failed to update", zap.Error(err))
-		return nil
+		logger.Sugar().Errorf("Failed to update", zap.Error(err))
+		return err
 	}
 	logger.Sugar().Infow("Update successful")
 	return nil
@@ -105,7 +105,7 @@ var updaterCmd = &cobra.Command{
 
 		err = runUpdater(ctx, cfg, logger)
 		if err != nil {
-			logger.Sugar().Error(err)
+			log.Fatalln(err)
 		}
 		if err := s.Close(); err != nil {
 			logger.Sugar().Errorw("Failed to close statsd client", zap.Error(err))
