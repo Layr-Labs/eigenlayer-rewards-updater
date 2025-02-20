@@ -1,0 +1,41 @@
+{{- if eq .Values.rewardsDataJob.enabled true -}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.rewardsDataJob.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    tags.datadoghq.com/env: {{ .Values.environment }}
+    tags.datadoghq.com/version: {{ .Values.version }}
+    tags.datadoghq.com/service: "{{ .Values.rewardsDataJob.name }}"
+    admission.datadoghq.com/config.mode: "socket"
+    app: {{ .Values.rewardsDataJob.name }}
+spec:
+  schedule: "{{ .Values.rewardsDataJob.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            tags.datadoghq.com/env: {{ .Values.environment }}
+            tags.datadoghq.com/version: {{ .Values.version }}
+            tags.datadoghq.com/service: "{{ .Values.rewardsDataJob.name }}"
+            admission.datadoghq.com/enabled: "true"
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: rewards-data
+              image: {{ .Values.rewardsDataJob.image.repository }}:{{ .Values.rewardsDataJob.image.tag }}
+              imagePullPolicy: {{ .Values.rewardsDataJob.image.pullPolicy }}
+              args:
+                - -plaintext
+                - -d
+                - '{ "cutoff_date": "latest", "wait_for_complete": false }'
+                - {{ .Values.rewardsDataJob.sidecarUrl }}
+                - eigenlayer.sidecar.v1.rewards.Rewards/GenerateRewards
+              env:
+                - name: DD_TRACE_SAMPLE_RATE
+                  value: "1.0"
+
+{{- end -}}

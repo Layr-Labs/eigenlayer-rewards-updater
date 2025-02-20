@@ -3,7 +3,7 @@ package sidecar
 import (
 	"context"
 	"crypto/tls"
-	"github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1"
+	rewardsV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -11,8 +11,8 @@ import (
 )
 
 type IRewardsClient interface {
-	GenerateRewards(ctx context.Context, req *v1.GenerateRewardsRequest, opts ...grpc.CallOption) (*v1.GenerateRewardsResponse, error)
-	GenerateRewardsRoot(ctx context.Context, req *v1.GenerateRewardsRootRequest, opts ...grpc.CallOption) (*v1.GenerateRewardsRootResponse, error)
+	GenerateRewards(ctx context.Context, req *rewardsV1.GenerateRewardsRequest, opts ...grpc.CallOption) (*rewardsV1.GenerateRewardsResponse, error)
+	GenerateRewardsRoot(ctx context.Context, req *rewardsV1.GenerateRewardsRootRequest, opts ...grpc.CallOption) (*rewardsV1.GenerateRewardsRootResponse, error)
 }
 
 type SidecarClient struct {
@@ -32,7 +32,7 @@ func NewSidecarClient(url string, insecureConn bool) (*SidecarClient, error) {
 		return nil, err
 	}
 
-	rewardsClient := v1.NewRewardsClient(grpcClient)
+	rewardsClient := rewardsV1.NewRewardsClient(grpcClient)
 
 	return &SidecarClient{
 		Rewards: rewardsClient,

@@ -4,7 +4,7 @@ go 1.21.10
 
 require (
 	github.com/Layr-Labs/eigenlayer-contracts v0.4.1-holesky-pepe.0.20240813143901-00fc4b95e9c1
-	github.com/Layr-Labs/protocol-apis v1.0.0-rc.1.0.20241206171209-6484d433345c
+	github.com/Layr-Labs/protocol-apis v1.3.0
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/google/go-cmp v0.6.0
 	github.com/pkg/errors v0.9.1

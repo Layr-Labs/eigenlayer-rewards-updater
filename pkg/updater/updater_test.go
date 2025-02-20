@@ -9,7 +9,7 @@ import (
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/mocks"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/sidecar"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/updater"
-	v1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1"
+	v1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
 	"google.golang.org/grpc"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/mocktracer"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
