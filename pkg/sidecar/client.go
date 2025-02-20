@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	rewardsV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
+	"github.com/akuity/grpc-gateway-client/pkg/grpc/gateway"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -40,4 +41,10 @@ func NewSidecarClient(url string, insecureConn bool) (*SidecarClient, error) {
 	return &SidecarClient{
 		Rewards: rewardsClient,
 	}, nil
+}
+
+func NewSidecarHttpClient(url string, opts ...gateway.ClientOption) (rewardsV1.RewardsGatewayClient, error) {
+	client := rewardsV1.NewRewardsGatewayClient(gateway.NewClient(url, opts...))
+
+	return client, nil
 }

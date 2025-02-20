@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	rewardsCoordinator "github.com/Layr-Labs/eigenlayer-contracts/pkg/bindings/IRewardsCoordinator"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/claimgen"
 	"github.com/Layr-Labs/eigenlayer-rewards-proofs/pkg/utils"
 	"github.com/Layr-Labs/eigenlayer-rewards-updater/internal/logger"
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	ddTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"time"
@@ -84,11 +86,17 @@ func runClaimgen(
 		return nil, err
 	}
 
-	sidecarClient, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl, cfg.SidecarInsecureRpc)
+	sidecarClientGrpc, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl, cfg.SidecarInsecureRpc)
 	if err != nil {
 		l.Sugar().Errorf("Failed to create sidecar client", zap.Error(err))
 		return nil, err
 	}
+
+	// sidecarClient, err := sidecar.NewSidecarHttpClient("http://localhost:7101")
+	// if err != nil {
+	// 	l.Sugar().Errorf("Failed to create sidecar client", zap.Error(err))
+	// 	return nil, err
+	// }
 
 	e, _ := config.StringEnvironmentFromEnum(cfg.Environment)
 	dataFetcher := httpProofDataFetcher.NewHttpProofDataFetcher(cfg.ProofStoreBaseUrl, e, cfg.Network, http.DefaultClient, l)
@@ -127,7 +135,7 @@ func runClaimgen(
 	} else {
 		return nil, fmt.Errorf("Claim timestamp must be 'latest'")
 	}
-	sidecarProofData, err := sidecarClient.Rewards.GenerateClaimProof(ctx, &rewardsV1.GenerateClaimProofRequest{
+	sidecarProofData, err := sidecarClientGrpc.Rewards.GenerateClaimProof(ctx, &rewardsV1.GenerateClaimProofRequest{
 		EarnerAddress: cfg.EarnerAddress,
 		Tokens:        cfg.Tokens,
 		RootIndex:     wrapperspb.Int64(int64(rootIndex)),
@@ -136,14 +144,24 @@ func runClaimgen(
 		l.Sugar().Errorf("Failed to generate claim proof", zap.Error(err))
 		return nil, err
 	}
+	fmt.Printf("raw http: %+v\n", sidecarProofData.Proof)
+
+	sidecarProofDataGrpc, err := sidecarClientGrpc.Rewards.GenerateClaimProof(ctx, &rewardsV1.GenerateClaimProofRequest{
+		EarnerAddress: cfg.EarnerAddress,
+		Tokens:        cfg.Tokens,
+		RootIndex:     wrapperspb.Int64(int64(rootIndex)),
+	})
+	fmt.Printf("raw grpc: %+v\n", sidecarProofDataGrpc.Proof)
+	if err != nil {
+		l.Sugar().Errorf("Failed to generate claim proof", zap.Error(err))
+		return nil, err
+	}
 
 	sidecarSolidity := FormatProofForSolidity(sidecarProofData.Proof.Root, sidecarProofData.Proof)
-	// spd, err := json.MarshalIndent(sidecarProofData, "", "  ")
-	// if err != nil {
-	// 	l.Sugar().Errorf("Failed to marshal sidecar proof data", zap.Error(err))
-	// 	return nil, err
-	// }
-	fmt.Printf("sidecarProofData: %+v\n", sidecarSolidity)
+	fmt.Printf("http: %+v\n\n", sidecarSolidity)
+
+	sidecarSolidityGrpc := FormatProofForSolidity(sidecarProofDataGrpc.Proof.Root, sidecarProofDataGrpc.Proof)
+	fmt.Printf("grpc: %+v\n\n", sidecarSolidityGrpc)
 
 	proofData, err := dataFetcher.FetchClaimAmountsForDate(ctx, claimDate)
 	if err != nil {
@@ -159,7 +177,7 @@ func runClaimgen(
 		tokenAddresses = append(tokenAddresses, gethcommon.HexToAddress(t))
 	}
 
-	accounts, claim, err := cg.GenerateClaimProofForEarner(
+	accountTree, oldClaim, err := cg.GenerateClaimProofForEarner(
 		gethcommon.HexToAddress(cfg.EarnerAddress),
 		tokenAddresses,
 		rootIndex,
@@ -167,14 +185,21 @@ func runClaimgen(
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Old claim: %+v\n", oldClaim)
 
-	solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
+	// solidity := claimgen.FormatProofForSolidity(accounts.Root(), claim)
 
-	fmt.Printf("solidity: %+v\n", solidity)
+	// fmt.Printf("solidity: %+v\n", solidity)
+
+	claim := convertSidecarProofToContractProof(sidecarProofDataGrpc.Proof)
+	fmt.Printf("New claim: %+v\n", claim)
+
+	fmt.Printf("Old root: %+v\n", utils.ConvertBytesToString(accountTree.Root()))
+	fmt.Printf("New root: %+v\n", utils.ConvertBytesToString(sidecarProofDataGrpc.Proof.Root))
 
 	if cfg.SubmitClaim {
 		metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsGenerated, nil, 1)
-		err := transactor.SubmitRewardClaim(ctx, *claim, gethcommon.HexToAddress(cfg.EarnerAddress))
+		err := transactor.SubmitRewardClaim(ctx, claim, gethcommon.HexToAddress(cfg.EarnerAddress))
 		if err != nil {
 			metrics.GetStatsdClient().Incr(metrics.Counter_ClaimsSubmittedFail, nil, 1)
 			l.Sugar().Errorf("Failed to submit claim", zap.Error(err))
@@ -185,6 +210,37 @@ func runClaimgen(
 
 	return sidecarSolidity, nil
 
+}
+
+func convertClaimTokenLeaves(
+	claimTokenLeaves []*rewardsV1.TokenLeaf,
+) []rewardsCoordinator.IRewardsCoordinatorTokenTreeMerkleLeaf {
+	var tokenLeaves []rewardsCoordinator.IRewardsCoordinatorTokenTreeMerkleLeaf
+	for _, claimTokenLeaf := range claimTokenLeaves {
+		earnings, _ := new(big.Int).SetString(claimTokenLeaf.CumulativeEarnings, 10)
+		tokenLeaves = append(tokenLeaves, rewardsCoordinator.IRewardsCoordinatorTokenTreeMerkleLeaf{
+			Token:              gethcommon.HexToAddress(claimTokenLeaf.Token),
+			CumulativeEarnings: earnings,
+		})
+	}
+	return tokenLeaves
+}
+
+func convertSidecarProofToContractProof(proof *rewardsV1.Proof) rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim {
+	var earnerTokenRoot [32]byte
+	copy(earnerTokenRoot[:], proof.EarnerLeaf.EarnerTokenRoot)
+	return rewardsCoordinator.IRewardsCoordinatorRewardsMerkleClaim{
+		RootIndex:       proof.RootIndex,
+		EarnerIndex:     proof.EarnerIndex,
+		EarnerTreeProof: proof.EarnerTreeProof,
+		EarnerLeaf: rewardsCoordinator.IRewardsCoordinatorEarnerTreeMerkleLeaf{
+			Earner:          gethcommon.HexToAddress(proof.EarnerLeaf.Earner),
+			EarnerTokenRoot: earnerTokenRoot,
+		},
+		TokenIndices:    proof.TokenIndices,
+		TokenTreeProofs: proof.TokenTreeProofs,
+		TokenLeaves:     convertClaimTokenLeaves(proof.TokenLeaves),
+	}
 }
 
 /*
