@@ -37,6 +37,7 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 		return err
 	}
 
+	fmt.Printf("config: %+v\n", cfg)
 	sidecarClient, err := sidecar.NewSidecarClient(cfg.SidecarRpcUrl, cfg.SidecarInsecureRpc)
 	if err != nil {
 		logger.Sugar().Errorf("Failed to create sidecar client", zap.Error(err))
@@ -57,7 +58,7 @@ func runUpdater(ctx context.Context, cfg *config.UpdaterConfig, logger *zap.Logg
 
 	_, err = u.Update(ctx)
 	if err != nil {
-		logger.Sugar().Errorf("Failed to update", zap.Error(err))
+		logger.Sugar().Errorw("Failed to update", zap.Error(err))
 		return err
 	}
 	logger.Sugar().Infow("Update successful")
@@ -71,6 +72,7 @@ var updaterCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.NewUpdaterConfig()
+		fmt.Printf("config: %+v\n", cfg)
 
 		tracer.StartTracer(cfg.EnableTracing)
 		defer ddTracer.Stop()

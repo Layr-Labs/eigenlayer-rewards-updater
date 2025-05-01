@@ -41,7 +41,7 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	span, ctx := ddTracer.StartSpanFromContext(ctx, "updater::Update")
 	defer span.Finish()
 
-	u.logger.Sugar().Debug("Generating a new rewards snapshot (this may take a while, please wait)")
+	u.logger.Sugar().Infow("Generating a new rewards snapshot (this may take a while, please wait)")
 	res, err := u.sidecarClient.Rewards.GenerateRewards(ctx, &rewardsV1.GenerateRewardsRequest{
 		RespondWithRewardsData: false,
 		WaitForComplete:        true,
@@ -51,6 +51,9 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 		return nil, fmt.Errorf("failed to generate rewards: %w", err)
 	}
 
+	u.logger.Sugar().Infow("Generating a rewards root",
+		zap.String("cutoffDate", res.CutoffDate),
+	)
 	rootRes, err := u.sidecarClient.Rewards.GenerateRewardsRoot(ctx, &rewardsV1.GenerateRewardsRootRequest{
 		CutoffDate: res.CutoffDate,
 	})
@@ -59,7 +62,7 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	}
 
 	u.logger.Sugar().Debugw("Rewards snapshot generated",
-		zap.String("snapshot_date", rootRes.RewardsCalcEndDate),
+		zap.String("rewardsCalculationEndDate", rootRes.RewardsCalcEndDate),
 		zap.String("root", rootRes.RewardsRoot),
 	)
 
@@ -76,7 +79,10 @@ func (u *Updater) Update(ctx context.Context) (*UpdatedRoot, error) {
 	// send the merkle root to the smart contract
 	u.logger.Sugar().Infow("updating rewards", zap.String("new_root", rootRes.RewardsRoot))
 
-	u.logger.Sugar().Infow("Calculated timestamp", zap.Int64("calculated_until_timestamp", rewardsCalcEnd.Unix()))
+	u.logger.Sugar().Infow("Calculated timestamp",
+		zap.Int64("calculated_until_timestamp", rewardsCalcEnd.Unix()),
+		zap.String("calculated_until_date", rewardsCalcEnd.Format(time.DateOnly)),
+	)
 	if err := u.transactor.SubmitRoot(ctx, [32]byte(rootBytes), uint32(rewardsCalcEnd.Unix())); err != nil {
 		metrics.GetStatsdClient().Incr(metrics.Counter_UpdateFails, nil, 1)
 		metrics.IncCounterUpdateRun(metrics.CounterUpdateRunsFailed)

@@ -1,6 +1,12 @@
 name: build-container
 
-on: push
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   test:

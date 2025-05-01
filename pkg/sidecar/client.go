@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	rewardsV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/sidecar/v1/rewards"
+	"github.com/ethereum/go-ethereum/common/math"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -27,7 +28,13 @@ func NewSidecarClient(url string, insecureConn bool) (*SidecarClient, error) {
 		creds = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: false}))
 	}
 
-	grpcClient, err := grpc.NewClient(url, creds)
+	opts := []grpc.DialOption{
+		creds,
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(math.MaxInt32)),
+	}
+
+	grpcClient, err := grpc.NewClient(url, opts...)
 	if err != nil {
 		return nil, err
 	}
