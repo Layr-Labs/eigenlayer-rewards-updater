@@ -106,6 +106,6 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => /Users/seanmcgary/Code/open-source/go-ethereum
+// replace github.com/ethereum/go-ethereum => /Users/seanmcgary/Code/open-source/go-ethereum
 
 // replace github.com/Layr-Labs/eigenlayer-contracts => github.com/Layr-Labs/eigenlayer-contracts v1.4.0-testnet-holesky
