@@ -26,6 +26,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set release version
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          ./scripts/version.sh $REF
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,8 +53,9 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           PLATFORMS: "linux/amd64,linux/arm64"
         run: |
-          if [[ $GITHUB_REF == refs/heads/master ]]; then
-            docker buildx build --platform $PLATFORMS -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest --push .
+          VERSION=$(cat VERSION | tr -d '[:space:]' | sed 's/+/_/g')
+          if [[ $GITHUB_REF == refs/heads/master || $GITHUB_REF == refs/tags/* ]]; then
+            docker buildx build --platform "linux/amd64,linux/arm64" -t $REGISTRY/$REPOSITORY:$VERSION -t $REGISTRY/$REPOSITORY:latest --push .
           else
-            docker buildx build --platform $PLATFORMS -t $REGISTRY/$REPOSITORY:$IMAGE_TAG --push .
+            docker buildx build --platform "linux/amd64" -t $REGISTRY/$REPOSITORY:$VERSION --push .
           fi
