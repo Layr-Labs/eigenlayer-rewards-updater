@@ -2,20 +2,13 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - vendor
-    - bin
-    - mocks
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   uniq-by-line: true
-  path-prefix: ""
   sort-results: true
 
 linters-settings:
@@ -23,7 +16,6 @@ linters-settings:
     check-type-assertions: true
     check-blank: true
   govet:
-    check-shadowing: true
     enable-all: true
   gocyclo:
     min-complexity: 15
@@ -81,26 +73,26 @@ linters-settings:
 linters:
   enable:
     - bodyclose
+    - copyloopvar
     - depguard
     - dogsled
     - dupl
     - errcheck
-    - exportloopref
     - goconst
     - gocritic
     - gocyclo
     - gofmt
     - goimports
-    - gomnd
-    - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
     - misspell
+    - mnd
     - nakedret
     - nolintlint
     - rowserrcheck
+    - shadow
     - staticcheck
     - typecheck
     - unconvert
@@ -108,22 +100,25 @@ linters:
     - unused
     - whitespace
   disable:
-    - maligned
     - prealloc
-    - scopelint
-    - interfacer
-    - golint
 
 issues:
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+  exclude-dirs:
+    - vendor
+    - bin
+    - mocks
   exclude-rules:
     - path: _test\.go
       linters:
-        - gomnd
+        - mnd
         - goconst
         - dupl
     - path: main\.go
       linters:
-        - gomnd
+        - mnd
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false
