@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - preprod-hoodi
+          - testnet-hoodi
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-preprod-hoodi:
+    if: inputs.environment == 'preprod-hoodi'
+    uses: ./.github/workflows/deploy-rewards-updater.yaml
+    secrets: inherit
+    with:
+      deploy_name: "rewards-updater-preprod-hoodi"
+      environment: "preprod-hoodi"
+      namespace: "internal-preprod-hoodi"
+      cluster_name: "protocol-preprod"
+      values_file: "./eigenlayer-rewards-updater/values-preprodHoodi.yaml"
+
+  deploy-testnet-hoodi:
+    if: inputs.environment == 'testnet-hoodi'
+    uses: ./.github/workflows/deploy-rewards-updater.yaml
+    secrets: inherit
+    with:
+      deploy_name: "rewards-updater-testnet-hoodi"
+      environment: "testnet-hoodi"
+      namespace: "internal-testnet-hoodi"
+      cluster_name: "protocol-testnet"
+      values_file: "./eigenlayer-rewards-updater/values-testnetHoodi.yaml"
