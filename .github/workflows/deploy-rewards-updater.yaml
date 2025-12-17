@@ -72,13 +72,9 @@ jobs:
           RPC_URL: ${{ secrets.RPC_URL }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: |
-          VERSION=$(git rev-parse --short HEAD)
-
           # Create temporary values file with secrets
           cat > /tmp/secrets-values.yaml <<EOF
           cronJob:
-            image:
-              tag: ${VERSION}
             config: |
               debug: true
 
