@@ -1,0 +1,22 @@
+environment: preprod
+network: hoodi
+cronJob:
+  namespace: internal-preprod-hoodi
+  enabled: true
+  image:
+    tag: latest
+  config: |
+    debug: true
+
+    environment: "preprod"
+    network: "hoodi"
+    rewards_coordinator_address: "0xfc67a24cdb9ee82f6111082274c62d8b2aae3abc"
+    sidecar_rpc_url: "sidecar.internal-preprod-hoodi.svc.cluster.local:7100"
+    sidecar_insecure_rpc: true
+
+claimJob:
+  enabled: false
+verifyRootJob:
+  enabled: false
+rewardsDataJob:
+  enabled: false

@@ -11,13 +11,9 @@ cronJob:
     pullPolicy: Always
   config: |
     debug: true
-  
-    environment: ""
-    network: ""
+
     rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
-    private_key: ""
     proof_store_base_url: "https://eigenlabs-rewards-preprod-holesky.s3.amazonaws.com"
-    rewards_coordinator_address: ""
 
 claimJob:
   name: rewards-claimer
@@ -29,13 +25,9 @@ claimJob:
     pullPolicy: Always
   config: |
     debug: true
-  
-    environment: ""
-    network: ""
+
     rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
     proof_store_base_url: "https://eigenlabs-rewards-preprod-holesky.s3.amazonaws.com"
-    rewards_coordinator_address: ""
-    private_key: ""
     earner_address: ""
     tokens: []
     claim_timestamp: 'latest'
@@ -51,13 +43,9 @@ verifyRootJob:
     pullPolicy: Always
   config: |
     debug: true
-    
-    environment: ""
-    network: ""
+
     rpc_url: "https://ethereum-holesky-rpc.publicnode.com"
-    private_key: ""
     proof_store_base_url: "https://eigenlabs-rewards-preprod-holesky.s3.amazonaws.com"
-    rewards_coordinator_address: ""
 rewardsDataJob:
   name: rewards-data
   enabled: true
@@ -65,4 +53,3 @@ rewardsDataJob:
   image:
     repository: fullstorydev/grpcurl
     tag: latest
-  sidecarUrl: ""

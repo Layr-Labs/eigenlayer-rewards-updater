@@ -1,0 +1,120 @@
+name: Deploy Rewards Updater
+
+on:
+  workflow_call:
+    inputs:
+      deploy_name:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
+      cluster_name:
+        required: true
+        type: string
+      values_file:
+        required: true
+        type: string
+      chart_version:
+        default: "v1.0.0"
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-rewards-updater:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name ${{ inputs.cluster_name }} --region ${{ secrets.AWS_REGION }}
+        shell: bash
+
+      - name: Verify kubectl connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.12.0'
+
+      - name: Validate Helm chart
+        run: |
+          helm lint ./eigenlayer-rewards-updater \
+            -f ${{ inputs.values_file }}
+
+      - name: Deploy rewards updater
+        env:
+          RPC_URL: ${{ secrets.RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: |
+          VERSION=$(git rev-parse --short HEAD)
+
+          # Create temporary values file with secrets
+          cat > /tmp/secrets-values.yaml <<EOF
+          cronJob:
+            image:
+              tag: ${VERSION}
+            config: |
+              debug: true
+
+              environment: "${{ inputs.environment }}"
+              network: "hoodi"
+              rpc_url: "${RPC_URL}"
+              private_key: "${PRIVATE_KEY}"
+              rewards_coordinator_address: "$(grep 'rewards_coordinator_address:' ${{ inputs.values_file }} | awk '{print $2}' | tr -d '\"')"
+              sidecar_rpc_url: "$(grep 'sidecar_rpc_url:' ${{ inputs.values_file }} | awk '{print $2}' | tr -d '\"')"
+              sidecar_insecure_rpc: true
+          EOF
+
+          helm upgrade --install \
+            --debug \
+            --atomic \
+            --cleanup-on-fail \
+            --timeout 10m \
+            --wait \
+            --namespace ${{ inputs.namespace }} \
+            --create-namespace \
+            -f ${{ inputs.values_file }} \
+            -f /tmp/secrets-values.yaml \
+            ${{ inputs.deploy_name }} ./eigenlayer-rewards-updater
+
+          # Clean up secrets file
+          rm -f /tmp/secrets-values.yaml
+
+      - name: Verify deployment
+        run: |
+          echo "=== Checking Helm release status ==="
+          helm status ${{ inputs.deploy_name }} -n ${{ inputs.namespace }}
+
+          echo ""
+          echo "=== Checking CronJob ==="
+          kubectl get cronjob -n ${{ inputs.namespace }}
+
+          echo ""
+          echo "=== Checking Secrets ==="
+          kubectl get secret -n ${{ inputs.namespace }} | grep rewards-updater

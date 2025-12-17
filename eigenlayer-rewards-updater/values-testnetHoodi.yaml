@@ -1,0 +1,22 @@
+environment: testnet
+network: hoodi
+cronJob:
+  namespace: internal-testnet-hoodi
+  enabled: true
+  image:
+    tag: latest
+  config: |
+    debug: true
+
+    environment: "testnet"
+    network: "hoodi"
+    rewards_coordinator_address: "0x29e8572678e0c272350aa0b4b8f304e47ebcd5e7"
+    sidecar_rpc_url: "sidecar.internal-testnet-hoodi.svc.cluster.local:7100"
+    sidecar_insecure_rpc: true
+
+claimJob:
+  enabled: false
+verifyRootJob:
+  enabled: false
+rewardsDataJob:
+  enabled: false
