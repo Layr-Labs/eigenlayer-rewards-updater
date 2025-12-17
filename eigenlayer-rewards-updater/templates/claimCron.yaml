@@ -13,6 +13,8 @@ metadata:
     app: {{ .Values.claimJob.name }}
 spec:
   schedule: "{{ .Values.claimJob.schedule }}"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       template:

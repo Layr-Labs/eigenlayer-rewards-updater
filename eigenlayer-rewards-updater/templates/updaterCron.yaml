@@ -13,6 +13,8 @@ metadata:
     app: {{ .Values.cronJob.name }}
 spec:
   schedule: "{{ .Values.cronJob.schedule }}"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       template:
