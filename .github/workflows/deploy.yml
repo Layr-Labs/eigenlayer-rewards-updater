@@ -23,7 +23,7 @@ jobs:
       deploy_name: "rewards-updater-preprod-hoodi"
       environment: "preprod-hoodi"
       namespace: "internal-preprod-hoodi"
-      cluster_name: "protocol-preprod"
+      cluster_name: "protocol-sidecar"
       values_file: "./eigenlayer-rewards-updater/values-preprodHoodi.yaml"
 
   deploy-testnet-hoodi:
@@ -34,5 +34,5 @@ jobs:
       deploy_name: "rewards-updater-testnet-hoodi"
       environment: "testnet-hoodi"
       namespace: "internal-testnet-hoodi"
-      cluster_name: "protocol-testnet"
+      cluster_name: "protocol-sidecar"
       values_file: "./eigenlayer-rewards-updater/values-testnetHoodi.yaml"
