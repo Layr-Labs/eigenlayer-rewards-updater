@@ -3,6 +3,7 @@ network: hoodi
 cronJob:
   namespace: internal-preprod-hoodi
   enabled: true
+  schedule: "0 7 * * *"  # Run daily at 7 AM UTC (after sidecar-rewards-refresher at 6 AM)
   image:
     tag: latest
   config: |
