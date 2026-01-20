@@ -1,7 +1,7 @@
 environment: testnet
-network: hoodi
+network: sepolia
 cronJob:
-  namespace: internal-testnet-hoodi
+  namespace: external-testnet-sepolia
   enabled: true
   schedule: "0 7 * * *"  # Run daily at 7 AM UTC (after sidecar-rewards-refresher at 6 AM)
   image:
@@ -10,9 +10,9 @@ cronJob:
     debug: true
 
     environment: "testnet"
-    network: "hoodi"
-    rewards_coordinator_address: "0x29e8572678e0c272350aa0b4b8f304e47ebcd5e7"
-    sidecar_rpc_url: "sidecar.internal-testnet-hoodi.svc.cluster.local:7100"
+    network: "sepolia"
+    rewards_coordinator_address: "0x5ae8152fb88c26ff9ca5c014c94fca3c68029349"
+    sidecar_rpc_url: "sidecar.external-testnet-sepolia.svc.cluster.local:7100"
     sidecar_insecure_rpc: true
 
 claimJob:

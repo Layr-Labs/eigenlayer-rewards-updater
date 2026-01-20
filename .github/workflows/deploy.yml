@@ -10,6 +10,7 @@ on:
         options:
           - preprod-hoodi
           - testnet-hoodi
+          - testnet-sepolia
 
 permissions:
   contents: read
@@ -36,3 +37,14 @@ jobs:
       namespace: "internal-testnet-hoodi"
       cluster_name: "protocol-sidecar"
       values_file: "./eigenlayer-rewards-updater/values-testnetHoodi.yaml"
+
+  deploy-testnet-sepolia:
+    if: inputs.environment == 'testnet-sepolia'
+    uses: ./.github/workflows/deploy-rewards-updater.yaml
+    secrets: inherit
+    with:
+      deploy_name: "rewards-updater-testnet-sepolia"
+      environment: "testnet-sepolia"
+      namespace: "external-testnet-sepolia"
+      cluster_name: "protocol-sidecar"
+      values_file: "./eigenlayer-rewards-updater/values-testnetSepolia.yaml"
