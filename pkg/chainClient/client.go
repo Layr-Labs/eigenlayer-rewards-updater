@@ -2,80 +2,90 @@ package chainClient
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"math/big"
 
+	"github.com/Layr-Labs/eigenlayer-rewards-updater/pkg/txsigner"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 var (
-	FallbackGasTipCap       = big.NewInt(15000000000)
-	ErrCannotGetECDSAPubKey = errors.New("ErrCannotGetECDSAPubKey")
-	ErrTransactionFailed    = errors.New("ErrTransactionFailed")
+	FallbackGasTipCap    = big.NewInt(15000000000)
+	ErrTransactionFailed = errors.New("ErrTransactionFailed")
 )
 
 type ChainClient struct {
 	*ethclient.Client
-	privateKey         *ecdsa.PrivateKey
+	signer             txsigner.ITransactionSigner
+	chainID            *big.Int
 	AccountAddress     common.Address
 	NoSendTransactOpts *bind.TransactOpts
 	Contracts          map[common.Address]*bind.BoundContract
 }
 
+// NewChainClient builds a ChainClient that signs with a local private key.
+// An empty privateKeyString yields a read-only client (no signer / no
+// NoSendTransactOpts), preserving the previous behavior.
 func NewChainClient(ctx context.Context, ethClient *ethclient.Client, privateKeyString string) (*ChainClient, error) {
 	span, ctx := tracer.StartSpanFromContext(ctx, "chainClient::NewChainClient")
 	defer span.Finish()
 
-	var accountAddress common.Address
-	var privateKey *ecdsa.PrivateKey
-	var opts *bind.TransactOpts
-	var err error
-
-	if len(privateKeyString) != 0 {
-		privateKey, err = crypto.HexToECDSA(privateKeyString)
-		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot parse private key")
-		}
-		publicKey := privateKey.Public()
-		publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-
-		if !ok {
-			log.Error().Msg("NewClient: cannot get publicKeyECDSA")
-			return nil, ErrCannotGetECDSAPubKey
-		}
-		accountAddress = crypto.PubkeyToAddress(*publicKeyECDSA)
-
-		chainIDBigInt, err := ethClient.ChainID(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot get chainId: %w", err)
-		}
-
-		// generate and memoize NoSendTransactOpts
-		opts, err = bind.NewKeyedTransactorWithChainID(privateKey, chainIDBigInt)
-		if err != nil {
-			return nil, fmt.Errorf("NewClient: cannot create NoSendTransactOpts: %w", err)
-		}
-		opts.NoSend = true
+	if len(privateKeyString) == 0 {
+		return newChainClient(ctx, ethClient, nil)
 	}
 
+	signer, err := txsigner.NewPrivateKeySigner(privateKeyString)
+	if err != nil {
+		return nil, fmt.Errorf("NewClient: cannot parse private key: %w", err)
+	}
+	return newChainClient(ctx, ethClient, signer)
+}
+
+// NewChainClientWithSigner builds a ChainClient backed by an arbitrary signer
+// (e.g. AWS KMS), so the signing key never has to live on the host.
+func NewChainClientWithSigner(ctx context.Context, ethClient *ethclient.Client, signer txsigner.ITransactionSigner) (*ChainClient, error) {
+	span, ctx := tracer.StartSpanFromContext(ctx, "chainClient::NewChainClientWithSigner")
+	defer span.Finish()
+
+	if signer == nil {
+		return nil, errors.New("NewChainClientWithSigner: signer must not be nil")
+	}
+	return newChainClient(ctx, ethClient, signer)
+}
+
+func newChainClient(ctx context.Context, ethClient *ethclient.Client, signer txsigner.ITransactionSigner) (*ChainClient, error) {
 	c := &ChainClient{
-		privateKey:     privateKey,
-		AccountAddress: accountAddress,
-		Client:         ethClient,
-		Contracts:      make(map[common.Address]*bind.BoundContract),
+		Client:    ethClient,
+		signer:    signer,
+		Contracts: make(map[common.Address]*bind.BoundContract),
 	}
 
-	c.NoSendTransactOpts = opts
+	if signer == nil {
+		return c, nil
+	}
+
+	chainID, err := ethClient.ChainID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("NewClient: cannot get chainId: %w", err)
+	}
+	c.chainID = chainID
+	c.AccountAddress = signer.GetAddress()
+
+	// generate and memoize NoSendTransactOpts
+	c.NoSendTransactOpts = &bind.TransactOpts{
+		From:    c.AccountAddress,
+		Signer:  signer.SignerFn(chainID),
+		Context: ctx,
+		NoSend:  true,
+	}
 
 	return c, nil
 }
@@ -146,15 +156,18 @@ func (c *ChainClient) EstimateGasPriceAndLimitAndSendTx(
 		return nil, err
 	}
 
-	opts, err := bind.NewKeyedTransactorWithChainID(c.privateKey, tx.ChainId())
-	if err != nil {
-		return nil, fmt.Errorf("EstimateGasPriceAndLimitAndSendTx: cannot create transactOpts: %w", err)
+	if c.signer == nil {
+		return nil, errors.New("EstimateGasPriceAndLimitAndSendTx: chain client has no signer")
 	}
-	opts.Context = ctx
-	opts.Nonce = new(big.Int).SetUint64(tx.Nonce())
-	opts.GasTipCap = gasTipCap
-	opts.GasFeeCap = gasFeeCap
-	opts.GasLimit = addGasBuffer(gasLimit)
+	opts := &bind.TransactOpts{
+		From:      c.AccountAddress,
+		Signer:    c.signer.SignerFn(c.chainID),
+		Context:   ctx,
+		Nonce:     new(big.Int).SetUint64(tx.Nonce()),
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasFeeCap,
+		GasLimit:  addGasBuffer(gasLimit),
+	}
 
 	contract := c.Contracts[*tx.To()]
 	// if the contract has not been cached

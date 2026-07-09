@@ -5,6 +5,7 @@ go 1.21.10
 require (
 	github.com/Layr-Labs/eigenlayer-contracts v0.4.1-holesky-pepe.0.20240813143901-00fc4b95e9c1
 	github.com/Layr-Labs/protocol-apis v1.3.0
+	github.com/aws/aws-sdk-go v1.55.7
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/google/go-cmp v0.6.0
 	github.com/pkg/errors v0.9.1
@@ -22,6 +23,7 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/prometheus/client_model v0.2.1-0.20210607210712-147c58e9608a // indirect
 	github.com/prometheus/common v0.32.1 // indirect

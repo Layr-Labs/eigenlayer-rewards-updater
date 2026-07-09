@@ -41,9 +41,13 @@ func init() {
 	rootCmd.PersistentFlags().String("network", "localnet", "Which network to use")
 	rootCmd.PersistentFlags().String("private-key", "", "An ethereum private key")
 	rootCmd.PersistentFlags().String("rewards-coordinator-address", "0x56c119bD92Af45eb74443ab14D4e93B7f5C67896", "Ethereum address of the rewards coordinator contract")
+	rootCmd.PersistentFlags().String("emissions-controller-address", "", "Ethereum address of the EmissionsController contract (required by the keeper command)")
 	rootCmd.PersistentFlags().String("proof-store-base-url", "", "HTTP base url where data is stored")
 	rootCmd.PersistentFlags().String("sidecar-rpc-url", "", "Sidecar RPC URL")
 	rootCmd.PersistentFlags().Bool("sidecar-insecure-rpc", false, "Use insecure gRPC connection to sidecar")
+	rootCmd.PersistentFlags().String("signer-type", "private_key", "How to sign submitRoot txns: 'private_key' or 'aws_kms'")
+	rootCmd.PersistentFlags().String("kms-key-id", "", "AWS KMS key id or ARN (required when signer-type=aws_kms)")
+	rootCmd.PersistentFlags().String("aws-region", "", "AWS region for the KMS key (optional; falls back to AWS config/credential chain)")
 	rootCmd.PersistentFlags().Bool("pushgateway-enabled", false, "Enable/disable pushgateway metrics collection")
 	rootCmd.PersistentFlags().String("pushgateway-url", "", "URL to use for Pushgateway. This option is ignored if pushgateway-enable is not set.")
 

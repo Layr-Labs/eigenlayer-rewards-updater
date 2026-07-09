@@ -39,4 +39,10 @@ const (
 
 	Counter_RootsMatch     = "roots_match"
 	Counter_RootsDontMatch = "roots_dont_match"
+
+	// Keeper (EmissionsController pressButton) metrics.
+	Counter_KeeperRuns         = "keeper_runs"          // incremented at run start -> heartbeat/liveness
+	Counter_KeeperPressSuccess = "keeper_press_success" // pressButton submitted successfully
+	Counter_KeeperNoPress      = "keeper_no_press"      // button not pressable -> healthy no-op
+	Counter_KeeperFails        = "keeper_press_fails"   // real pressButton failure
 )
