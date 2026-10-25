@@ -69,20 +69,16 @@ func runClaimgen(
 			return nil, err
 		}
 
-		latestSubmittedTimestamp, err := transactor.CurrRewardsCalculationEndTimestamp()
+		// The newest root only becomes claimable after the activation delay, so
+		// claim against the newest root that is enabled and already activated.
+		latestRootIndex, latestRootDate, err := latestClaimableRoot(transactor, time.Now())
 		if err != nil {
-			l.Sugar().Errorf("Failed to get latest submitted timestamp", zap.Error(err))
+			l.Sugar().Errorf("Failed to find the latest claimable root", zap.Error(err))
 			return nil, err
 		}
-		claimDate = time.Unix(int64(latestSubmittedTimestamp), 0).UTC().Format(time.DateOnly)
-		l.Sugar().Debugw("Latest submitted timestamp", zap.String("claimDate", claimDate))
-
-		rootCount, err := transactor.GetNumberOfPublishedRoots()
-		if err != nil {
-			l.Sugar().Errorf("Failed to get number of published roots", zap.Error(err))
-			return nil, err
-		}
-		rootIndex = uint32(rootCount.Uint64() - 1)
+		rootIndex = latestRootIndex
+		claimDate = latestRootDate
+		l.Sugar().Debugw("Latest claimable root", zap.Uint32("rootIndex", rootIndex), zap.String("claimDate", claimDate))
 	} else {
 		return nil, fmt.Errorf("Claim timestamp must be 'latest'")
 	}
@@ -125,6 +121,29 @@ func runClaimgen(
 
 	return solidity, nil
 
+}
+
+// latestClaimableRoot returns the index and rewards calculation end date of the
+// newest distribution root that is not disabled and whose activation delay has
+// passed. RewardsCoordinator.processClaim reverts with RootNotActivated for any
+// newer root.
+func latestClaimableRoot(transactor services.Transactor, now time.Time) (uint32, string, error) {
+	rootCount, err := transactor.GetNumberOfPublishedRoots()
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to get number of published roots: %w", err)
+	}
+	for i := rootCount.Uint64(); i > 0; i-- {
+		root, err := transactor.GetRootByIndex(i - 1)
+		if err != nil {
+			return 0, "", fmt.Errorf("failed to get root %d: %w", i-1, err)
+		}
+		if root.Disabled || int64(root.ActivatedAt) > now.Unix() {
+			continue
+		}
+		claimDate := time.Unix(int64(root.RewardsCalculationEndTimestamp), 0).UTC().Format(time.DateOnly)
+		return uint32(i - 1), claimDate, nil
+	}
+	return 0, "", fmt.Errorf("no activated distribution root found")
 }
 
 // distribution represents the updater command
