@@ -35,6 +35,10 @@ func (v *Validator) ValidatePostedRoot(ctx context.Context) (string, bool, error
 	defer span.Finish()
 
 	retrievedRoot, err := v.transactor.GetCurrentRoot()
+	if err != nil {
+		v.logger.Sugar().Errorw("Failed to get current distribution root", zap.Error(err))
+		return "", false, err
+	}
 
 	lst := time.Unix(int64(retrievedRoot.RewardsCalculationEndTimestamp), 0).UTC().Format(time.DateOnly)
 
